@@ -5,16 +5,18 @@ import (
 )
 
 
+
 type Backup struct {
-    Paths   string
+    Paths   []string
 }
 
 type Args int
 
 type Result int
 
+
 func (args *Args) ShowPaths(backup Backup, result *Result) error{
-    *result = 1
+    *result = 100
     fmt.Println("Paths: ", backup.Paths)
     return nil
 }
