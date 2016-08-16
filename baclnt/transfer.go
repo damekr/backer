@@ -5,6 +5,7 @@ import (
 	"net"
 	"strconv"
 	"os"
+	"io"
 	)
 
 const BUFFERSIZE = 1024
@@ -41,7 +42,29 @@ func InitConnection() {
 		fmt.Println("An error occured: "+err.Error())
 	}
 	fmt.Println(outName, "bytes sent size")
-    
+	defer connection.Close()
+    // Start sending file
+	sendBuffer := make([]byte, BUFFERSIZE)
+	file := readFile()
+	defer file.Close()
+	for {
+		_, err := file.Read(sendBuffer)
+		if err == io.EOF {
+			break
+		}
+		connection.Write(sendBuffer)
+	}
+	fmt.Println("File has been sent, closing connection!")
+	return 
+}
+
+func readFile() *os.File{
+	file, err := os.Open("/home/damian/tmp.tar")
+	if err != nil {
+		fmt.Println(err.Error())
+		panic(err)
+	}
+	return file
 }
 
 func readFileMetadata() (string, string){

@@ -5,6 +5,8 @@ import (
 	"net"
 	"strings"
 	"strconv"
+	"io"
+	"os"
 )
 const BUFFERSIZE = 1024
 
@@ -37,17 +39,28 @@ func InitTransferServer(){
 		fileName := strings.Trim(string(bufferFileName), ":")
 		fmt.Printf("Received: %s\n", fileName)
 
-		// file, err := os.Create("tmp.tar")
-		// if err != nil{
-		// 	fmt.Println("An error during openning file")
-		// }
-		// defer file.Close()
-		// n, err := io.Copy(connection, file)
-		// if err == io.EOF {
-		// 	fmt.Println("An error during copy to file. "+ err.Error())
-		// }
 		fmt.Println(sizeBytes, "bytes received")
 		fmt.Println(nameBytes, "bytes received")
+
+		// Part of receiving file
+		newFile, err := os.Create(fileName)
+		if err != nil {
+			panic(err.Error())
+		}
+		defer newFile.Close()
+		var receivedBytes int64
+
+		for {
+			if (fileSize - receivedBytes) < BUFFERSIZE {
+				io.CopyN(newFile, connection, (fileSize - receivedBytes))
+				connection.Read(make([]byte, (receivedBytes +BUFFERSIZE) - fileSize))
+				break
+			}
+			io.CopyN(newFile, connection, BUFFERSIZE)
+			receivedBytes += BUFFERSIZE
+		}
+		fmt.Println("Received file completely!")
+
 		connection.Close()
 	}
 }
