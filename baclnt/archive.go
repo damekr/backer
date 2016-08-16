@@ -103,6 +103,11 @@ func (a *Archive) MakeArchive(location string){
             log.Fatalln(err)
         }
     }
-
+    fi, err := tarfile.Stat()
+    if err != nil {
+        log.Fatalln(err)       
+    }
+    a.Size = fi.Size()
+    log.Printf("File size: %d Bytes", fi.Size())
 
 }
