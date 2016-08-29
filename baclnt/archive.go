@@ -27,8 +27,6 @@ func NewArchive(Paths []string, Name string) *Archive{
     }
 }
 
-
-
 func (a *Archive) validatePaths(){
     validatedPaths := []string{}
     for _,path := range a.Paths{

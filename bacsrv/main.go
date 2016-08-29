@@ -7,11 +7,10 @@ import (
     // "github.com/backer/common"
 )
 
-var result int
 
 
 
 func main(){
-    InitTransferServer()
+    makeConnection()
 
 }

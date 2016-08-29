@@ -1,22 +1,11 @@
 package common
 
-import (
-	"fmt"
-)
-
-
-
-type Backup struct {
-    Paths   []string
+type Args struct {
+    A int64
 }
 
-type Args int
-
-type Result int
-
-
-func (args *Args) ShowPaths(backup Backup, result *Result) error{
-    *result = 100
-    fmt.Println("Paths: ", backup.Paths)
-    return nil
+type Reply struct {
+    C int64
 }
+
+type Client int

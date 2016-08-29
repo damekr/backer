@@ -2,27 +2,27 @@ package main
 
 import (
     "log"
-    "net"
-    "net/http"
-    "net/rpc"
-    "github.com/backer/common"
 )
 
+// Args received by connection
+type Args struct {
+    A int64
+}
 
-func serveInterface(){
-    backup := new(common.Args)
-    err := rpc.Register(backup)
-    if err != nil{
-        log.Fatalf("ERROR %s", err)
-    }
-    rpc.HandleHTTP()
-    l, e := net.Listen("tcp", ":8080")
-    if e != nil {
-        log.Fatalf("Error tcp: %s", e)
-    }
-    log.Println("Serving RPC Handler")
-    err = http.Serve(l, nil)
-    if err != nil {
-        log.Fatalf("Error serving: %s", err)
-    }
+// Reply returned value to server
+type Reply struct {
+    C int64
+}
+// Client just simply data type
+type Client int
+
+// Ping method returns recieved value to show that the client is available
+func (c *Client) Ping(args *Args, reply *Reply) error {
+    log.Println("Values:", args.A)
+    reply.C = args.A
+    return nil
+}
+
+func (c *Client) Error(args *Args, reply *Reply) error {
+    panic("ERROR")
 }
