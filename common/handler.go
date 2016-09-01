@@ -2,6 +2,7 @@ package common
 
 type Args struct {
     A int64
+    Path string
 }
 
 type Reply struct {

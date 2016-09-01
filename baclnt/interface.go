@@ -7,6 +7,7 @@ import (
 // Args received by connection
 type Args struct {
     A int64
+    Path string
 }
 
 // Reply returned value to server
@@ -25,4 +26,13 @@ func (c *Client) Ping(args *Args, reply *Reply) error {
 
 func (c *Client) Error(args *Args, reply *Reply) error {
     panic("ERROR")
+}
+
+func (c *Client) ExecuteBackup(args *Args, reply *Reply) error {
+    log.Println("Received data to backup: ", args.Path)
+    archive := NewArchive([]string{"/tmp"},"Archiwum")
+    archive.MakeArchive("/home/damian/tmp.tar")
+    // go InitConnection() function to run backup
+    reply.C = 10
+    return nil
 }

@@ -6,60 +6,81 @@ import (
 	"strconv"
 	"os"
 	"io"
+	"log"
 	)
 
 const BUFFERSIZE = 1024
 
-type Connection struct {
-    Port    int8
+type TransferConnection struct {
+    Port    int
     Host    string
     Timeout int
     BUFFERSIZE int
+	conn net.Conn
 }
 
-func NewConnection(Port int8, Host string, Timeout int, BufferSize int) *Connection{
-    return &Connection{
-        Port: Port,
-        Host: Host,
-        Timeout: Timeout,
-        BUFFERSIZE: BufferSize,
-    }
+type BackupConfig struct {
+	Paths []string
+	Exclude []string
+	ArchiveName string
+	ArchiveSize string
+	TRConn TransferConnection
+
 }
 
-func InitConnection() {
-	connection, err := net.Dial("tcp", "localhost:27001")
+func (c *TransferConnection) InitConnection() net.Conn {
+	connection, err := net.Dial("tcp", c.Host+":"+strconv.Itoa(c.Port))
 	if err != nil {
-		fmt.Println("An error during connection: "+ err.Error())
+		log.Fatal("Cannot initialize transfer connection")
 	}
-	fileName, fileSize := readFileMetadata()
-	outSize, err := connection.Write([]byte(fileSize))
+	return connection
+}
+
+func (b *BackupConfig) CreateArchive(paths []string, tmploc string) string{
+	archivePath := tmploc+b.ArchiveName
+	b.Paths = paths
+	archive := NewArchive(b.Paths, "Archiwum")
+	log.Print("Creating archive in: %v with paths: %v", archivePath, paths)
+    archive.MakeArchive(archivePath)
+	return archivePath
+}
+
+func (b *BackupConfig) SendArchive(archiveLocation string) {
+	b.ArchiveName, b.ArchiveSize = readArchiveMetadata(archiveLocation)
+	// Sending archive size to compare that all has been sent
+	outSize, err := b.TRConn.conn.Write([]byte(b.ArchiveSize))
 	if err != nil {
-		fmt.Println("An error occured: "+err.Error())
+		log.Println("An error occured: "+err.Error())
 	}
-	fmt.Println(outSize, "bytes sent Name") 
-	outName, err := connection.Write([]byte(fileName))
+	log.Println(outSize, "bytes sent Name") 
+	// Sending archive name to use on backend side
+	sentDataSize, err := b.TRConn.conn.Write([]byte(b.ArchiveName))
 	if err != nil {
-		fmt.Println("An error occured: "+err.Error())
+		log.Println("An error occured: "+err.Error())
 	}
-	fmt.Println(outName, "bytes sent size")
-	defer connection.Close()
-    // Start sending file
+	log.Println(sentDataSize, "bytes sent size")
+	// TODO I am not sure that this is proper to close in this place
+	// connection, make it maybe in seperate method?
+	defer b.TRConn.conn.Close()
+	// Sending archive
 	sendBuffer := make([]byte, BUFFERSIZE)
-	file := readFile()
+	file := readArchive(archiveLocation)
 	defer file.Close()
 	for {
 		_, err := file.Read(sendBuffer)
 		if err == io.EOF {
 			break
 		}
-		connection.Write(sendBuffer)
+		b.TRConn.conn.Write(sendBuffer)
 	}
 	fmt.Println("File has been sent, closing connection!")
 	return 
 }
 
-func readFile() *os.File{
-	file, err := os.Open("/home/damian/tmp.tar")
+
+func readArchive(archiveLocation string) *os.File{
+	// TODO Check if file exists and if is an archive
+	file, err := os.Open(archiveLocation)
 	if err != nil {
 		fmt.Println(err.Error())
 		panic(err)
@@ -67,8 +88,8 @@ func readFile() *os.File{
 	return file
 }
 
-func readFileMetadata() (string, string){
-	file, err := os.Open("/home/damian/tmp.tar")
+func readArchiveMetadata(archiveLocation string) (string, string){
+	file, err := os.Open(archiveLocation)
 	if err != nil {
 		fmt.Println(err.Error())
 		panic(err)
@@ -84,38 +105,7 @@ func readFileMetadata() (string, string){
 	return fileName, fileSize
 }
 
-// func sendFileToClient(connection net.Conn, f string) {
-// 	fmt.Println("A client has connected!")
-// 	defer connection.Close()
-// 	file, err := os.Open(f)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return
-// 	}
-// 	fileInfo, err := file.Stat()
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return
-// 	}
-// 	fileSize := fillString(strconv.FormatInt(fileInfo.Size(), 10), 10)
-// 	fileName := fillString(fileInfo.Name(), 64)
-// 	fmt.Printf("File Size: %s, FileName: %s ", fileSize, fileName)
-// 	fmt.Println("Sending filename and filesize!")
-// 	connection.Write([]byte(fileSize))
-// 	connection.Write([]byte(fileName))
-// 	fmt.Println("Sending filename and filesize!")
-// 	sendBuffer := make([]byte, BUFFERSIZE)
-// 	fmt.Println("Start sending file!")
-// 	for {
-// 		_, err = file.Read(sendBuffer)
-// 		if err == io.EOF {
-// 			break
-// 		}
-// 		connection.Write(sendBuffer)
-// 	}
-// 	fmt.Println("File has been sent, closing connection!")
-// 	return
-// }
+
 
 func fillString(retunString string, toLength int) string {
 	for {

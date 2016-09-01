@@ -12,8 +12,6 @@ import (
 // BUFFERSIZE determines how big is piece of data that will be send in one frame
 const BUFFERSIZE = 1024
 
-
-
 func InitTransferServer(){
 	listener, err := net.Listen("tcp", "localhost:27001")
 	if err != nil {
@@ -26,14 +24,14 @@ func InitTransferServer(){
 			fmt.Println("An error: "+err.Error())
 		}else{
 			fmt.Println("New connection estabilished")
+			fileSize := GetFileSize(connection)
+			fileName := GetFileName(connection)
+			// Part of receiving file
+			ReceiveFile(fileSize, fileName, connection)
+
 		}
 
-		fileSize := GetFileSize(connection)
-		fileName := GetFileName(connection)
-		// Part of receiving file
-		ReceiveFile(fileSize, fileName, connection)
-
-		connection.Close()
+		
 	}
 }
 

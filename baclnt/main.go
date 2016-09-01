@@ -10,7 +10,7 @@ import (
 	"net/rpc/jsonrpc"
 )
 
-func startInterfaceServer(){
+func startInterfaceClient(){
     client := new(Client)
     server := rpc.NewServer()
     server.Register(client)
@@ -28,13 +28,26 @@ func startInterfaceServer(){
 }
 
 
+
 func main(){
     fmt.Println("OK")
-    startInterfaceServer()
-    // TODO Change NewArchive method to get name and make archive according to given name
-    // archive := NewArchive([]string{"/tmp"},"Archiwum")
-    // archive.MakeArchive("/home/damian/tmp.tar")
+    // startInterfaceClient()
+    host := "localhost"
+    port := 27001
+    paths := []string{
+        "/tmp",
+        "/home/damian/dupa",
+    }
+    archivename := "tmp.tar"
+    connection := TransferConnection{
+        Port: port,
+        Host: host,
+    }
+    
+    backup := BackupConfig{
+        TRConn: connection,
+    }
+    backup.CreateArchive(paths, archivename)
 
-    // InitConnection()
     
 }

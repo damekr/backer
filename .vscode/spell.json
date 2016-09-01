@@ -2,7 +2,8 @@
   "language": "en",
   "ignoreWordsList": [
     "BACSRV",
-    "TODO"
+    "TODO",
+    "sockect"
   ],
   "mistakeTypeToStatus": {
     "Passive voice": "Hint",

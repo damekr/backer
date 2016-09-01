@@ -8,22 +8,30 @@ import (
     "github.com/backer/common"
 )
 
+type Client struct {
+    address string
+    conn *net.Conn
+
+}
 
 
-func makeConnection(){
-    conn, err := net.Dial("tcp", "localhost:8222")
-
+func (c *Client)initConnection(){
+    conn, err := net.Dial("tcp", c.address)
     if err != nil {
-        panic(err)
+        log.Fatal("Client is not available")
     }
-    defer conn.Close()
-    c := jsonrpc.NewClient(conn)
+    c.conn = &conn
+}
+
+func (c *Client) PingClient(){
+    conn := c.conn
+    jsonconn := jsonrpc.NewClient(*conn)
     var reply common.Reply
     var args *common.Args
     now := time.Now()
     sec := now.Unix()
-    args = &common.Args{sec}
-    e := c.Call("Client.Ping", args, &reply)
+    args = &common.Args{A: sec}
+    e := jsonconn.Call("Client.Ping", args, &reply)
     if e != nil {
         log.Fatal("Call error: ", e)
     }
@@ -32,4 +40,20 @@ func makeConnection(){
         log.Fatal("Client is not available")
     }
    
+}
+
+func (c *Client) RunBackup(){
+    conn, err := net.Dial("tcp", c.address)
+    if err != nil {
+        log.Fatal("Client is not available")
+    }
+    var reply common.Reply
+    var args common.Args
+    jsonconn := jsonrpc.NewClient(conn)
+    args = common.Args{Path: "LAA"}
+    e := jsonconn.Call("Client.ExecuteBackup", args, &reply)
+    if e != nil {
+        log.Fatal("Call error: ", e)
+    }
+    log.Print("Response: ", reply.C)
 }
