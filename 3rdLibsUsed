@@ -1,0 +1,2 @@
+"github.com/spf13/cobra" -- parsing arguments
+"github.com/spf13/viper" -- config files

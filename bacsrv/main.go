@@ -16,7 +16,7 @@ func CheckClientAvailability(){
 	for {
 		client.initConnection()
 		time.Sleep(1 * time.Second)
-		client.PingClient()
+		client.Ping()
 		actualTime++
 		if actualTime == backupTime{
 			client.initConnection()
@@ -31,8 +31,9 @@ func CheckClientAvailability(){
 
 
 func main(){
-	go InitTransferServer()
-    CheckClientAvailability()
-	
+	// go InitTransferServer()
+    // CheckClientAvailability()
+	config := readConfigFile()
+	config.showConfig()
 
 }

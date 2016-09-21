@@ -1,0 +1,5 @@
+[server]
+MgmtPort = 9000
+DataPort = 8000
+LogOutput = "STDOUT"
+Debug = true

@@ -9,8 +9,9 @@ import (
 )
 
 type Client struct {
+    auth    map[string]string
     address string
-    conn *net.Conn
+    conn    *net.Conn
 
 }
 
@@ -23,7 +24,7 @@ func (c *Client)initConnection(){
     c.conn = &conn
 }
 
-func (c *Client) PingClient(){
+func (c *Client) Ping(){
     conn := c.conn
     jsonconn := jsonrpc.NewClient(*conn)
     var reply common.Reply
@@ -56,4 +57,8 @@ func (c *Client) RunBackup(){
         log.Fatal("Call error: ", e)
     }
     log.Print("Response: ", reply.C)
+}
+
+func (c *Client) RunRestore(destination string){
+
 }
