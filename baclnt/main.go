@@ -1,8 +1,7 @@
 package main
 
 import (
-    "fmt"
-    // "github.com/backer/baclnt/interface"
+    "github.com/backer/baclnt/api"
 
 	"net/rpc"
 	"log"
@@ -30,24 +29,29 @@ func startInterfaceClient(){
 
 
 func main(){
-    fmt.Println("OK")
-    // startInterfaceClient()
-    host := "localhost"
-    port := 27001
-    paths := []string{
-        "/tmp",
-        "/home/damian/dupa",
-    }
-    archivename := "tmp.tar"
-    connection := TransferConnection{
-        Port: port,
-        Host: host,
-    }
+    log.Println("Starting Client and Api")
+    api.ServeServer()
+
+
+
+    // fmt.Println("OK")
+    // // startInterfaceClient()
+    // host := "localhost"
+    // port := 27001
+    // paths := []string{
+    //     "/tmp",
+    //     "/home/damian/dupa",
+    // }
+    // archivename := "tmp.tar"
+    // connection := TransferConnection{
+    //     Port: port,
+    //     Host: host,
+    // }
     
-    backup := BackupConfig{
-        TRConn: connection,
-    }
-    backup.CreateArchive(paths, archivename)
+    // backup := BackupConfig{
+    //     TRConn: connection,
+    // }
+    // backup.CreateArchive(paths, archivename)
 
     
 }

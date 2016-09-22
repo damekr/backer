@@ -1,2 +1,4 @@
-"github.com/spf13/cobra" -- parsing arguments
-"github.com/spf13/viper" -- config files
+"github.com/spf13/cobra"        -- parsing arguments
+"github.com/spf13/viper"        -- config files
+"github.com/Sirupsen/logrus"    -- logging
+"github.com/takama/daemon"      -- daemon library
