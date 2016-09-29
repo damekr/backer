@@ -44,3 +44,7 @@ func ReadConfigFile() *ServerConfig{
 func GetMgmtPort() string{
     return ReadConfigFile().MgmtPort
 }
+
+func GetTransferPort() string{
+    return ReadConfigFile().DataPort
+}

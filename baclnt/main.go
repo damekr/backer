@@ -2,35 +2,49 @@ package main
 
 import (
     "github.com/backer/baclnt/api"
-
-	"net/rpc"
-	"log"
-	"net"
-	"net/rpc/jsonrpc"
+    "os"
+    log "github.com/Sirupsen/logrus"
+	"syscall"
+	"os/signal"
 )
 
-func startInterfaceClient(){
-    client := new(Client)
-    server := rpc.NewServer()
-    server.Register(client)
-    l, e := net.Listen("tcp", ":8222")
-    if e != nil {
-        log.Fatal("Listen error: ", e)
-    }
-    for {
-        conn, err := l.Accept()
-        if err != nil {
-            log.Fatal(err)
-        }
-        go server.ServeCodec(jsonrpc.NewServerCodec(conn))
-    }
+func init(){
+	log.SetFormatter(&log.TextFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.DebugLevel)
 }
 
 
+func mainLoop() (string, error){
+	log.Debug("Entering into main loop...")
+    interrupt := make(chan os.Signal, 1)
+    signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
+	
+    go api.ServeServer()
+    for {
+        select{
+            case killSignal := <-interrupt:
+            log.Info("Got signal: ", killSignal)
+            log.Info("Stopping application, exiting...")
+            if killSignal == os.Interrupt {
+                return "Application was interrupted by system signal", nil
+            }
+        return "Application was killed", nil
+        }
+    
+	}
+	 
+}
+
 
 func main(){
-    log.Println("Starting Client and Api")
-    api.ServeServer()
+    log.Info("Starting baclnt application...")
+    srv, err := mainLoop()
+	if err != nil {
+		log.Error("Cannot start client application, error: ", err.Error())
+		os.Exit(1)
+	}
+	log.Info(srv)
 
 
 

@@ -1,66 +1,60 @@
 package main
 
 import (
-	// "net/rpc"
-	// "log"
+	"os/signal"
 	"fmt"
 	"os"
-    // "github.com/backer/common"
-	"github.com/takama/daemon"
-	bacsrvd "github.com/backer/bacsrv/daemon"
-	
+	"github.com/backer/bacsrv/api"
+	"github.com/backer/bacsrv/transfer"
+	"syscall"
+	log "github.com/Sirupsen/logrus"
 )
 
+func init(){
+	log.SetFormatter(&log.TextFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.DebugLevel)
+}
 
-// func CheckClientAvailability(){
-// 	client := api.Client{address: "localhost:8222"}
-// 	backupTime := 10
-// 	actualTime := 0
-// 	for {
-// 		client.initConnection()
-// 		time.Sleep(1 * time.Second)
-// 		client.Ping()
-// 		actualTime++
-// 		if actualTime == backupTime{
-// 			client.initConnection()
-// 			client.RunBackup()
-// 		}
-// 	}
+func mainLoop() (string, error){
+	log.Debug("Entering into main loop...")
+    interrupt := make(chan os.Signal, 1)
+    signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
+	startDataServer()
+	startApi()
+    for {
+        select{
+            case killSignal := <-interrupt:
+            log.Info("Got signal: ", killSignal)
+            log.Info("Stopping application, exiting...")
+            if killSignal == os.Interrupt {
+                return "Application was interrupted by system signal", nil
+            }
+        return "Application was killed", nil
+        }
     
-//     // client.RunBackup()
+	}
+	 
+}
 
-// }
+func startApi(){
+    paths := []string{"/home/damian/test"}
+    go api.SendBackupRequest(paths)
+}
 
-// Data engine and Mgmt engine should be started in 
-// Seperated gorutines.
-
-
-const (
-
-    name = "bacsrvd"
-    description = "Daemon for Backup & Restore Service"
-
-)
-
+func startDataServer(){
+	// It should have channel communication to close connection after stopping
+	go transfer.InitTransferServer() 
+}
 
 
 func main(){
-	srv, err := daemon.New(name, description)
+	srv, err := mainLoop()
 	if err != nil {
 		fmt.Println("An error during starting daemon")
 		os.Exit(1)
 	}
-	service := &bacsrvd.Service{srv}
-	status, err := service.Manage()
-	if err != nil {
-		fmt.Println(status, "Error: ", err)
-		os.Exit(1)
-	}
-	fmt.Println(status)
-	// go InitTransferServer()
-    // CheckClientAvailability()
-	// Config := readConfigFile()
-	// Config.showConfig()
-
+	fmt.Println(srv)
+	
 
 }

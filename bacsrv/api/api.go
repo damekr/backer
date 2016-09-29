@@ -1,16 +1,19 @@
 package api
 
-
-
 import (
-	"log"
-
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	pb "github.com/backer/bacsrv/api/proto"
 	"github.com/backer/bacsrv/config"
+	log "github.com/Sirupsen/logrus"
+	"os"
 )
 
+func init(){
+	log.SetFormatter(&log.TextFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.DebugLevel)
+}
 
 func makePbPaths(path string) *pb.Paths{
 	return &pb.Paths{Path: path}
@@ -24,22 +27,21 @@ func preparePaths(paths []string) []*pb.Paths{
 	return pbpaths
 }
 
-
 func triggerBackup(client pb.BaclntClient, paths []*pb.Paths) {
 	stream, err := client.TriggerBackup(context.Background())
 	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+		log.Errorf("Could not greet: %v", err)
 	}
 	for _, path := range paths{
 		if err := stream.Send(path); err != nil{
-			log.Fatalf("Error %v", err)
+			log.Errorf("Error %v", err)
 		}
 	}
 	reply, err := stream.CloseAndRecv()
 	if err != nil {
-		log.Fatalf("An error occured: %v", err)
+		log.Errorf("An error occured: %v", err)
 	}
-	log.Printf("Route summary: %v", reply)
+	log.Debugf("Route summary: %v", reply)
 }
 
 
