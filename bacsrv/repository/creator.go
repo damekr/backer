@@ -16,7 +16,6 @@ REPOSITORY SCHEMA (TEMPORARY)
 /data/<client_name>
 /locks
 
-
 */
 
 func init(){
@@ -26,24 +25,42 @@ func init(){
 
 }
 
-func checkIfRepoExists(){
+func checkIfRepoExists() bool {
     repolocation := config.GetRepositoryLocalization()
     log.Debugf("Checking if %s repository exists...", repolocation)
     repo, err := os.Stat(repolocation)
         if err == nil && repo.IsDir() {
             // make more repository validations
-            log.Info("Repository exists, skipping creating.")
+            return true
         } else {
-            log.Info("Repository does not exist, creating...")
-            out, err := createRepository(repolocation)
-            if err != nil {
-                log.Error("An error during creating repository, error: ", err.Error())
-            }
-            log.Info(out)
+            return false
+           
         }
 }
 
-func createRepository(repolocation string)(string, error){
+func CreateRepository() (*Repository, error){
+    repolocation := config.GetRepositoryLocalization()
+    if checkIfRepoExists(){
+        log.Infof("Repository %s exists, skipping creating", repolocation)
+        return &Repository{Location: repolocation}, nil
+    }
+    err := os.MkdirAll(repolocation + "/.meta/init", 0700)
+    if err != nil {
+        log.Errorf("Cannot create repository %s...", repolocation)
+        return nil, err
+    }
+    errd := os.MkdirAll(repolocation + "/data", 0700)
+    if errd != nil {
+        log.Error("Cannot create data directory inside repository")
+        return nil, errd
+    }
 
-    return "nil", nil
+    erri := os.MkdirAll(repolocation + "/locks", 0700)
+    if erri != nil {
+        log.Error("Cannot create locks directory inside repository")
+        return nil, erri
+    }
+    log.Infof("Repository %s has been created successfully", repolocation)
+    return &Repository{Location: repolocation}, nil
 }
+

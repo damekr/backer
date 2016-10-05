@@ -2,12 +2,14 @@ package main
 
 import (
 	"os/signal"
-	"fmt"
+	// "fmt"
 	"os"
+	// "github.com/backer/bacsrv/repository"
 	"github.com/backer/bacsrv/api"
 	"github.com/backer/bacsrv/transfer"
 	"syscall"
 	log "github.com/Sirupsen/logrus"
+	"github.com/backer/bacsrv/config"
 )
 
 func init(){
@@ -49,12 +51,19 @@ func startDataServer(){
 
 
 func main(){
-	srv, err := mainLoop()
-	if err != nil {
-		fmt.Println("An error during starting daemon")
-		os.Exit(1)
-	}
-	fmt.Println(srv)
+	config.InitClientsConfig()
+
+	// repo, err := repository.CreateRepository()
+	// if err != nil{
+	// 	fmt.Println("Cannot create repository")
+	// }
+	// fmt.Printf("Repository status: %#v\n", repo.GetCapacityStatus())
+	// srv, err := mainLoop()
+	// if err != nil {
+	// 	fmt.Println("An error during starting daemon")
+	// 	os.Exit(1)
+	// }
+	// fmt.Println(srv)
 	
 
 }
