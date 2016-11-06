@@ -9,7 +9,9 @@ import (
 	"github.com/backer/bacsrv/transfer"
 	"syscall"
 	log "github.com/Sirupsen/logrus"
-	"github.com/backer/bacsrv/config"
+	// "github.com/backer/bacsrv/config"
+	"github.com/backer/bacsrv/repository"
+	"fmt"
 )
 
 func init(){
@@ -51,8 +53,10 @@ func startDataServer(){
 
 
 func main(){
-	config.InitClientsConfig()
-
+	
+	// config.InitClientsConfig()
+	clientBucket := repository.CreateClient("minitx")
+	fmt.Printf("Client %#v\n", clientBucket)
 	// repo, err := repository.CreateRepository()
 	// if err != nil{
 	// 	fmt.Println("Cannot create repository")

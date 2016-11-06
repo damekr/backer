@@ -12,7 +12,7 @@ func init(){
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.DebugLevel)
-    // TODO It cannot be in init because of overriding
+    // TODO It cannot be in init because of overwriting
     ReadConfigFile()
 }
 

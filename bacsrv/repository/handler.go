@@ -4,6 +4,7 @@ import (
 	"os"
     log "github.com/Sirupsen/logrus"
 	"syscall"
+
 )
 
 
@@ -26,6 +27,13 @@ type DiskStatus struct {
 	Free uint64 
 }
 
+func GetRepository() *Repository{
+    repo, err := CreateRepository()
+	if err != nil{
+		log.Error("Cannot create repository")
+	}
+    return repo
+}
 
 func (r *Repository) GetCapacityStatus() (disk DiskStatus) {
     fs := syscall.Statfs_t{}
@@ -39,11 +47,13 @@ func (r *Repository) GetCapacityStatus() (disk DiskStatus) {
     return
 }
 
+
+
 func (r *Repository) CreateClientBucket(name string) error {
     const bucketsLocation string = "/data/"
     err := os.Mkdir(r.Location + bucketsLocation + name, 0700)
     if err != nil {
-        log.Error("Cannot create bucket: ", name)
+        log.Debugf("Repository %s exists, skipping", name)
         return err
     }
     return nil
