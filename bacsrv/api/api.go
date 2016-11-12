@@ -1,30 +1,60 @@
 package api
 
 import (
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
+	log "github.com/Sirupsen/logrus"
 	pb "github.com/backer/bacsrv/api/proto"
 	"github.com/backer/bacsrv/config"
-	log "github.com/Sirupsen/logrus"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 	"os"
 )
 
-func init(){
+func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.DebugLevel)
 }
 
-func makePbPaths(path string) *pb.Paths{
+func makePbPaths(path string) *pb.Paths {
 	return &pb.Paths{Path: path}
 }
 
-func preparePaths(paths []string) []*pb.Paths{
+func preparePaths(paths []string) []*pb.Paths {
 	var pbpaths []*pb.Paths
-	for _, l := range paths{
+	for _, l := range paths {
 		pbpaths = append(pbpaths, makePbPaths(l))
 	}
 	return pbpaths
+}
+
+func triggerCheckingPaths(client pb.BaclntClient, paths []*pb.Paths) {
+	stream, err := client.GetStatusPaths(context.Backgroun())
+	if err != nil {
+		log.Errorf("Cannot estabilish stream for path checking connection")
+	}
+	for _, path := range paths {
+		if err := stream.Send(path); err != nil {
+			log.Errorf("Cannot send path  %s over stream", path)
+		}
+	}
+	reply, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Errorf("Cannot get stream replay during checking paths, err: %v", err)
+	}
+	log.Debugf("Received paths from client informations: %v", replay)
+
+}
+
+func CheckIfPathsExists(paths []string, clientaddr string) {
+	address := clientaddr + ":" + config.GetMgmtPort()
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		log.Warnf("Cannot connect to client: %s", err)
+	}
+	defer conn.Close()
+	c := pb.NewBaclntClient(conn)
+	pbpaths := preparePaths(paths)
+
 }
 
 func triggerBackup(client pb.BaclntClient, paths []*pb.Paths) {
@@ -32,8 +62,8 @@ func triggerBackup(client pb.BaclntClient, paths []*pb.Paths) {
 	if err != nil {
 		log.Errorf("Could not greet: %v", err)
 	}
-	for _, path := range paths{
-		if err := stream.Send(path); err != nil{
+	for _, path := range paths {
+		if err := stream.Send(path); err != nil {
 			log.Errorf("Error %v", err)
 		}
 	}
@@ -44,8 +74,7 @@ func triggerBackup(client pb.BaclntClient, paths []*pb.Paths) {
 	log.Debugf("Route summary: %v", reply)
 }
 
-
-func SendBackupRequest(paths []string){
+func SendBackupRequest(paths []string) {
 	address := "localhost:" + config.GetMgmtPort()
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
@@ -56,4 +85,3 @@ func SendBackupRequest(paths []string){
 	pbpaths := preparePaths(paths)
 	triggerBackup(c, pbpaths)
 }
-

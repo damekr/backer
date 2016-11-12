@@ -5,4 +5,4 @@ LogOutput = "STDOUT"
 Debug = true
 
 [repository]
-Localization = "/home/damian/repository"
+Localization = "/home/damekr/repository"

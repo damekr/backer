@@ -11,12 +11,11 @@ It is generated from these files:
 It has these top-level messages:
 	Paths
 	Status
+	Info
 */
 package proto
 
 import proto1 "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
 
 import (
 	context "golang.org/x/net/context"
@@ -24,53 +23,48 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto1.Marshal
-var _ = fmt.Errorf
-var _ = math.Inf
+var _ context.Context
+var _ grpc.ClientConn
 
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the proto package it is being compiled against.
-// A compilation error at this line likely means your copy of the
-// proto package needs to be updated.
-const _ = proto1.ProtoPackageIsVersion2 // please upgrade the proto package
+// Reference imports to suppress errors if they are not otherwise used.
+var _ = proto1.Marshal
 
 // The request message containing the user's name.
 type Paths struct {
 	Path string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
 }
 
-func (m *Paths) Reset()                    { *m = Paths{} }
-func (m *Paths) String() string            { return proto1.CompactTextString(m) }
-func (*Paths) ProtoMessage()               {}
-func (*Paths) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (m *Paths) Reset()         { *m = Paths{} }
+func (m *Paths) String() string { return proto1.CompactTextString(m) }
+func (*Paths) ProtoMessage()    {}
 
 // The response message containing the greetings
 type Status struct {
 	Message string `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
 }
 
-func (m *Status) Reset()                    { *m = Status{} }
-func (m *Status) String() string            { return proto1.CompactTextString(m) }
-func (*Status) ProtoMessage()               {}
-func (*Status) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (m *Status) Reset()         { *m = Status{} }
+func (m *Status) String() string { return proto1.CompactTextString(m) }
+func (*Status) ProtoMessage()    {}
 
-func init() {
-	proto1.RegisterType((*Paths)(nil), "proto.Paths")
-	proto1.RegisterType((*Status)(nil), "proto.Status")
+type Info struct {
+	Path   string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+	Size   int64  `protobuf:"varint,2,opt,name=size" json:"size,omitempty"`
+	Exists bool   `protobuf:"varint,3,opt,name=exists" json:"exists,omitempty"`
 }
 
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConn
+func (m *Info) Reset()         { *m = Info{} }
+func (m *Info) String() string { return proto1.CompactTextString(m) }
+func (*Info) ProtoMessage()    {}
 
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion3
+func init() {
+}
 
 // Client API for Baclnt service
 
 type BaclntClient interface {
 	TriggerBackup(ctx context.Context, opts ...grpc.CallOption) (Baclnt_TriggerBackupClient, error)
+	GetStatusPaths(ctx context.Context, opts ...grpc.CallOption) (Baclnt_GetStatusPathsClient, error)
 }
 
 type baclntClient struct {
@@ -115,10 +109,42 @@ func (x *baclntTriggerBackupClient) CloseAndRecv() (*Status, error) {
 	return m, nil
 }
 
+func (c *baclntClient) GetStatusPaths(ctx context.Context, opts ...grpc.CallOption) (Baclnt_GetStatusPathsClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_Baclnt_serviceDesc.Streams[1], c.cc, "/proto.Baclnt/GetStatusPaths", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &baclntGetStatusPathsClient{stream}
+	return x, nil
+}
+
+type Baclnt_GetStatusPathsClient interface {
+	Send(*Paths) error
+	Recv() (*Info, error)
+	grpc.ClientStream
+}
+
+type baclntGetStatusPathsClient struct {
+	grpc.ClientStream
+}
+
+func (x *baclntGetStatusPathsClient) Send(m *Paths) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *baclntGetStatusPathsClient) Recv() (*Info, error) {
+	m := new(Info)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // Server API for Baclnt service
 
 type BaclntServer interface {
 	TriggerBackup(Baclnt_TriggerBackupServer) error
+	GetStatusPaths(Baclnt_GetStatusPathsServer) error
 }
 
 func RegisterBaclntServer(s *grpc.Server, srv BaclntServer) {
@@ -151,6 +177,32 @@ func (x *baclntTriggerBackupServer) Recv() (*Paths, error) {
 	return m, nil
 }
 
+func _Baclnt_GetStatusPaths_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(BaclntServer).GetStatusPaths(&baclntGetStatusPathsServer{stream})
+}
+
+type Baclnt_GetStatusPathsServer interface {
+	Send(*Info) error
+	Recv() (*Paths, error)
+	grpc.ServerStream
+}
+
+type baclntGetStatusPathsServer struct {
+	grpc.ServerStream
+}
+
+func (x *baclntGetStatusPathsServer) Send(m *Info) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *baclntGetStatusPathsServer) Recv() (*Paths, error) {
+	m := new(Paths)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 var _Baclnt_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.Baclnt",
 	HandlerType: (*BaclntServer)(nil),
@@ -161,21 +213,11 @@ var _Baclnt_serviceDesc = grpc.ServiceDesc{
 			Handler:       _Baclnt_TriggerBackup_Handler,
 			ClientStreams: true,
 		},
+		{
+			StreamName:    "GetStatusPaths",
+			Handler:       _Baclnt_GetStatusPaths_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
 	},
-	Metadata: fileDescriptor0,
-}
-
-func init() { proto1.RegisterFile("server.proto", fileDescriptor0) }
-
-var fileDescriptor0 = []byte{
-	// 139 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0x29, 0x4e, 0x2d, 0x2a,
-	0x4b, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x05, 0x53, 0x4a, 0xd2, 0x5c, 0xac,
-	0x01, 0x89, 0x25, 0x19, 0xc5, 0x42, 0x42, 0x5c, 0x2c, 0x05, 0x40, 0x86, 0x04, 0xa3, 0x02, 0xa3,
-	0x06, 0x67, 0x10, 0x98, 0xad, 0xa4, 0xc4, 0xc5, 0x16, 0x5c, 0x92, 0x58, 0x52, 0x5a, 0x2c, 0x24,
-	0xc1, 0xc5, 0x9e, 0x9b, 0x5a, 0x5c, 0x9c, 0x98, 0x9e, 0x0a, 0x55, 0x00, 0xe3, 0x1a, 0x59, 0x71,
-	0xb1, 0x39, 0x25, 0x26, 0xe7, 0xe4, 0x95, 0x08, 0x19, 0x70, 0xf1, 0x86, 0x14, 0x65, 0xa6, 0xa7,
-	0xa7, 0x16, 0x01, 0x05, 0xb2, 0x4b, 0x0b, 0x84, 0x78, 0x20, 0x56, 0xe9, 0x81, 0x2d, 0x90, 0xe2,
-	0x85, 0xf2, 0x20, 0x26, 0x2a, 0x31, 0x68, 0x30, 0x26, 0xb1, 0x81, 0x45, 0x8c, 0x01, 0x01, 0x00,
-	0x00, 0xff, 0xff, 0xfa, 0xa6, 0xbc, 0xf0, 0x9a, 0x00, 0x00, 0x00,
 }

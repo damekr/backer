@@ -8,6 +8,7 @@ package proto;
 service Baclnt {
 
   rpc TriggerBackup (stream Paths) returns (Status) {}
+  rpc GetStatusPaths (stream Paths) returns (stream Info) {}
 }
 
 // The request message containing the user's name.
@@ -18,4 +19,10 @@ message Paths {
 // The response message containing the greetings
 message Status {
   string message = 1;
+}
+
+message Info {
+  string path = 1;
+  int64 size = 2;
+  bool exists = 3;
 }
