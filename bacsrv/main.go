@@ -3,6 +3,7 @@ package main
 import (
 	"os/signal"
 	// "fmt"
+	"flag"
 	"os"
 	// "github.com/backer/bacsrv/repository"
 	log "github.com/Sirupsen/logrus"
@@ -50,8 +51,14 @@ func startDataServer() {
 	go transfer.InitTransferServer()
 }
 
-func main() {
+func parseFlags() {
+	configFile := flag.String("config", "", "Localization of configureation file")
+	flag.StringVar(configFile, "f", "", "Localization of configuration file")
+	flag.Parse()
+}
 
+func main() {
+	parseFlags()
 	// config.InitClientsConfig()
 	repo, err := repository.CreateRepository()
 	if err != nil {

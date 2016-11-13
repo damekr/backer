@@ -28,7 +28,7 @@ func preparePaths(paths []string) []*pb.Paths {
 }
 
 func triggerCheckingPaths(client pb.BaclntClient, paths []*pb.Paths) {
-	stream, err := client.GetStatusPaths(context.Backgroun())
+	stream, err := client.GetStatusPaths(context.Background())
 	if err != nil {
 		log.Errorf("Cannot estabilish stream for path checking connection")
 	}
@@ -37,11 +37,12 @@ func triggerCheckingPaths(client pb.BaclntClient, paths []*pb.Paths) {
 			log.Errorf("Cannot send path  %s over stream", path)
 		}
 	}
-	reply, err := stream.CloseAndRecv()
+	// TODO Bellow probably does not work, was changed bacause of compiling errors.
+	reply, err := stream.Recv()
 	if err != nil {
 		log.Errorf("Cannot get stream replay during checking paths, err: %v", err)
 	}
-	log.Debugf("Received paths from client informations: %v", replay)
+	log.Debugf("Received paths from client informations: %v", reply)
 
 }
 
@@ -54,7 +55,7 @@ func CheckIfPathsExists(paths []string, clientaddr string) {
 	defer conn.Close()
 	c := pb.NewBaclntClient(conn)
 	pbpaths := preparePaths(paths)
-
+	log.Debug(c, pbpaths)
 }
 
 func triggerBackup(client pb.BaclntClient, paths []*pb.Paths) {
