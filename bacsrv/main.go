@@ -6,19 +6,24 @@ import (
 	"flag"
 	"os"
 	// "github.com/backer/bacsrv/repository"
+	"syscall"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/backer/bacsrv/api"
 	"github.com/backer/bacsrv/transfer"
-	"syscall"
 	// "github.com/backer/bacsrv/config"
 	"fmt"
+
 	"github.com/backer/bacsrv/repository"
 )
+
+var configFlag = flag.String("config", "", "Configuration file")
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.DebugLevel)
+	flag.StringVar(configFlag, "c", "", "Configuration file")
 }
 
 func mainLoop() (string, error) {
@@ -51,14 +56,33 @@ func startDataServer() {
 	go transfer.InitTransferServer()
 }
 
-func parseFlags() {
-	configFile := flag.String("config", "", "Localization of configureation file")
-	flag.StringVar(configFile, "f", "", "Localization of configuration file")
+func checkConfigFile(configPath string) error {
+	// It works for one file, as viper supports directory with given extensions,
+	// it shall be extended by this feature
+	_, err := os.Stat(configPath)
+	if err == nil {
+		return nil
+	}
+	return err
+}
+
+func setFlags() {
 	flag.Parse()
+	if *configFlag == "" {
+		log.Error("Please provide config file with proper flag")
+		os.Exit(2)
+	}
+	if checkConfigFile(*configFlag) != nil {
+		log.Error("Provided config path is not a file, exiting...")
+		os.Exit(3)
+
+	}
+	log.Debug("Config file: ", *configFlag)
+
 }
 
 func main() {
-	parseFlags()
+	setFlags()
 	// config.InitClientsConfig()
 	repo, err := repository.CreateRepository()
 	if err != nil {
