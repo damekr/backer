@@ -1,17 +1,22 @@
 package main
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"github.com/backer/baclnt/api"
+	"flag"
 	"os"
 	"os/signal"
 	"syscall"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/backer/baclnt/api"
 )
+
+var configFlag = flag.String("config", "", "Configuration file")
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.DebugLevel)
+	flag.StringVar(configFlag, "c", "", "Configuration file")
 }
 
 func mainLoop() (string, error) {
@@ -32,7 +37,34 @@ func mainLoop() (string, error) {
 	}
 }
 
+func checkConfigFile(configPath string) error {
+	// It works for one file, as viper supports directory with given extensions,
+	// it shall be extended by this feature
+	_, err := os.Stat(configPath)
+	if err == nil {
+		return nil
+	}
+	return err
+
+}
+
+func setFlags() {
+	flag.Parse()
+	if *configFlag == "" {
+		log.Error("Please provide config file with proper flag")
+		os.Exit(2)
+	}
+	if checkConfigFile(*configFlag) != nil {
+		log.Error("Provided config path is not a file, exiting...")
+		os.Exit(3)
+
+	}
+	log.Debug("Config file: ", *configFlag)
+
+}
+
 func main() {
+	setFlags()
 	log.Info("Starting baclnt application...")
 	srv, err := mainLoop()
 	if err != nil {

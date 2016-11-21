@@ -1,13 +1,14 @@
 package api
 
 import (
+	"io"
+	"net"
+	"os"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/backer/baclnt/transfer"
 	pb "github.com/backer/bacsrv/api/proto"
 	"google.golang.org/grpc"
-	"io"
-	"net"
-	"os"
 )
 
 const (
@@ -64,9 +65,9 @@ func (s *server) GetStatusPaths(stream pb.Baclnt_GetStatusPathsServer) error {
 }
 
 func ServeServer() {
-	listOfFiles := []string{"/home/damekr/d8x.github.io"}
-	files := transfer.GetFilesInformations(listOfFiles)
-	log.Debug("Files ", files)
+	//listOfFiles := []string{"/home/damekr/d8x.github.io"}
+	//files := transfer.GetFilesInformations(listOfFiles)
+	//log.Debug("Files ", files)
 	lis, err := net.Listen("tcp", port)
 	log.Info("Starting baclnt api on addr: ", lis.Addr())
 	if err != nil {
