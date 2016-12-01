@@ -30,9 +30,11 @@ Client daemon creates archive with given paths in temporary path and then send t
 - [x] Extract common function to one package
 - [x] Change 'prints' to log at the begging, later make it more configurable
 - [x] BACSRV: Create package to read configuration files
-- [ ] BACSRV: Demonize server
-- [ ] BACSRV: Create gRPC API
-- [ ] BACLNT: Create gRPC API
+- [x] BACSRV: Demonize server (It is not needed because of systemd)
+- [x] BACSRV: Read config file from parameter
+- [ ] BACSRV: Create inside gRPC API -- in progress
+- [ ] BACLNT: Create inside gRPC API -- in progress
+- [ ] BACSRV: Create oudside gRPC API
 - [ ] README: Add simple architecture picture in ASCI
 - [ ] BACSRV: Prepare description of data repository structure
 - [ ] BACSRV: Prepare description of database structure
