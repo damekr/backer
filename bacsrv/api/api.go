@@ -1,12 +1,13 @@
 package api
 
 import (
+	"os"
+
 	log "github.com/Sirupsen/logrus"
 	pb "github.com/backer/bacsrv/api/proto"
 	"github.com/backer/bacsrv/config"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"os"
 )
 
 func init() {
