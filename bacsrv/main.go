@@ -1,20 +1,16 @@
 package main
 
 import (
-	"os/signal"
-	// "fmt"
 	"flag"
 	"os"
-	// "github.com/backer/bacsrv/repository"
+	"os/signal"
 	"syscall"
 
+	//"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/backer/bacsrv/api"
+	"github.com/backer/bacsrv/config"
+	"github.com/backer/bacsrv/restapi"
 	"github.com/backer/bacsrv/transfer"
-	// "github.com/backer/bacsrv/config"
-	"fmt"
-
-	"github.com/backer/bacsrv/repository"
 )
 
 var configFlag = flag.String("config", "", "Configuration file")
@@ -26,12 +22,12 @@ func init() {
 	flag.StringVar(configFlag, "c", "", "Configuration file")
 }
 
-func mainLoop() (string, error) {
+func mainLoop(config *config.ServerConfig) (string, error) {
 	log.Debug("Entering into main loop...")
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 	startDataServer()
-	startApi()
+	startRestApi(config)
 	for {
 		select {
 		case killSignal := <-interrupt:
@@ -46,13 +42,16 @@ func mainLoop() (string, error) {
 	}
 }
 
-func startApi() {
-	paths := []string{"/home/damian/test"}
-	go api.SendBackupRequest(paths)
+func startRestApi(config *config.ServerConfig) {
+	// Starting a new goroutine
+	//paths := []string{"/home/damian/test"}
+	//go api.SendBackupRequest(paths)
+	go restapi.StartServerRestApi(config)
 }
 
 func startDataServer() {
 	// It should have channel communication to close connection after stopping
+	// Starging a new goroutine
 	go transfer.InitTransferServer()
 }
 
@@ -81,14 +80,24 @@ func setFlags() {
 
 }
 
+func getConfig(path string) *config.ServerConfig {
+	config.SetConfigPath(path)
+	srvConfig := config.GetServerConfig()
+	return srvConfig
+
+}
+
 func main() {
 	setFlags()
+	srvConfig := getConfig(*configFlag)
+	srvConfig.ShowConfig()
+	mainLoop(srvConfig)
 	// config.InitClientsConfig()
-	repo, err := repository.CreateRepository()
-	if err != nil {
-		fmt.Println("Cannot create repository")
-	}
-	fmt.Println("REPO", repo.Location)
+	//repo, err := repository.CreateRepository()
+	//if err != nil {
+	//	fmt.Println("Cannot create repository")
+	//	}
+	//fmt.Println("REPO", repo.Location)
 	//fmt.Printf("Repository status: %#v\n", repo.GetCapacityStatus())
 	//clientBucket := repository.CreateClient("minitx")
 	//fmt.Printf("Client %#v\n", clientBucket)

@@ -5,6 +5,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+const configName = "bacsrv"
+
 type ServerConfig struct {
 	MgmtPort  string
 	DataPort  string
@@ -21,31 +23,31 @@ func fillMainConfigStruct() *ServerConfig {
 	}
 }
 
-func (c *ServerConfig) showConfig() {
+func (c *ServerConfig) ShowConfig() {
 	fmt.Printf("Config Struct: %#v\n", c)
 }
 
-func setConfigPath() {
-	// Viper can cooperate with Cobra arg parser consider reading config file path from arg
-	viper.SetConfigName("bacsrv")
-	viper.AddConfigPath("/home/damekr/dev/go/src/github.com/backer/config")
+func SetConfigPath(path string) {
+	// Viper can cooperate with Cobra arg parser consider reading config file path from
+	viper.SetConfigFile(path)
+	//viper.SetConfigName(configName)
+	//viper.AddConfigPath(path)
 }
 
-func GetServerSettings() *ServerConfig {
+func GetServerConfig() *ServerConfig {
 	ReadConfigFile()
 	config := fillMainConfigStruct()
 	return config
 }
 
 func ReadConfigFile() {
-	setConfigPath()
 	viper.ReadInConfig()
 }
 
 func GetMgmtPort() string {
-	return GetServerSettings().MgmtPort
+	return GetServerConfig().MgmtPort
 }
 
 func GetTransferPort() string {
-	return GetServerSettings().DataPort
+	return GetServerConfig().DataPort
 }
