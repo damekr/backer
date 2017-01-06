@@ -8,18 +8,20 @@ import (
 const configName = "bacsrv"
 
 type ServerConfig struct {
-	MgmtPort  string
-	DataPort  string
-	LogOutput string // STDOUT, FILE, SYSLOG
-	Debug     bool
+	MgmtPort      string
+	DataPort      string
+	LogOutput     string // STDOUT, FILE, SYSLOG
+	Debug         bool
+	ClientsConfig string
 }
 
 func fillMainConfigStruct() *ServerConfig {
 	return &ServerConfig{
-		MgmtPort:  viper.GetString("server.MgmtPort"),
-		DataPort:  viper.GetString("server.DataPort"),
-		LogOutput: viper.GetString("server.LogOutput"),
-		Debug:     viper.GetBool("server.Debug"),
+		MgmtPort:      viper.GetString("server.MgmtPort"),
+		DataPort:      viper.GetString("server.DataPort"),
+		LogOutput:     viper.GetString("server.LogOutput"),
+		Debug:         viper.GetBool("server.Debug"),
+		ClientsConfig: viper.GetString("clients.ConfigFile"),
 	}
 }
 
@@ -42,6 +44,10 @@ func GetServerConfig() *ServerConfig {
 
 func ReadConfigFile() {
 	viper.ReadInConfig()
+}
+
+func GetClientconfigPath() string {
+	return GetServerConfig().ClientsConfig
 }
 
 func GetMgmtPort() string {

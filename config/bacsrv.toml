@@ -6,3 +6,6 @@ Debug = true
 
 [repository]
 Localization = "/home/damekr/repository"
+
+[clients]
+ConfigFile = "/home/damian/dev/go/src/github.com/backer/clients/clients.toml"

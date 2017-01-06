@@ -91,6 +91,8 @@ func main() {
 	setFlags()
 	srvConfig := getConfig(*configFlag)
 	srvConfig.ShowConfig()
+	config.InitClientsConfig(srvConfig)
+	config.PrintValues()
 	mainLoop(srvConfig)
 	// config.InitClientsConfig()
 	//repo, err := repository.CreateRepository()
