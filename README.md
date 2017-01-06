@@ -34,7 +34,7 @@ Client daemon creates archive with given paths in temporary path and then send t
 - [x] BACSRV: Read config file from parameter
 - [ ] BACSRV: Create inside gRPC API -- in progress
 - [ ] BACLNT: Create inside gRPC API -- in progress
-- [ ] BACSRV: Create oudside gRPC API
+- [ ] BACSRV: Create oudside REST API -- in progress
 - [ ] README: Add simple architecture picture in ASCI
 - [ ] BACSRV: Prepare description of data repository structure
 - [ ] BACSRV: Prepare description of database structure
