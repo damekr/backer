@@ -9,6 +9,7 @@ import (
 	//"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/backer/bacsrv/config"
+	"github.com/backer/bacsrv/jobs"
 	"github.com/backer/bacsrv/restapi"
 	"github.com/backer/bacsrv/transfer"
 )
@@ -87,13 +88,24 @@ func getConfig(path string) *config.ServerConfig {
 
 }
 
+func add(data interface{}, result chan<- interface{}) (err error) {
+	r := data.(int) + data.(int)
+	result <- r
+	return error.Error()
+
+}
+
 func main() {
 	setFlags()
 	srvConfig := getConfig(*configFlag)
 	srvConfig.ShowConfig()
-	config.InitClientsConfig(srvConfig)
-	config.PrintValues()
-	mainLoop(srvConfig)
+	//j := jobs.New(2)
+	resultChan := make(chan interface{})
+	jobs.Run(add, 2, resultChan)
+	log.Debug("Result: ", <-resultChan)
+	//config.InitClientsConfig(srvConfig)
+	//config.PrintValues()
+	//mainLoop(srvConfig)
 	// config.InitClientsConfig()
 	//repo, err := repository.CreateRepository()
 	//if err != nil {
