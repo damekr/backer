@@ -1,5 +1,5 @@
-hash: a1006fee9e65fe24f5ad9e10e3a2dc41f8636d17bdbd9a414fbb174cdd342d14
-updated: 2017-01-19T13:08:11.646707896Z
+hash: b9f3ef464a0a18f5c8b03d4f640089aa597e9b85f7ce85978ef3cc3f583dcc5b
+updated: 2017-01-19T19:57:30.835223423+01:00
 imports:
 - name: github.com/fsnotify/fsnotify
   version: fd9ec7deca8bf46ecd2a795baaacf2b3a9be1197
@@ -11,6 +11,8 @@ imports:
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
   version: 392c28fe23e1c45ddba891b0320b3b5df220beea
+- name: github.com/grpc/grpc-go
+  version: 708a7f9f3283aa2d4f6132d287d78683babe55c8
 - name: github.com/hashicorp/hcl
   version: eb6f65b2d77ed5078887f960ff570fbddbbeb49d
   subpackages:
