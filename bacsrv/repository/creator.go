@@ -2,7 +2,7 @@ package repository
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/backer/bacsrv/config"
+	"github.com/damekr/backer/bacsrv/config"
 	"os"
 )
 

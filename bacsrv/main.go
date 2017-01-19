@@ -8,10 +8,10 @@ import (
 
 	//"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/backer/bacsrv/config"
-	"github.com/backer/bacsrv/jobs"
-	"github.com/backer/bacsrv/restapi"
-	"github.com/backer/bacsrv/transfer"
+	"github.com/damekr/backer/bacsrv/config"
+	"github.com/damekr/backer/bacsrv/jobs"
+	"github.com/damekr/backer/bacsrv/restapi"
+	"github.com/damekr/backer/bacsrv/transfer"
 )
 
 var configFlag = flag.String("config", "", "Configuration file")

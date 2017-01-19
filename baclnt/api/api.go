@@ -6,8 +6,8 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/backer/baclnt/transfer"
-	pb "github.com/backer/bacsrv/api/proto"
+	"github.com/damekr/backer/baclnt/transfer"
+	pb "github.com/damekr/backer/bacsrv/api/proto"
 	"google.golang.org/grpc"
 )
 

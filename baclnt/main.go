@@ -7,7 +7,7 @@ import (
 	"syscall"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/backer/baclnt/api"
+	"github.com/damekr/backer/baclnt/api"
 )
 
 var configFlag = flag.String("config", "", "Configuration file")

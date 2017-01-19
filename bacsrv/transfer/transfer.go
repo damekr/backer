@@ -1,25 +1,25 @@
 package transfer
 
 import (
-	"net"
-	"strings"
-	"strconv"
-	"io"
-	"os"
 	log "github.com/Sirupsen/logrus"
-	"github.com/backer/bacsrv/config"
+	"github.com/damekr/backer/bacsrv/config"
+	"io"
+	"net"
+	"os"
+	"strconv"
+	"strings"
 )
 
 // BUFFERSIZE determines how big is piece of data that will be send in one frame
 const BUFFERSIZE = 1024
 
-func init(){
+func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.DebugLevel)
 }
 
-func InitTransferServer(){
+func InitTransferServer() {
 	listener, err := net.Listen("tcp", "localhost:"+config.GetTransferPort())
 	log.Info("Starting transfer server on addr: ", listener.Addr())
 	if err != nil {
@@ -29,7 +29,7 @@ func InitTransferServer(){
 		connection, err := listener.Accept()
 		if err != nil {
 			log.Error("Cannot accept conection, error: ", err.Error())
-		}else{
+		} else {
 			log.Debug("A new transfer connection estabilished, from: ", connection.RemoteAddr())
 			fileSize := GetFileSize(connection)
 			fileName := GetFileName(connection)
@@ -41,7 +41,7 @@ func InitTransferServer(){
 
 // ReceiveFile is able to read data from buffer and save them in created file.
 // It also checks if retrived file is equeal to sent earlier in first chunks of data.
-func ReceiveFile(fileSize int64, fileName string, connection net.Conn){
+func ReceiveFile(fileSize int64, fileName string, connection net.Conn) {
 	newFile, err := os.Create(fileName)
 	if err != nil {
 		log.Error("Cannot create file, error: ", err.Error())
@@ -51,17 +51,17 @@ func ReceiveFile(fileSize int64, fileName string, connection net.Conn){
 	for {
 		if (fileSize - receivedBytes) < BUFFERSIZE {
 			io.CopyN(newFile, connection, (fileSize - receivedBytes))
-			connection.Read(make([]byte, (receivedBytes +BUFFERSIZE) - fileSize))
+			connection.Read(make([]byte, (receivedBytes+BUFFERSIZE)-fileSize))
 			break
 		}
 		io.CopyN(newFile, connection, BUFFERSIZE)
 		receivedBytes += BUFFERSIZE
-		}
+	}
 	log.Debugf("File %s has been correctly received", fileName)
 }
 
-// GetFileSize gets file size from given buffer --> remember to send and receive data in proper order 
-func GetFileSize(connection net.Conn) int64{
+// GetFileSize gets file size from given buffer --> remember to send and receive data in proper order
+func GetFileSize(connection net.Conn) int64 {
 	bufferFileSize := make([]byte, 10)
 	_, err := connection.Read(bufferFileSize)
 	if err != nil {
@@ -73,7 +73,7 @@ func GetFileSize(connection net.Conn) int64{
 }
 
 // GetFileName returns filename from given connection --> remember to send data and read
-func GetFileName(connection net.Conn) string{
+func GetFileName(connection net.Conn) string {
 	bufferFileName := make([]byte, 64)
 	_, err := connection.Read(bufferFileName)
 	if err != nil {
@@ -83,4 +83,3 @@ func GetFileName(connection net.Conn) string{
 	log.Debug("Receiving file name: ", fileName)
 	return fileName
 }
-
