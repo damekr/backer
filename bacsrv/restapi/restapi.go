@@ -68,7 +68,7 @@ func ShowClientStatus(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	clientName := vars["client"]
 	log.Debug("Received arguments: ", clientName)
-	api.SayHellotoClient(clientName)
+	api.SayHelloToClient(clientName)
 	fmt.Fprintln(w, clientName)
 
 }

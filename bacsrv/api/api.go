@@ -17,12 +17,12 @@ func init() {
 }
 
 func SayHelloToClient(message string) {
-	conn, err := grpc.Dial("localhost:9000", grpc.WithInsecure())
+	conn, err := grpc.Dial("localhost:9001", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGreeterClient(conn)
+	c := pb.NewBaclntClient(conn)
 	//Contact the server and print out its response.
 	name := message
 	r, err := c.SayHello(context.Background(), &pb.HelloRequest{Name: name})

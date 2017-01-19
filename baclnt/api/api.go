@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	port = ":9000"
+	port = ":9001"
 )
 
 func init() {
@@ -25,6 +25,7 @@ func init() {
 type server struct{}
 
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+	log.Debug("Got hello")
 	return &pb.HelloReply{Message: "Hello " + in.Name}, nil
 }
 
