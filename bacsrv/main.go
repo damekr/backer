@@ -9,7 +9,6 @@ import (
 	//"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
-	"github.com/damekr/backer/bacsrv/jobs"
 	"github.com/damekr/backer/bacsrv/restapi"
 	"github.com/damekr/backer/bacsrv/transfer"
 )

@@ -1,0 +1,16 @@
+package: github.com/damekr/backer
+import:
+- package: github.com/Sirupsen/logrus
+- package: github.com/golang/protobuf
+  subpackages:
+  - proto
+- package: github.com/gorilla/mux
+- package: github.com/shirou/gopsutil
+  subpackages:
+  - mem
+- package: github.com/spf13/viper
+- package: github.com/takama/daemon
+- package: golang.org/x/net
+  subpackages:
+  - context
+- package: google.golang.org/grpc
