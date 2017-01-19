@@ -4,6 +4,7 @@ import:
 - package: github.com/golang/protobuf
   subpackages:
   - proto
+  - protoc-gen-go
 - package: github.com/gorilla/mux
 - package: github.com/shirou/gopsutil
   subpackages:
