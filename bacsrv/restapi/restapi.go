@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/bacsrv/api"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/status"
 	"github.com/gorilla/mux"
@@ -31,6 +32,7 @@ func StartServerRestApi(config *config.ServerConfig) {
 	router.HandleFunc("/", Index)
 	router.HandleFunc("/status", StatusIndex)
 	router.HandleFunc("/clients", ShowClients)
+	router.HandleFunc("/clients/{client}", ShowClientStatus)
 	log.Debug("Starting Server RESTAPi on port: ", config.MgmtPort)
 	log.Fatal(http.ListenAndServe(":"+config.MgmtPort, router))
 }
@@ -60,4 +62,13 @@ func StatusIndex(w http.ResponseWriter, r *http.Request) {
 
 func ShowClients(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Todo show:")
+}
+
+func ShowClientStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	clientName := vars["client"]
+	log.Debug("Received arguments: ", clientName)
+	api.SayHellotoClient(clientName)
+	fmt.Fprintln(w, clientName)
+
 }

@@ -9,6 +9,8 @@ It is generated from these files:
 	server.proto
 
 It has these top-level messages:
+	HelloRequest
+	HelloReply
 	Paths
 	Status
 	Info
@@ -28,6 +30,24 @@ var _ grpc.ClientConn
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto1.Marshal
+
+// The request message containing the user's name.
+type HelloRequest struct {
+	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+}
+
+func (m *HelloRequest) Reset()         { *m = HelloRequest{} }
+func (m *HelloRequest) String() string { return proto1.CompactTextString(m) }
+func (*HelloRequest) ProtoMessage()    {}
+
+// The response message containing the greetings
+type HelloReply struct {
+	Message string `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
+}
+
+func (m *HelloReply) Reset()         { *m = HelloReply{} }
+func (m *HelloReply) String() string { return proto1.CompactTextString(m) }
+func (*HelloReply) ProtoMessage()    {}
 
 // The request message containing the user's name.
 type Paths struct {
@@ -65,6 +85,7 @@ func init() {
 type BaclntClient interface {
 	TriggerBackup(ctx context.Context, opts ...grpc.CallOption) (Baclnt_TriggerBackupClient, error)
 	GetStatusPaths(ctx context.Context, opts ...grpc.CallOption) (Baclnt_GetStatusPathsClient, error)
+	SayHello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error)
 }
 
 type baclntClient struct {
@@ -140,11 +161,21 @@ func (x *baclntGetStatusPathsClient) Recv() (*Info, error) {
 	return m, nil
 }
 
+func (c *baclntClient) SayHello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error) {
+	out := new(HelloReply)
+	err := grpc.Invoke(ctx, "/proto.Baclnt/SayHello", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Baclnt service
 
 type BaclntServer interface {
 	TriggerBackup(Baclnt_TriggerBackupServer) error
 	GetStatusPaths(Baclnt_GetStatusPathsServer) error
+	SayHello(context.Context, *HelloRequest) (*HelloReply, error)
 }
 
 func RegisterBaclntServer(s *grpc.Server, srv BaclntServer) {
@@ -203,10 +234,27 @@ func (x *baclntGetStatusPathsServer) Recv() (*Paths, error) {
 	return m, nil
 }
 
+func _Baclnt_SayHello_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(HelloRequest)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(BaclntServer).SayHello(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Baclnt_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.Baclnt",
 	HandlerType: (*BaclntServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SayHello",
+			Handler:    _Baclnt_SayHello_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "TriggerBackup",

@@ -87,24 +87,13 @@ func getConfig(path string) *config.ServerConfig {
 
 }
 
-func add(data interface{}, result chan<- interface{}) (err error) {
-	r := data.(int) + data.(int)
-	result <- r
-	return error.Error()
-
-}
-
 func main() {
 	setFlags()
 	srvConfig := getConfig(*configFlag)
 	srvConfig.ShowConfig()
-	//j := jobs.New(2)
-	resultChan := make(chan interface{})
-	jobs.Run(add, 2, resultChan)
-	log.Debug("Result: ", <-resultChan)
 	//config.InitClientsConfig(srvConfig)
 	//config.PrintValues()
-	//mainLoop(srvConfig)
+	mainLoop(srvConfig)
 	// config.InitClientsConfig()
 	//repo, err := repository.CreateRepository()
 	//if err != nil {

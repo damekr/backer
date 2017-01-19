@@ -8,6 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/baclnt/transfer"
 	pb "github.com/damekr/backer/bacsrv/api/proto"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
@@ -22,6 +23,10 @@ func init() {
 }
 
 type server struct{}
+
+func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+	return &pb.HelloReply{Message: "Hello " + in.Name}, nil
+}
 
 func (s *server) TriggerBackup(stream pb.Baclnt_TriggerBackupServer) error {
 	log.Debug("Backup has been triggered")
