@@ -8,22 +8,34 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/baclnt/api"
+	"github.com/damekr/backer/baclnt/config"
 )
 
 var configFlag = flag.String("config", "", "Configuration file")
 
 func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
 	flag.StringVar(configFlag, "c", "", "Configuration file")
 }
 
-func mainLoop() (string, error) {
+func setLogger(clntConfig *config.ClientConfig) {
+	log.SetFormatter(&log.TextFormatter{})
+	switch clntConfig.LogOutput {
+
+	case "STDOUT":
+		log.SetOutput(os.Stdout)
+	case "SYSLOG":
+		//TODO
+	}
+	if clntConfig.Debug {
+		log.SetLevel(log.DebugLevel)
+	}
+}
+
+func mainLoop(clntConfig *config.ClientConfig) (string, error) {
 	log.Debug("Entering into main loop...")
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
-	go api.ServeServer()
+	startProtoApi(clntConfig)
 	for {
 		select {
 		case killSignal := <-interrupt:
@@ -35,6 +47,10 @@ func mainLoop() (string, error) {
 			return "Application was killed", nil
 		}
 	}
+}
+
+func startProtoApi(config *config.ClientConfig) {
+	go api.ServeServer(config)
 }
 
 func checkConfigFile(configPath string) error {
@@ -57,7 +73,6 @@ func setFlags() {
 	if checkConfigFile(*configFlag) != nil {
 		log.Error("Provided config path is not a file, exiting...")
 		os.Exit(3)
-
 	}
 	log.Debug("Config file: ", *configFlag)
 
@@ -65,8 +80,10 @@ func setFlags() {
 
 func main() {
 	setFlags()
+	clntConfig := config.ReadConfigFile(*configFlag)
+	clntConfig.ShowConfig()
 	log.Info("Starting baclnt application...")
-	srv, err := mainLoop()
+	srv, err := mainLoop(clntConfig)
 	if err != nil {
 		log.Error("Cannot start client application, error: ", err.Error())
 		os.Exit(1)

@@ -6,14 +6,11 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/baclnt/config"
 	"github.com/damekr/backer/baclnt/transfer"
-	pb "github.com/damekr/backer/bacsrv/api/proto"
+	pb "github.com/damekr/backer/bacsrv/protoapi/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-)
-
-const (
-	port = ":9001"
 )
 
 func init() {
@@ -24,9 +21,14 @@ func init() {
 
 type server struct{}
 
+// SayHello returns hostname of client
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	log.Debug("Got hello")
-	return &pb.HelloReply{Message: "Hello " + in.Name}, nil
+	name, err := os.Hostname()
+	if err != nil {
+		log.Error("Cannot get hostname, sending default value")
+		return &pb.HelloReply{Name: "0"}, nil
+	}
+	return &pb.HelloReply{Name: name}, nil
 }
 
 func (s *server) TriggerBackup(stream pb.Baclnt_TriggerBackupServer) error {
@@ -70,11 +72,11 @@ func (s *server) GetStatusPaths(stream pb.Baclnt_GetStatusPathsServer) error {
 	}
 }
 
-func ServeServer() {
+func ServeServer(config *config.ClientConfig) {
 	//listOfFiles := []string{"/home/damekr/d8x.github.io"}
 	//files := transfer.GetFilesInformations(listOfFiles)
 	//log.Debug("Files ", files)
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", ":"+config.MgmtPort)
 	log.Info("Starting baclnt api on addr: ", lis.Addr())
 	if err != nil {
 		log.Errorf("failed to listen: %v", err)

@@ -1,13 +1,17 @@
-package api
+package protoapi
 
 import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	pb "github.com/damekr/backer/bacsrv/api/proto"
 	"github.com/damekr/backer/bacsrv/config"
+	pb "github.com/damekr/backer/bacsrv/protoapi/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+)
+
+const (
+	clntMgmtPort = ":9090"
 )
 
 func init() {
@@ -16,20 +20,27 @@ func init() {
 	log.SetLevel(log.DebugLevel)
 }
 
-func SayHelloToClient(message string) {
-	conn, err := grpc.Dial("localhost:9001", grpc.WithInsecure())
+func SayHelloToClient(address string) (string, error) {
+	conn, err := grpc.Dial(address+clntMgmtPort, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		log.Warningf("Cannot connect to address %s", address)
+		return "", err
 	}
 	defer conn.Close()
+	name, err := os.Hostname()
+	if err != nil {
+		log.Error("Cannot get server hostname, setting default")
+		name = "bacsrv"
+	}
 	c := pb.NewBaclntClient(conn)
 	//Contact the server and print out its response.
-	name := message
 	r, err := c.SayHello(context.Background(), &pb.HelloRequest{Name: name})
 	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+		log.Warningf("Could not get client name: %v", err)
+		return "", err
 	}
-	log.Printf("Greeting: %s", r.Message)
+	log.Debugf("Received client name: %s", r.Name)
+	return r.Name, nil
 }
 
 func makePbPaths(path string) *pb.Paths {
