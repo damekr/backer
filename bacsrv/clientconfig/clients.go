@@ -1,4 +1,4 @@
-package config
+package clientconfig
 
 import (
 	"fmt"
@@ -19,11 +19,23 @@ func init() {
 
 }
 
+// DoesClientIntegrated checks if client is in configuration files and is integrated
+func DoesClientIntegrated(name string) {
+	nil
+
+}
+
+// DoesClientExist checks if client has been added to clients configuration file
+func DoesClientExist(name string) {
+	nil
+}
+
 func InitClientsConfig(c *ServerConfig) {
 	log.Info("Client config path: ", c.ClientsConfig)
 	//TODO Add checking file
 	//TODO Make another instance of Viper, now everything is in one variable, server etc
-	viper.SetConfigFile(c.ClientsConfig)
+	clientConfig := viper.New()
+	clientConfig.SetConfigFile(c.ClientsConfig)
 	//viper.SetConfigName("config")
 	//viper.AddConfigPath("/home/damian/dev/go/src/github.com/backer/clients")
 	//err := viper.ReadInConfig()
