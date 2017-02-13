@@ -8,4 +8,4 @@ Debug = true
 Localization = "/home/damekr/repository"
 
 [clients]
-ConfigFile = "/home/damian/dev/go/src/github.com/backer/clients/clients.toml"
+ConfigFile = "/mnt/c/Users/Damian Rajca/dev/go/src/github.com/damekr/backer/config/clients"

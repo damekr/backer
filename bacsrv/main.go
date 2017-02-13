@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/bacsrv/clientsconfig"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/restapi"
 	"github.com/damekr/backer/bacsrv/transfer"
@@ -20,12 +21,12 @@ func init() {
 	flag.StringVar(configFlag, "c", "", "Configuration file")
 }
 
-func mainLoop(config *config.ServerConfig) (string, error) {
+func mainLoop(srvConfig *config.ServerConfig) (string, error) {
 	log.Debug("Entering into main loop...")
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
-	startDataServer()
-	startRestApi(config)
+	startDataServer(srvConfig)
+	startRestApi(srvConfig)
 	for {
 		select {
 		case killSignal := <-interrupt:
@@ -40,17 +41,17 @@ func mainLoop(config *config.ServerConfig) (string, error) {
 	}
 }
 
-func startRestApi(config *config.ServerConfig) {
+func startRestApi(srvConfig *config.ServerConfig) {
 	// Starting a new goroutine
 	//paths := []string{"/home/damian/test"}
 	//go api.SendBackupRequest(paths)
-	go restapi.StartServerRestApi(config)
+	go restapi.StartServerRestApi(srvConfig)
 }
 
-func startDataServer() {
+func startDataServer(srvConfig *config.ServerConfig) {
 	// It should have channel communication to close connection after stopping
 	// Starging a new goroutine
-	go transfer.InitTransferServer()
+	go transfer.InitTransferServer(srvConfig)
 }
 
 func checkConfigFile(configPath string) error {
@@ -89,7 +90,7 @@ func main() {
 	setFlags()
 	srvConfig := getConfig(*configFlag)
 	srvConfig.ShowConfig()
-	//config.InitClientsConfig(srvConfig)
+	clientsconfig.InitClientsConfig(srvConfig)
 	//config.PrintValues()
 	mainLoop(srvConfig)
 	// config.InitClientsConfig()

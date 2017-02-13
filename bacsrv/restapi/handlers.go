@@ -14,8 +14,10 @@ import (
 	"os"
 )
 
+// ContentType specified type of data sending from application
 const ContentType = "text/json"
 
+// Bacsrv represents information about server
 type Bacsrv struct {
 	Name      string `json:"name"`
 	Version   string `json:"version"`
@@ -28,12 +30,14 @@ func init() {
 	log.SetLevel(log.DebugLevel)
 }
 
-func StartServerRestApi(config *config.ServerConfig) {
+// StartServerRestAPI starts http server on given port
+func StartServerRestAPI(srvConfig *config.ServerConfig) {
 	router := NewRouter()
-	log.Debug("Starting Server RESTAPi on port: ", config.MgmtPort)
-	log.Fatal(http.ListenAndServe(":"+config.MgmtPort, router))
+	log.Debug("Starting Server RESTAPi on port: ", srvConfig.MgmtPort)
+	log.Fatal(http.ListenAndServe(":"+srvConfig.MgmtPort, router))
 }
 
+// Index shows basic information about server
 func Index(w http.ResponseWriter, r *http.Request) {
 	bacsrv := Bacsrv{
 		Name:      "Backer Server",
@@ -48,6 +52,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// StatusIndex responds current server status
 func StatusIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", ContentType)
 	serverStatus := status.GetSeverStatus()
@@ -57,15 +62,22 @@ func StatusIndex(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// ShowClients responds all information about added clients
 func ShowClients(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Todo show:")
+	w.Header().Set("Content-Type", ContentType)
+	if err := json.NewEncoder(w).Encode(manager.GetAllIntegratedClients()); err != nil {
+		log.Error("Cannot encode clients structs")
+	}
 }
 
+// HelloMessage determines hostname about client with given name or ip
 type HelloMessage struct {
 	Hostname string `json:"hostname"`
 }
 
+// ShowClientStatus simply connects over grpc to client with specified name and read hostname
 func ShowClientStatus(w http.ResponseWriter, r *http.Request) {
+	// TODO It must be somehow specified what will be used, could be a name and during the process read ip address and then send request
 	vars := mux.Vars(r)
 	clientName := vars["clientName"]
 	log.Debug("Received arguments: ", clientName)

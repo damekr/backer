@@ -19,8 +19,9 @@ func init() {
 	log.SetLevel(log.DebugLevel)
 }
 
-func InitTransferServer() {
-	listener, err := net.Listen("tcp", "localhost:"+config.GetTransferPort())
+// InitTransferServer starts main part of transfering data, consider later to running this on demand
+func InitTransferServer(srvConfig *config.ServerConfig) {
+	listener, err := net.Listen("tcp", "localhost:"+srvConfig.DataPort)
 	log.Info("Starting transfer server on addr: ", listener.Addr())
 	if err != nil {
 		log.Error("Cannot start transfer server, error: ", err.Error())
