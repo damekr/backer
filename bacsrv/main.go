@@ -2,15 +2,13 @@ package main
 
 import (
 	"flag"
-	"os"
-	"os/signal"
-	"syscall"
-
-	//"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/restapi"
 	"github.com/damekr/backer/bacsrv/transfer"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 var configFlag = flag.String("config", "", "Configuration file")

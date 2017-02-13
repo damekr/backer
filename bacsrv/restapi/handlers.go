@@ -40,6 +40,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		Version:   "0.1",
 		GoVersion: "1.7.5",
 	}
+	log.Printf("BACSRV %#v", bacsrv)
 	w.Header().Set("Content-Type", ContentType)
 	if err := json.NewEncoder(w).Encode(bacsrv); err != nil {
 		log.Error("Cannot encode server metadata into json")
@@ -49,8 +50,8 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 func StatusIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", ContentType)
-	status := status.GetSeverStatus()
-	if err := json.NewEncoder(w).Encode(status); err != nil {
+	serverStatus := status.GetSeverStatus()
+	if err := json.NewEncoder(w).Encode(serverStatus); err != nil {
 		log.Error("Cannot encode memory information")
 	}
 
