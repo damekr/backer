@@ -1,27 +1,19 @@
 package restapi
 
-
 import (
-	
-	log "github.com/Sirupsen/logrus"
-	"github.com/gorilla/mux"
 	"net/http"
-
 )
 
-
 type Route struct {
-	Name		string
-	Method		string
-	Pattern		string
-	HandlerFunc	http.HandlerFunc
+	Name        string
+	Method      string
+	Pattern     string
+	HandlerFunc http.HandlerFunc
 }
 
 type Routes []Route
 
-
-
-var routes = Routes {
+var routes = Routes{
 	Route{
 		"Index",
 		"GET",
@@ -42,4 +34,14 @@ var routes = Routes {
 	},
 	Route{
 		"Client Status",
-		""
+		"GET",
+		"/clients/{clientName}",
+		ShowClientStatus,
+	},
+	Route{
+		"Client Integration",
+		"POST",
+		"/clients/integrate",
+		IntegrateNewClient,
+	},
+}
