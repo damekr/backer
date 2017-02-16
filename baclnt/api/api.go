@@ -7,7 +7,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/baclnt/config"
-	"github.com/damekr/backer/baclnt/transfer"
 	pb "github.com/damekr/backer/bacsrv/protoapi/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -34,6 +33,7 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 func (s *server) TriggerBackup(stream pb.Baclnt_TriggerBackupServer) error {
 	log.Debug("Backup has been triggered")
 	var paths []string
+
 	for {
 		path, err := stream.Recv()
 		if path != nil {
@@ -45,12 +45,6 @@ func (s *server) TriggerBackup(stream pb.Baclnt_TriggerBackupServer) error {
 			return stream.SendAndClose(&pb.Status{
 				Message: "OK",
 			})
-		}
-		absPaths := transfer.GetAbsolutePaths(paths)
-		log.Debugf("Absolutive paths: %v", absPaths)
-
-		if err != nil {
-			return nil
 		}
 	}
 
@@ -72,7 +66,9 @@ func (s *server) GetStatusPaths(stream pb.Baclnt_GetStatusPathsServer) error {
 	}
 }
 
+// ServeServer method starts a grpc server on specific port
 func ServeServer(config *config.ClientConfig) {
+	// TODO Find a way to get client informations.
 	//listOfFiles := []string{"/home/damekr/d8x.github.io"}
 	//files := transfer.GetFilesInformations(listOfFiles)
 	//log.Debug("Files ", files)

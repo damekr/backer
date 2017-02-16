@@ -13,6 +13,7 @@ func init() {
 	log.SetLevel(log.DebugLevel)
 }
 
+// IntegrateClient creates client config and should add it to configuration file
 func IntegrateClient(name string, address string, backupID string) error {
 	//	client := &clientconfig.Client{
 	//		Name:     name,
@@ -30,7 +31,7 @@ func IntegrateClient(name string, address string, backupID string) error {
 
 }
 
-// GetAllIntegratedClients simply fetching clients from clients configuration file, at least now
+// GetAllIntegratedClients simply fetching clients from clients configuration file, at least now and shows them
 func GetAllIntegratedClients() []clientsconfig.Client {
 	return clientsconfig.GetAllClients()
 }
