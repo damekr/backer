@@ -3,15 +3,15 @@ package restapi
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/manager"
 	"github.com/damekr/backer/bacsrv/status"
 	"github.com/gorilla/mux"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
 )
 
 // ContentType specified type of data sending from application
@@ -22,12 +22,6 @@ type Bacsrv struct {
 	Name      string `json:"name"`
 	Version   string `json:"version"`
 	GoVersion string `json:"goversion"`
-}
-
-func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
 }
 
 // StartServerRestAPI starts http server on given port

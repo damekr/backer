@@ -1,9 +1,10 @@
 package repository
 
 import (
+	"os"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
-	"os"
 )
 
 /*
@@ -16,13 +17,6 @@ REPOSITORY SCHEMA (TEMPORARY)
 /locks
 
 */
-
-func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-
-}
 
 func checkIfRepoExists() bool {
 	repolocation := config.GetRepositoryLocalization()

@@ -2,23 +2,35 @@ package main
 
 import (
 	"flag"
+	"os"
+	"os/signal"
+	"syscall"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/clientsconfig"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/restapi"
 	"github.com/damekr/backer/bacsrv/transfer"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 var configFlag = flag.String("config", "", "Configuration file")
 
 func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
 	flag.StringVar(configFlag, "c", "", "Configuration file")
+}
+
+func setLogger(srvConfig *config.ServerConfig) {
+	log.SetFormatter(&log.TextFormatter{})
+	switch srvConfig.LogOutput {
+
+	case "STDOUT":
+		log.SetOutput(os.Stdout)
+	case "SYSLOG":
+		//TODO
+	}
+	if srvConfig.Debug {
+		log.SetLevel(log.DebugLevel)
+	}
 }
 
 func mainLoop(srvConfig *config.ServerConfig) (string, error) {
@@ -45,7 +57,7 @@ func startRestApi(srvConfig *config.ServerConfig) {
 	// Starting a new goroutine
 	//paths := []string{"/home/damian/test"}
 	//go api.SendBackupRequest(paths)
-	go restapi.StartServerRestApi(srvConfig)
+	go restapi.StartServerRestAPI(srvConfig)
 }
 
 func startDataServer(srvConfig *config.ServerConfig) {
@@ -89,6 +101,7 @@ func getConfig(path string) *config.ServerConfig {
 func main() {
 	setFlags()
 	srvConfig := getConfig(*configFlag)
+	setLogger(srvConfig)
 	srvConfig.ShowConfig()
 	clientsconfig.InitClientsConfig(srvConfig)
 	//config.PrintValues()

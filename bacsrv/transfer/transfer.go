@@ -1,23 +1,18 @@
 package transfer
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/bacsrv/config"
 	"io"
 	"net"
 	"os"
 	"strconv"
 	"strings"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/bacsrv/config"
 )
 
 // BUFFERSIZE determines how big is piece of data that will be send in one frame
 const BUFFERSIZE = 1024
-
-func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-}
 
 // InitTransferServer starts main part of transfering data, consider later to running this on demand
 func InitTransferServer(srvConfig *config.ServerConfig) {

@@ -1,17 +1,11 @@
 package repository
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"os"
 	"syscall"
+
+	log "github.com/Sirupsen/logrus"
 )
-
-func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-
-}
 
 type Repository struct {
 	Location string

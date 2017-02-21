@@ -2,23 +2,16 @@ package clientsconfig
 
 import (
 	"fmt"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/spf13/viper"
-	"os"
 )
 
 type Client struct {
 	Name     string `json:"clientName"`
 	Address  string `json:"clientAddress"`
 	BackupID string `json:"backupId"`
-}
-
-func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-
 }
 
 // ClientsConfigInstance represents a new instance of viper config library for configuration

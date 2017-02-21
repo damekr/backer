@@ -14,12 +14,6 @@ const (
 	clntMgmtPort = ":9090"
 )
 
-func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-}
-
 func SayHelloToClient(address string) (string, error) {
 	conn, err := grpc.Dial(address+clntMgmtPort, grpc.WithInsecure())
 	if err != nil {

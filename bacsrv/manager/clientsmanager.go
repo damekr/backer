@@ -4,14 +4,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/clientsconfig"
 	"github.com/damekr/backer/bacsrv/protoapi"
-	"os"
 )
-
-func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-}
 
 // IntegrateClient creates client config and should add it to configuration file
 func IntegrateClient(name string, address string, backupID string) error {

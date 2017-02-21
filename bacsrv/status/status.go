@@ -4,16 +4,10 @@ import (
 	log "github.com/Sirupsen/logrus"
 	//"github.com/shirou/gopsutil/cpu"
 	//"github.com/shirou/gopsutil/load"
-	"github.com/shirou/gopsutil/mem"
-	"os"
 	"runtime"
-)
 
-func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-}
+	"github.com/shirou/gopsutil/mem"
+)
 
 type Status struct {
 	Cpu   int                    `json:"numberOfCpu"`
