@@ -21,6 +21,7 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 		log.Error("Cannot get hostname, sending default value")
 		return &pb.HelloReply{Name: "0"}, nil
 	}
+	log.Printf("Got request from server: %s", in.Name)
 	return &pb.HelloReply{Name: name}, nil
 }
 

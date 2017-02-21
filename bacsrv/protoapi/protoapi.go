@@ -14,6 +14,17 @@ const (
 	clntMgmtPort = ":9090"
 )
 
+var Name string
+
+func init() {
+	name, err := os.Hostname()
+	if err != nil {
+		log.Error("Cannot get server hostname, setting default")
+		name = "bacsrv"
+	}
+	Name = name
+}
+
 func SayHelloToClient(address string) (string, error) {
 	conn, err := grpc.Dial(address+clntMgmtPort, grpc.WithInsecure())
 	if err != nil {
@@ -21,14 +32,9 @@ func SayHelloToClient(address string) (string, error) {
 		return "", err
 	}
 	defer conn.Close()
-	name, err := os.Hostname()
-	if err != nil {
-		log.Error("Cannot get server hostname, setting default")
-		name = "bacsrv"
-	}
 	c := pb.NewBaclntClient(conn)
 	//Contact the server and print out its response.
-	r, err := c.SayHello(context.Background(), &pb.HelloRequest{Name: name})
+	r, err := c.SayHello(context.Background(), &pb.HelloRequest{Name: Name})
 	if err != nil {
 		log.Warningf("Could not get client name: %v", err)
 		return "", err
@@ -38,7 +44,10 @@ func SayHelloToClient(address string) (string, error) {
 }
 
 func makePbPaths(path string) *pb.Paths {
-	return &pb.Paths{Path: path}
+	return &pb.Paths{
+		Name: Name,
+		Path: path,
+	}
 }
 
 func preparePaths(paths []string) []*pb.Paths {
@@ -97,14 +106,17 @@ func triggerBackup(client pb.BaclntClient, paths []*pb.Paths) {
 	log.Debugf("Route summary: %v", reply)
 }
 
-func SendBackupRequest(paths []string) {
-	address := "localhost:" + config.GetMgmtPort()
+// SendBackupRequest creates connection to client with specified address and trigger a backup
+func SendBackupRequest(paths []string, clntAddress string) error {
+	address := clntAddress + config.GetMgmtPort()
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		log.Errorf("Could not connect to client: %s", address)
+		return err
 	}
 	defer conn.Close()
 	c := pb.NewBaclntClient(conn)
 	pbpaths := preparePaths(paths)
 	triggerBackup(c, pbpaths)
+	return nil
 }

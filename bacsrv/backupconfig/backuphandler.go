@@ -1,8 +1,13 @@
 package backupconfig
 
+// Backup specifies one specific backup
 type Backup struct {
-	ID        string
-	Paths     []string
-	Excluded  []string
-	Retention string
+	Paths     []string `json:"paths"`
+	Excluded  []string `json:"excludedPaths"`
+	Retention string   `json:"retentionTime"`
+}
+
+type BackupTriggerMessage struct {
+	ClientName   string `json:"clientName"`
+	BackupConfig Backup
 }

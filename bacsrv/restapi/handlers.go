@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/bacsrv/backupconfig"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/manager"
 	"github.com/damekr/backer/bacsrv/status"
@@ -75,7 +76,7 @@ func ShowClientStatus(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	clientName := vars["clientName"]
 	log.Debug("Received arguments: ", clientName)
-	clientHostname, err := manager.HelloMessageManager(clientName)
+	clientHostname, err := manager.SendHelloMessage(clientName)
 	if err != nil {
 		errorMessage := &HelloMessage{
 			Hostname: "Error, Cannot find given client",
@@ -102,7 +103,6 @@ type IntegrationMessage struct {
 }
 
 func IntegrateNewClient(w http.ResponseWriter, r *http.Request) {
-	//TODO Change this endpoint
 	var integrateMessage IntegrationMessage
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
@@ -121,4 +121,43 @@ func IntegrateNewClient(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Received integration message: %#v", integrateMessage)
 	fmt.Fprint(w, "OK")
 
+}
+
+// TODO Exclude body handler to on generic method, to prevent repeating the same stuff
+
+/*
+TriggerClientBackkup json message
+{
+"paths": ["sad", "sd"],
+"excludedPaths": ["asd", "sd"],
+"retentionTime": "365"
+}
+*/
+
+func TriggerClientBackup(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	clientName := vars["clientName"]
+	log.Debug("Received arguments: ", clientName)
+	var backupMessage backupconfig.Backup
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		log.Error("Cannot read body of Trigger message backup")
+	}
+	if err := r.Body.Close(); err != nil {
+		log.Errorf("Unexpected end of body in backup trigger request")
+	}
+	if err := json.Unmarshal(body, &backupMessage); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			log.Errorf("Cannot decode json, check header")
+		}
+	}
+	clientBackupMessage := &backupconfig.BackupTriggerMessage{
+		ClientName:   clientName,
+		BackupConfig: backupMessage,
+	}
+	log.Printf("Received backup message: %#v", backupMessage)
+	log.Printf("Full backup message %#v", clientBackupMessage)
+	fmt.Fprint(w, "OK")
 }

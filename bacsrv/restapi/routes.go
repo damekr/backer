@@ -44,4 +44,10 @@ var routes = Routes{
 		"/clients/integrate",
 		IntegrateNewClient,
 	},
+	Route{
+		"Client Backup Trigger",
+		"POST",
+		"/client/{clientName}/backup",
+		TriggerClientBackup,
+	},
 }

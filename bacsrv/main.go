@@ -107,7 +107,6 @@ func main() {
 	setLogger(srvConfig)
 	srvConfig.ShowConfig()
 	clientsconfig.InitClientsConfig(srvConfig)
-	//config.PrintValues()
 	mainLoop(srvConfig)
 	// config.InitClientsConfig()
 	//repo, err := repository.CreateRepository()

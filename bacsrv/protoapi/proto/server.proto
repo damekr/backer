@@ -4,7 +4,6 @@ syntax = "proto3";
 
 package proto;
 
-// The greeting service definition.
 service Baclnt {
 
   rpc TriggerBackup (stream Paths) returns (Status) {}
@@ -13,13 +12,15 @@ service Baclnt {
 }
 
 
+// Each message needs to have specific host name
 
-// The request message containing the user's name.
+
+// The request message contains a hostname of requester
 message HelloRequest {
   string name = 1;
 }
 
-// The response message containing the greetings
+// The response for hello contains a hostname of replayer
 message HelloReply {
   string name = 1;
 }
@@ -27,16 +28,19 @@ message HelloReply {
 
 // The request message containing the user's name.
 message Paths {
-  string path = 1;
+  string name = 1;
+  string path = 2;
 }
 
 // The response message containing the greetings
 message Status {
-  string message = 1;
+  string name = 1;
+  string message = 2;
 }
 
 message Info {
-  string path = 1;
-  int64 size = 2;
-  bool exists = 3;
+  string name = 1;
+  string path = 2;
+  int64 size = 3;
+  bool exists = 4;
 }

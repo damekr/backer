@@ -15,6 +15,7 @@ import (
 )
 
 var configFlag = flag.String("config", "", "Configuration file")
+var commit string
 
 func init() {
 	flag.StringVar(configFlag, "c", "", "Configuration file")
@@ -91,19 +92,20 @@ func testFunc(loc string) {
 
 func main() {
 	setFlags()
+	log.Debugf("COMMIT: %s", commit)
 	clntConfig := config.ReadConfigFile(*configFlag)
 	setLogger(clntConfig)
 	transfer.Config = clntConfig
 	archiver.CreateTempDir(clntConfig.TempDir)
 	clntConfig.ShowConfig()
 	log.Info("Starting baclnt application...")
-	testFunc(clntConfig.TempDir)
-	// srv, err := mainLoop(clntConfig)
-	// if err != nil {
-	// 	log.Error("Cannot start client application, error: ", err.Error())
-	// 	os.Exit(1)
-	// }
-	// log.Info(srv)
+	// testFunc(clntConfig.TempDir)
+	srv, err := mainLoop(clntConfig)
+	if err != nil {
+		log.Error("Cannot start client application, error: ", err.Error())
+		os.Exit(1)
+	}
+	log.Info(srv)
 
 	// fmt.Println("OK")
 	// // startInterfaceClient()
