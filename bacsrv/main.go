@@ -13,6 +13,8 @@ import (
 	"github.com/damekr/backer/bacsrv/transfer"
 )
 
+var commit string
+
 var configFlag = flag.String("config", "", "Configuration file")
 
 func init() {
@@ -99,6 +101,7 @@ func getConfig(path string) *config.ServerConfig {
 }
 
 func main() {
+	log.Printf("COMMIT: %s", commit)
 	setFlags()
 	srvConfig := getConfig(*configFlag)
 	setLogger(srvConfig)
