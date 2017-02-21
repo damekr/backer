@@ -1,9 +1,10 @@
 package archiver
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"os"
 	"path/filepath"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var TempDir string
@@ -12,12 +13,6 @@ type FileInfo struct {
 	Path   string
 	Size   int64
 	Exists bool
-}
-
-func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
 }
 
 func GetAbsolutePaths(paths []string) []string {

@@ -38,7 +38,7 @@ func mainLoop(clntConfig *config.ClientConfig) (string, error) {
 	log.Debug("Entering into main loop...")
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
-	startProtoApi(clntConfig)
+	startProtoAPI(clntConfig)
 	for {
 		select {
 		case killSignal := <-interrupt:
@@ -52,7 +52,7 @@ func mainLoop(clntConfig *config.ClientConfig) (string, error) {
 	}
 }
 
-func startProtoApi(config *config.ClientConfig) {
+func startProtoAPI(config *config.ClientConfig) {
 	go api.ServeServer(config)
 }
 
@@ -92,6 +92,7 @@ func testFunc(loc string) {
 func main() {
 	setFlags()
 	clntConfig := config.ReadConfigFile(*configFlag)
+	setLogger(clntConfig)
 	transfer.Config = clntConfig
 	archiver.CreateTempDir(clntConfig.TempDir)
 	clntConfig.ShowConfig()

@@ -2,20 +2,16 @@ package transfer
 
 import (
 	"fmt"
-	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/baclnt/config"
 	"io"
 	"net"
 	"os"
 	"strconv"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/baclnt/config"
 )
 
-func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-}
-
+// BUFFERSIZE specifies how big is a chunk of data being sent
 const BUFFERSIZE = 1024
 
 var Config *config.ClientConfig

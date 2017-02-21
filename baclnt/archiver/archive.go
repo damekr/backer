@@ -3,19 +3,17 @@ package archiver
 import (
 	"archive/tar"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // TODO It needs to be changed to something unique
 var archiveName string
 
 func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
 	generateArchiveName()
 }
 

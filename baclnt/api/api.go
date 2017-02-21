@@ -12,12 +12,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-}
-
 type server struct{}
 
 // SayHello returns hostname of client
