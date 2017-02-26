@@ -138,7 +138,7 @@ func TriggerClientBackup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	clientName := vars["clientName"]
 	log.Debug("Received arguments: ", clientName)
-	var backupMessage backupconfig.Backup
+	var backupConfigMassage backupconfig.Backup
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		log.Error("Cannot read body of Trigger message backup")
@@ -146,7 +146,7 @@ func TriggerClientBackup(w http.ResponseWriter, r *http.Request) {
 	if err := r.Body.Close(); err != nil {
 		log.Errorf("Unexpected end of body in backup trigger request")
 	}
-	if err := json.Unmarshal(body, &backupMessage); err != nil {
+	if err := json.Unmarshal(body, &backupConfigMassage); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
@@ -155,9 +155,9 @@ func TriggerClientBackup(w http.ResponseWriter, r *http.Request) {
 	}
 	clientBackupMessage := &backupconfig.BackupTriggerMessage{
 		ClientName:   clientName,
-		BackupConfig: backupMessage,
+		BackupConfig: backupConfigMassage,
 	}
-	log.Printf("Received backup message: %#v", backupMessage)
+	log.Printf("Received backup message: %#v", backupConfigMassage)
 	log.Printf("Full backup message %#v", clientBackupMessage)
 	fmt.Fprint(w, "OK")
 }

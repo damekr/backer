@@ -1,7 +1,10 @@
 package manager
 
 import (
+	"errors"
 	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/bacsrv/backupconfig"
+	"github.com/damekr/backer/bacsrv/clientsconfig"
 	"github.com/damekr/backer/bacsrv/protoapi"
 )
 
@@ -17,12 +20,17 @@ func SendHelloMessage(address string) (string, error) {
 }
 
 // SendBackupTriggerMessage sending a message to client with specific address and does not wait for status
-func SendBackupTriggerMessage(paths []string, address string) error {
+func SendBackupTriggerMessage(backupMessage *backupconfig.BackupTriggerMessage) (string, error) {
 	// TODO It sould have logic like if client is integrated
 	// TODO Should I send checking paths message before?
-	err := protoapi.SendBackupRequest(paths, address)
-	if err != nil {
-		return err
+	client := clientsconfig.GetClientInformation(backupMessage.ClientName)
+	if client.Name == "" {
+		return "", errors.New("Client does not exist")
 	}
-	return nil
+	err := protoapi.SendBackupRequest(backupMessage.BackupConfig.Paths, client.Address)
+	if err != nil {
+		return "", err
+	}
+	return "Clients is not added into clients config file", nil
+
 }

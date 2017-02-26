@@ -1,8 +1,8 @@
 package clientsconfig
 
 import (
+	"errors"
 	"fmt"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/spf13/viper"
@@ -13,6 +13,8 @@ type Client struct {
 	Address  string `json:"clientAddress"`
 	BackupID string `json:"backupId"`
 }
+
+// TODO - GENERAL - It needs to be refactored, remove repeated functions checking executing. Error creating instead of returning nil in case of error.
 
 // ClientsConfigInstance represents a new instance of viper config library for configuration
 var ClientsConfigInstance = viper.New()
@@ -26,15 +28,9 @@ func InitClientsConfig(srvConfig *config.ServerConfig) {
 	ClientsConfigInstance.AddConfigPath(srvConfig.ClientsConfig)
 	err := ClientsConfigInstance.ReadInConfig()
 	if err != nil {
-		log.Error("Cannot read clients config file")
+		log.Errorf("Cannot read clients config file, an error: %s", err)
 	}
 }
-
-// DoesClientIntegrated checks if client is in configuration files and is integrated
-//func DoesClientIntegrated(name string) {
-//	nil
-
-//}
 
 func GetAllClients() []Client {
 	var Clients []Client
@@ -52,7 +48,7 @@ func GetAllClients() []Client {
 	return Clients
 }
 
-func GetClientInformations(name string) *Client {
+func GetClientInformation(name string) *Client {
 	if !DoesClientExist(name) {
 		return &Client{}
 	}
@@ -63,6 +59,26 @@ func GetClientInformations(name string) *Client {
 		BackupID: client["backupid"],
 	}
 
+}
+
+func DoesClientExistWithIP(address string) bool {
+	clients := GetAllClients()
+	for _, v := range clients {
+		if v.Address == address {
+			log.Debugf("Client: %s with address: %s exists", v.Name, address)
+			return true
+		}
+	}
+	return false
+}
+
+// GetClientIP returns an ip address from name
+func GetClientIP(name string) (string, error) {
+	client := GetClientInformation(name)
+	if client.Address == "" {
+		return "", errors.New("Client does not exist")
+	}
+	return client.Address, nil
 }
 
 // DoesClientExist checks if client has been added to clients configuration file

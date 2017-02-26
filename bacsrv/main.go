@@ -107,7 +107,8 @@ func main() {
 	setLogger(srvConfig)
 	srvConfig.ShowConfig()
 	clientsconfig.InitClientsConfig(srvConfig)
-	mainLoop(srvConfig)
+	clientsconfig.DoesClientExistWithIP("10.0.0.1")
+	// mainLoop(srvConfig)
 	// config.InitClientsConfig()
 	//repo, err := repository.CreateRepository()
 	//if err != nil {
@@ -117,16 +118,5 @@ func main() {
 	//fmt.Printf("Repository status: %#v\n", repo.GetCapacityStatus())
 	//clientBucket := repository.CreateClient("minitx")
 	//fmt.Printf("Client %#v\n", clientBucket)
-	// repo, err := repository.CreateRepository()
-	// if err != nil{
-	// 	fmt.Println("Cannot create repository")
-	// }
-	// fmt.Printf("Repository status: %#v\n", repo.GetCapacityStatus())
-	// srv, err := mainLoop()
-	// if err != nil {
-	// 	fmt.Println("An error during starting daemon")
-	// 	os.Exit(1)
-	// }
-	// fmt.Println(srv)
 
 }
