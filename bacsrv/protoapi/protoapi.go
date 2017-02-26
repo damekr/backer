@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+// TODO - GENERAL - Should be considered if main messages functions should get specific STRUCTs Like BackupMessageConfig
+
 const (
 	clntMgmtPort = ":9090"
 )
