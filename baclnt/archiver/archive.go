@@ -2,7 +2,6 @@ package archiver
 
 import (
 	"archive/tar"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -89,7 +88,7 @@ func getFilesAbsPaths(paths []string) []string {
 		}
 	}
 	for _, file := range fileList {
-		fmt.Println("File: ", file)
+		log.Println("File: ", file)
 	}
 	return fileList
 }
@@ -103,7 +102,7 @@ func (a *Archive) MakeArchive() string {
 	log.Debugf("Absoulte path of package %s", tarAbsolutePath)
 	tarfile, err := os.Create(tarAbsolutePath)
 	if err != nil {
-		log.Panic("The location does not exists")
+		log.Panicf("Location %s does not exists", tarAbsolutePath)
 	}
 	defer tarfile.Close()
 	tw := tar.NewWriter(tarfile)

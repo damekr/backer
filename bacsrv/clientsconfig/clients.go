@@ -23,11 +23,11 @@ var ClientsConfigInstance = viper.New()
 func InitClientsConfig(srvConfig *config.ServerConfig) {
 	log.Info("Client config path: ", srvConfig.ClientsConfig)
 	// TODO Add checking file
-
 	ClientsConfigInstance.SetConfigName("config")
 	ClientsConfigInstance.AddConfigPath(srvConfig.ClientsConfig)
 	err := ClientsConfigInstance.ReadInConfig()
 	if err != nil {
+
 		log.Errorf("Cannot read clients config file, an error: %s", err)
 	}
 }
