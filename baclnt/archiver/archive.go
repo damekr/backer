@@ -7,15 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+
 	"time"
 )
 
-// TODO It needs to be changed to something unique
 var archiveName string
-
-func init() {
-	generateArchiveName()
-}
 
 func generateArchiveName() {
 	hostname, err := os.Hostname()
@@ -24,7 +20,8 @@ func generateArchiveName() {
 	}
 	now := time.Now()
 	nanos := now.UnixNano()
-	archiveName = hostname + strconv.Itoa(nanos) + ".tar"
+	shorted := strconv.FormatInt(nanos, 10)
+	archiveName = hostname + shorted + ".tar"
 }
 
 type Archive struct {
@@ -34,6 +31,7 @@ type Archive struct {
 }
 
 func NewArchive(Paths []string) *Archive {
+	generateArchiveName()
 	return &Archive{
 		Paths: Paths,
 		Size:  0,
