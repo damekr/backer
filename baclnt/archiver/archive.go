@@ -2,11 +2,12 @@ package archiver
 
 import (
 	"archive/tar"
+	log "github.com/Sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
-
-	log "github.com/Sirupsen/logrus"
+	"strconv"
+	"time"
 )
 
 // TODO It needs to be changed to something unique
@@ -21,7 +22,9 @@ func generateArchiveName() {
 	if err != nil {
 		log.Errorf("Cannot get hostname to set archive name")
 	}
-	archiveName = hostname + ".tar"
+	now := time.Now()
+	nanos := now.UnixNano()
+	archiveName = hostname + strconv.Itoa(nanos) + ".tar"
 }
 
 type Archive struct {

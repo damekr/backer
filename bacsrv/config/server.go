@@ -8,11 +8,12 @@ import (
 const configName = "bacsrv"
 
 type ServerConfig struct {
-	MgmtPort      string
-	DataPort      string
-	LogOutput     string // STDOUT, FILE, SYSLOG
-	Debug         bool
-	ClientsConfig string
+	MgmtPort         string
+	DataPort         string
+	LogOutput        string // STDOUT, FILE, SYSLOG
+	Debug            bool
+	RepositoryConfig string
+	ClientsConfig    string
 }
 
 func fillMainConfigStruct() *ServerConfig {

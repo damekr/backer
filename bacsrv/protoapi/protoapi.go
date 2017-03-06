@@ -4,7 +4,6 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/bacsrv/config"
 	pb "github.com/damekr/backer/bacsrv/protoapi/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -19,6 +18,7 @@ const (
 var Name string
 
 func init() {
+	// TODO It needs to be changed because client will not have a connection to hostname always, otherwise hostname must exists in hosts file
 	name, err := os.Hostname()
 	if err != nil {
 		log.Error("Cannot get server hostname, setting default")
@@ -80,7 +80,7 @@ func triggerCheckingPaths(client pb.BaclntClient, paths []*pb.Paths) {
 }
 
 func CheckIfPathsExists(paths []string, clientaddr string) {
-	address := clientaddr + ":" + config.GetMgmtPort()
+	address := clientaddr + clntMgmtPort
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Warnf("Cannot connect to client: %s", err)
@@ -110,7 +110,8 @@ func triggerBackup(client pb.BaclntClient, paths []*pb.Paths) {
 
 // SendBackupRequest creates connection to client with specified address and trigger a backup
 func SendBackupRequest(paths []string, clntAddress string) error {
-	address := clntAddress + config.GetMgmtPort()
+	address := clntAddress + clntMgmtPort
+	log.Debug("Sending backup request to client: ", address)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Errorf("Could not connect to client: %s", address)

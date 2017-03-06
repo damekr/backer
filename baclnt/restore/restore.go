@@ -9,6 +9,6 @@ func init() {
 	log.Debugln("Initializes restore module")
 }
 
-func RestoreArchive(archive *tar.Reader) error {
+func Archive(archive *tar.Reader) error {
 	return nil
 }

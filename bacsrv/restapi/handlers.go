@@ -159,5 +159,6 @@ func TriggerClientBackup(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Received backup message: %#v", backupConfigMassage)
 	log.Printf("Full backup message %#v", clientBackupMessage)
+	manager.SendBackupTriggerMessage(clientBackupMessage)
 	fmt.Fprint(w, "OK")
 }

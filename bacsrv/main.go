@@ -9,6 +9,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/clientsconfig"
 	"github.com/damekr/backer/bacsrv/config"
+	"github.com/damekr/backer/bacsrv/repository"
 	"github.com/damekr/backer/bacsrv/restapi"
 	"github.com/damekr/backer/bacsrv/transfer"
 )
@@ -107,13 +108,11 @@ func main() {
 	setLogger(srvConfig)
 	srvConfig.ShowConfig()
 	clientsconfig.InitClientsConfig(srvConfig)
-	clientsconfig.DoesClientExistWithIP("10.0.0.1")
-	// mainLoop(srvConfig)
-	// config.InitClientsConfig()
-	//repo, err := repository.CreateRepository()
-	//if err != nil {
-	//	fmt.Println("Cannot create repository")
-	//	}
+	_, err := repository.CreateRepository()
+	if err != nil {
+		log.Println("Cannot create repository")
+	}
+	mainLoop(srvConfig)
 	//fmt.Println("REPO", repo.Location)
 	//fmt.Printf("Repository status: %#v\n", repo.GetCapacityStatus())
 	//clientBucket := repository.CreateClient("minitx")

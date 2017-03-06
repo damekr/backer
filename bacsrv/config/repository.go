@@ -20,5 +20,7 @@ func GetRepositoryConfig() *RepositoryConfig {
 }
 
 func GetRepositoryLocalization() string {
-	return GetRepositoryConfig().Localization
+	// TODO This below does not look well, needs to be changed
+	repoLocalization := GetRepositoryConfig().Localization + "/" + "data" + "/"
+	return repoLocalization
 }
