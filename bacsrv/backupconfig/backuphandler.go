@@ -1,6 +1,6 @@
 package backupconfig
 
-// Backup specifies one specific backup
+// Backup specifies a backup
 type Backup struct {
 	Paths     []string `json:"paths"`
 	Excluded  []string `json:"excludedPaths"`

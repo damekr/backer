@@ -7,6 +7,7 @@ package proto;
 service Baclnt {
 
   rpc TriggerBackup (stream Paths) returns (Status) {}
+  rpc TriggerRestore (TriggerRestoreMessage) returns (TriggerRestoreResponse) {}
   rpc GetStatusPaths (stream Paths) returns (stream Info) {}
   rpc SayHello (HelloRequest) returns (HelloReply) {}
 }
@@ -43,4 +44,16 @@ message Info {
   string path = 2;
   int64 size = 3;
   bool exists = 4;
+}
+
+message TriggerRestoreMessage {
+  string name = 1;
+  int64 reqcapacity = 2;
+  bool startlistener = 3;
+}
+
+message TriggerRestoreResponse {
+  string name = 1;
+  bool ok = 2;
+  bool listenerok = 3;
 }

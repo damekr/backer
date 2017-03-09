@@ -24,3 +24,8 @@ func DispatchBackupStart(paths []string, serverAddress string) {
 	}
 	backupConfig.SendArchive(tarlocation)
 }
+
+func DispatchRestoreStart() error {
+	return nil
+
+}

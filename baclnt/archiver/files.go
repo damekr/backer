@@ -1,10 +1,10 @@
 package archiver
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"os"
 	"path/filepath"
-
-	log "github.com/Sirupsen/logrus"
+	"syscall"
 )
 
 var TempDir string
@@ -64,4 +64,16 @@ func CreateTempDir(location string) {
 		os.Exit(5)
 	}
 	TempDir = location
+}
+
+func GetTempAvailableSpace() int64 {
+	log.Debug("Checking if temporary directory has enough space for restore")
+	fs := syscall.Statfs_t{}
+	err := syscall.Statfs(TempDir, &fs)
+	if err != nil {
+		log.Error("Cannot check file system capacity")
+	}
+	free := int64(fs.Bfree) * int64(fs.Bsize)
+	log.Debug("Available space in temporary directory: ", free)
+	return free
 }

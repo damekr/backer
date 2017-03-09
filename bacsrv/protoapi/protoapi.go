@@ -1,12 +1,12 @@
 package protoapi
 
 import (
-	"os"
-
+	"errors"
 	log "github.com/Sirupsen/logrus"
 	pb "github.com/damekr/backer/bacsrv/protoapi/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"os"
 )
 
 // TODO - GENERAL - Should be considered if main messages functions should get specific STRUCTs Like BackupMessageConfig
@@ -45,25 +45,10 @@ func SayHelloToClient(address string) (string, error) {
 	return r.Name, nil
 }
 
-func makePbPaths(path string) *pb.Paths {
-	return &pb.Paths{
-		Name: Name,
-		Path: path,
-	}
-}
-
-func preparePaths(paths []string) []*pb.Paths {
-	var pbpaths []*pb.Paths
-	for _, l := range paths {
-		pbpaths = append(pbpaths, makePbPaths(l))
-	}
-	return pbpaths
-}
-
 func triggerCheckingPaths(client pb.BaclntClient, paths []*pb.Paths) {
 	stream, err := client.GetStatusPaths(context.Background())
 	if err != nil {
-		log.Errorf("Cannot estabilish stream for path checking connection")
+		log.Errorf("Cannot establish stream for path checking connection")
 	}
 	for _, path := range paths {
 		if err := stream.Send(path); err != nil {
@@ -89,6 +74,21 @@ func CheckIfPathsExists(paths []string, clientaddr string) {
 	c := pb.NewBaclntClient(conn)
 	pbpaths := preparePaths(paths)
 	log.Debug(c, pbpaths)
+}
+
+func makePbPaths(path string) *pb.Paths {
+	return &pb.Paths{
+		Name: Name,
+		Path: path,
+	}
+}
+
+func preparePaths(paths []string) []*pb.Paths {
+	var pbpaths []*pb.Paths
+	for _, l := range paths {
+		pbpaths = append(pbpaths, makePbPaths(l))
+	}
+	return pbpaths
 }
 
 func triggerBackup(client pb.BaclntClient, paths []*pb.Paths) {
@@ -121,5 +121,53 @@ func SendBackupRequest(paths []string, clntAddress string) error {
 	c := pb.NewBaclntClient(conn)
 	pbpaths := preparePaths(paths)
 	triggerBackup(c, pbpaths)
+	return nil
+}
+
+func prepareRestoreTriggerMessage(reqcapacity int64, startlistener bool) *pb.TriggerRestoreMessage {
+	return &pb.TriggerRestoreMessage{
+		Name:          Name,
+		Reqcapacity:   reqcapacity,
+		Startlistener: startlistener,
+	}
+}
+
+func triggerRestore(client pb.BaclntClient, pbMessage *pb.TriggerRestoreMessage) error {
+	response, err := client.TriggerRestore(context.Background(), pbMessage)
+	if err != nil {
+		log.Error("Cannot send restore message, error: ", err)
+		return err
+	}
+	if response.Ok {
+		log.Debug("Client %s has enough space", response.Name)
+	} else if response.Listenerok {
+		log.Debug("Sterted data listener on client %s side", response.Name)
+	} else {
+		log.Error("There is problem with space or starting data listener on client: ", response.Name)
+		return errors.New("Cannot start data listener or client has not enough space")
+	}
+	return nil
+}
+
+func SendRestoreRequest(reqcapacity int64, startlistener bool, clntAddress string) error {
+	address := clntAddress + clntMgmtPort
+	log.Debug("Sending restore request to client: ", address)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	defer conn.Close()
+
+	if err != nil {
+		log.Error("Could not estabilsh connection with client: ", address)
+		return err
+	}
+
+	clnt := pb.NewBaclntClient(conn)
+	pbMessage := prepareRestoreTriggerMessage(reqcapacity, startlistener)
+
+	err = triggerRestore(clnt, pbMessage)
+	if err != nil {
+		log.Error("Cannot trigger restore on client: ", address)
+		return err
+	}
+
 	return nil
 }
