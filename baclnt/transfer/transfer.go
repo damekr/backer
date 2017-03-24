@@ -15,56 +15,45 @@ const BUFFERSIZE = 1024
 
 var Config *config.ClientConfig
 
-type TransferConnection struct {
-	Port       int
-	Host       string
-	Timeout    int
-	BUFFERSIZE int
-}
-
 type BackupConfig struct {
 	Paths       []string
 	Exclude     []string
 	ArchiveName string
 	ArchiveSize string
-	TRConn      net.Conn
 }
 
-func (c *TransferConnection) InitConnection() net.Conn {
-	log.Debugf("Trying to intialize transfer connection with %s, on port: %s", c.Host, c.Port)
-	connection, err := net.Dial("tcp", c.Host+":"+strconv.Itoa(c.Port))
+type RestoreConfig struct {
+	Override    bool
+	ArchiveName string
+}
+
+func InitConnection(host string, port string) net.Conn {
+	log.Debugf("Trying to intialize transfer connection with %s, on port: %s", host, port)
+	connection, err := net.Dial("tcp", host+":"+port)
 	if err != nil {
 		log.Fatal("Cannot initialize transfer connection")
 	}
 	return connection
 }
 
-// func (b *BackupConfig) CreateArchive(paths []string) string {
-// 	b.Paths = paths
-// 	archive := archiver.NewArchive(b.Paths, "Archiwum")
-// 	log.Print("Creating archive in: %v with paths: %v", archivePath, paths)
-// 	archive.MakeArchive(Config.TempPath, "Archive")
-// 	return archivePath
-// }
-
-func (b *BackupConfig) SendArchive(archiveLocation string) {
+func (b *BackupConfig) SendArchive(transferConn net.Conn, archiveLocation string) {
 	b.ArchiveName, b.ArchiveSize = readArchiveMetadata(archiveLocation)
 	log.Debugf("Read arch metadata, name: %s, size: %s", b.ArchiveName, b.ArchiveSize)
 	// Sending archive size to compare that all has been sent
-	outSize, err := b.TRConn.Write([]byte(b.ArchiveSize))
+	outSize, err := transferConn.Write([]byte(b.ArchiveSize))
 	if err != nil {
 		log.Println("An error occured: " + err.Error())
 	}
 	log.Println(outSize, "bytes sent Name")
 	// Sending archive name to use on backend side
-	sentDataSize, err := b.TRConn.Write([]byte(b.ArchiveName))
+	sentDataSize, err := transferConn.Write([]byte(b.ArchiveName))
 	if err != nil {
 		log.Println("An error occured: " + err.Error())
 	}
 	log.Println(sentDataSize, "bytes sent size")
 	// TODO I am not sure that this is proper to close in this place
 	// connection, make it maybe in seperate method?
-	defer b.TRConn.Close()
+	defer transferConn.Close()
 	// Sending archive
 	sendBuffer := make([]byte, BUFFERSIZE)
 	file := readArchive(archiveLocation)
@@ -74,10 +63,32 @@ func (b *BackupConfig) SendArchive(archiveLocation string) {
 		if err == io.EOF {
 			break
 		}
-		b.TRConn.Write(sendBuffer)
+		transferConn.Write(sendBuffer)
 	}
 	log.Debug("File has been sent, closing connection!")
 	return
+}
+
+func (r *RestoreConfig) ReceiveArchive(transferConn net.Conn, tempRestoreLocation string) error {
+
+	return nil
+}
+
+// SendRestoreHeader sends "restore" command for requesting a restore
+func SendRestoreHeader(transferConn net.Conn) error {
+	restoreHeader := fillString("dupa", 20)
+	log.Print("Restore header: ", restoreHeader)
+	sentHeaderSize, err := transferConn.Write([]byte(restoreHeader))
+	if err != nil {
+		log.Error("An error occured during sending header message, error: ", err.Error())
+	}
+	log.Debug("Sent header size: ", sentHeaderSize, " Sending archive Name")
+	sentArchNameSize, err := transferConn.Write([]byte("dummyName"))
+	if err != nil {
+		log.Error("An error occured during sending header message, error: ", err.Error())
+	}
+	log.Debug("Sent Archive name size: ", sentArchNameSize)
+	return nil
 }
 
 func readArchive(archiveLocation string) *os.File {
@@ -105,14 +116,15 @@ func readArchiveMetadata(archiveLocation string) (string, string) {
 	return fileName, fileSize
 }
 
-func fillString(retunString string, toLength int) string {
+func fillString(returnString string, toLength int) string {
+	log.Debug("String length to be filled up: ", len(returnString))
 	for {
-		lengtString := len(retunString)
+		lengtString := len(returnString)
 		if lengtString < toLength {
-			retunString = retunString + ":"
+			returnString = returnString + ":"
 			continue
 		}
 		break
 	}
-	return retunString
+	return returnString
 }

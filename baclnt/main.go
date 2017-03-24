@@ -10,7 +10,7 @@ import (
 	"github.com/damekr/backer/baclnt/api"
 	"github.com/damekr/backer/baclnt/archiver"
 	"github.com/damekr/backer/baclnt/config"
-	"github.com/damekr/backer/baclnt/dispatcher"
+	// "github.com/damekr/backer/baclnt/dispatcher"
 	"github.com/damekr/backer/baclnt/transfer"
 )
 
@@ -83,11 +83,8 @@ func setFlags() {
 }
 
 func testFunc(loc string) {
-	paths := []string{
-		"/home/dixi/ala",
-		"/home/dixi/dupa",
-	}
-	dispatcher.DispatchBackupStart(paths, "")
+	conn := transfer.InitConnection("localhost", "8000")
+	transfer.SendRestoreHeader(conn)
 }
 
 func main() {
@@ -99,13 +96,13 @@ func main() {
 	archiver.CreateTempDir(clntConfig.TempDir)
 	clntConfig.ShowConfig()
 	log.Info("Starting baclnt application...")
-	// testFunc(clntConfig.TempDir)
-	srv, err := mainLoop(clntConfig)
-	if err != nil {
-		log.Error("Cannot start client application, error: ", err.Error())
-		os.Exit(1)
-	}
-	log.Info(srv)
+	testFunc(clntConfig.TempDir)
+	// srv, err := mainLoop(clntConfig)
+	// if err != nil {
+	// 	log.Error("Cannot start client application, error: ", err.Error())
+	// 	os.Exit(1)
+	// }
+	// log.Info(srv)
 
 	// fmt.Println("OK")
 	// // startInterfaceClient()

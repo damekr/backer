@@ -9,8 +9,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/clientsconfig"
 	"github.com/damekr/backer/bacsrv/config"
-	"github.com/damekr/backer/bacsrv/manager"
-	"github.com/damekr/backer/bacsrv/operationshandler"
+	// "github.com/damekr/backer/bacsrv/manager"
+	// "github.com/damekr/backer/bacsrv/operationshandler"
 	"github.com/damekr/backer/bacsrv/repository"
 	"github.com/damekr/backer/bacsrv/restapi"
 	"github.com/damekr/backer/bacsrv/transfer"
@@ -68,7 +68,7 @@ func startRestApi(srvConfig *config.ServerConfig) {
 func startDataServer(srvConfig *config.ServerConfig) {
 	// It should have channel communication to close connection after stopping
 	// Starging a new goroutine
-	go transfer.InitTransferServer(srvConfig)
+	go transfer.InitTransferServerDispatcher(srvConfig)
 }
 
 func checkConfigFile(configPath string) error {
@@ -114,18 +114,18 @@ func main() {
 	if err != nil {
 		log.Println("Cannot create repository")
 	}
-	restore := operationshandler.Restore{
-		Saveset: "/opt/bacsrc/ala.100MB",
-	}
-	restoreMessage := &operationshandler.RestoreTriggerMessage{
-		ClientName:    "localhost",
-		RestoreConfig: restore,
-	}
-	err = manager.SendRestoreTriggerMessage(restoreMessage)
-	if err != nil {
-		log.Error("BUG")
-	}
-	// mainLoop(srvConfig)
+	// restore := operationshandler.Restore{
+	// 	Saveset: "/opt/bacsrc/ala.100MB",
+	// }
+	// restoreMessage := &operationshandler.RestoreTriggerMessage{
+	// 	ClientName:    "localhost",
+	// 	RestoreConfig: restore,
+	// }
+	// err = manager.SendRestoreTriggerMessage(restoreMessage)
+	// if err != nil {
+	// 	log.Error("BUG")
+	// }
+	mainLoop(srvConfig)
 	//fmt.Println("REPO", repo.Location)
 	//fmt.Printf("Repository status: %#v\n", repo.GetCapacityStatus())
 	//clientBucket := repository.CreateClient("minitx")
