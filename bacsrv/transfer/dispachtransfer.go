@@ -41,11 +41,18 @@ func dispatchTransferConnection(connection net.Conn) error {
 	switch header {
 	case "backup":
 		log.Info("Dispatching backup transfer operation")
-		log.Error("Not implemented")
+		fileSize := GetFileSize(connection)
+		fileName := GetFileName(connection)
+		// Part of receiving file
+		ReceiveFile(fileSize, fileName, connection)
 	case "restore":
 		log.Info("Dispatching restore transfer operation")
 		requestedArchiveName := GetFileName(connection)
 		log.Debug("Client requesting archive: ", requestedArchiveName)
+		err := SendArchive(connection, requestedArchiveName)
+		if err != nil {
+			log.Errorf("Cannot send archive: %s to client: %s", requestedArchiveName, connection.RemoteAddr())
+		}
 	default:
 		log.Errorf("The header: %s does not mean anything", header)
 		return errors.New("Did not recognize header as an operation")
