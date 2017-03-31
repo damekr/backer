@@ -45,6 +45,7 @@ func (s *server) TriggerBackup(stream pb.Baclnt_TriggerBackupServer) error {
 			serverName = path.Name
 		}
 		if err == io.EOF {
+			// TODO dispatcher shall be triggered in the same goroutine, the work inside should be in goroutines
 			go dispatcher.DispatchBackupStart(paths, serverName)
 			log.Debug("Recivied all paths, sending OK message to server...")
 			return stream.SendAndClose(&pb.Status{
@@ -75,6 +76,31 @@ func (s *server) GetStatusPaths(stream pb.Baclnt_GetStatusPathsServer) error {
 			log.Debug("Received all paths, checking locally paths..")
 		}
 
+	}
+}
+
+func (s *server) SendRestorePaths(pathsStream pb.Baclnt_SendRestorePathsServer) error {
+	log.Debugf("Getting restore paths in stream...")
+	var (
+		paths         []string
+		serverAddress string
+	)
+	for {
+		path, err := pathsStream.Recv()
+		if path != nil {
+			log.Debugf("Received path to be restored: %s", path.Path)
+			paths = append(paths, path.Path)
+			//  TODO The same case as in backup, maybe consider sending to messages --> hello with authentication and then paths
+			serverAddress = path.Name
+		}
+		if err == io.EOF {
+			// TODO here always is sends "OK" message should be executed some checks and then send a proper message
+			log.Debugf("Received all paths from server: %s, sending ok message to server", serverAddress)
+			dispatcher.DispatchRestoreStart(paths, serverAddress)
+			return pathsStream.SendAndClose(&pb.HelloReply{
+				Name: HostName,
+			})
+		}
 	}
 }
 

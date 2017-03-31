@@ -72,8 +72,17 @@ func SendRestoreTriggerMessage(restoreMessage *operationshandler.RestoreTriggerM
 	log.Printf("Restore Struct: ", restoreMessage)
 	err := protoapi.SendRestoreRequest(restoreMessage.RestoreConfig.SavesetSize, true, restoreMessage.ClientName)
 	if err != nil {
-		log.Error("Send restore trigger message failed")
+		log.Error("Sent restore trigger message failed")
 	}
 	// DataTransfer
+	return nil
+}
+
+func SendPathsToBeRestored(paths []string, clientAddr string) error {
+	log.Debugf("Sending paths to client %s to perform the restore", clientAddr)
+	err := protoapi.SendRestorePaths(paths, clientAddr)
+	if err != nil {
+		log.Error("Sent restore paths failed, error: ", err.Error())
+	}
 	return nil
 }

@@ -96,13 +96,13 @@ func main() {
 	archiver.CreateTempDir(clntConfig.TempDir)
 	clntConfig.ShowConfig()
 	log.Info("Starting baclnt application...")
-	testFunc(clntConfig.TempDir)
-	// srv, err := mainLoop(clntConfig)
-	// if err != nil {
-	// 	log.Error("Cannot start client application, error: ", err.Error())
-	// 	os.Exit(1)
-	// }
-	// log.Info(srv)
+	// testFunc(clntConfig.TempDir)
+	srv, err := mainLoop(clntConfig)
+	if err != nil {
+		log.Error("Cannot start client application, error: ", err.Error())
+		os.Exit(1)
+	}
+	log.Info(srv)
 
 	// fmt.Println("OK")
 	// // startInterfaceClient()

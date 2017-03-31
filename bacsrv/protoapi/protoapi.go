@@ -174,6 +174,21 @@ func SendRestoreRequest(reqcapacity int64, startlistener bool, clntAddress strin
 }
 
 func sendGrpcPathsToClient(clnt pb.BaclntClient, paths []*pb.Paths) error {
+	stream, err := clnt.SendRestorePaths(context.Background())
+	if err != nil {
+		log.Error("Cannot send restore paths, error: ", err.Error())
+		return err
+	}
+	for _, path := range paths {
+		if err := stream.Send(path); err != nil {
+			log.Errorf("Error %v", err)
+		}
+	}
+	reply, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Errorf("An error occured: %v", err)
+	}
+	log.Debugf("Replay summary: %v", reply)
 	return nil
 }
 
@@ -183,12 +198,14 @@ func SendRestorePaths(paths []string, clientAddr string) error {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Errorf("Could not establish connection with client: ", address)
+		return err
 	}
 	grpcPaths := preparePaths(paths)
 	clnt := pb.NewBaclntClient(conn)
 	err = sendGrpcPathsToClient(clnt, grpcPaths)
 	if err != nil {
 		log.Errorf("Error occured during sending paths to be restored, error content: ", err.Error())
+		return err
 	}
 	return nil
 }

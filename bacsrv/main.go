@@ -103,6 +103,20 @@ func getConfig(path string) *config.ServerConfig {
 
 }
 
+func initRepository() {
+	err := repository.InitRepository()
+	if err != nil {
+		log.Panic("Cannot create repository")
+	}
+}
+
+func initClientsBuckets() {
+	err := repository.InitClientsBuckets()
+	if err != nil {
+		log.Panic("Cannot initialize clients buckets")
+	}
+}
+
 func main() {
 	log.Printf("COMMIT: %s", commit)
 	setFlags()
@@ -110,10 +124,8 @@ func main() {
 	setLogger(srvConfig)
 	srvConfig.ShowConfig()
 	clientsconfig.InitClientsConfig(srvConfig)
-	_, err := repository.CreateRepository()
-	if err != nil {
-		log.Println("Cannot create repository")
-	}
+	initRepository()
+	initClientsBuckets()
 	// restore := operationshandler.Restore{
 	// 	Saveset: "/opt/bacsrc/ala.100MB",
 	// }

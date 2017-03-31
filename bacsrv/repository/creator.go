@@ -18,12 +18,13 @@ REPOSITORY SCHEMA (TEMPORARY)
 
 */
 
-func checkIfRepoExists() bool {
-	repolocation := config.GetRepositoryLocalization()
+var MainRepository *Repository
+
+func checkIfRepoExists(repolocation string) bool {
 	log.Debugf("Checking if %s repository exists...", repolocation)
 	repo, err := os.Stat(repolocation)
 	if err == nil && repo.IsDir() {
-		// make more repository validations
+		// TODO make more repository validations
 		return true
 	} else {
 		return false
@@ -31,10 +32,11 @@ func checkIfRepoExists() bool {
 }
 
 func CreateRepository() (*Repository, error) {
-	repolocation := config.GetRepositoryLocalization()
-	if checkIfRepoExists() {
+	repolocation := config.GetMainRepositoryLocation()
+	if checkIfRepoExists(repolocation) {
 		log.Infof("Repository %s exists, skipping creating", repolocation)
-		return &Repository{Location: repolocation}, nil
+		MainRepository = &Repository{Location: repolocation}
+		return MainRepository, nil
 	}
 	err := os.MkdirAll(repolocation+"/.meta/init", 0700)
 	if err != nil {
@@ -53,5 +55,6 @@ func CreateRepository() (*Repository, error) {
 		return nil, erri
 	}
 	log.Infof("Repository %s has been created successfully", repolocation)
-	return &Repository{Location: repolocation}, nil
+	MainRepository = &Repository{Location: repolocation}
+	return MainRepository, nil
 }

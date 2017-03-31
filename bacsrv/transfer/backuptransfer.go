@@ -38,7 +38,7 @@ func InitTransferServer(srvConfig *config.ServerConfig) {
 // ReceiveFile is able to read data from buffer and save them in created file.
 // It also checks if retrived file is equeal to sent earlier in first chunks of data.
 func ReceiveFile(fileSize int64, fileName string, connection net.Conn) {
-	newFile, err := os.Create(config.GetRepositoryLocalization() + fileName)
+	newFile, err := os.Create(config.GetMainRepositoryLocation() + fileName)
 	if err != nil {
 		log.Panic("Cannot create uniq local file in repository")
 	}

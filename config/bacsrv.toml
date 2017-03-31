@@ -5,7 +5,7 @@ LogOutput = "STDOUT"
 Debug = true
 
 [repository]
-Localization = "/home/damekr/repository"
+Localization = "/home/dixi/repository"
 
 [clients]
 ConfigFile = "/mnt/c/Users/Damian Rajca/dev/go/src/github.com/damekr/backer/config/clients"

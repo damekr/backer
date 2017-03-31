@@ -6,7 +6,7 @@ import (
 	"github.com/damekr/backer/baclnt/transfer"
 )
 
-// DataPort TODO Must be excluded to config file, or should be received from server during an integration
+// DataPort TODO shall be excluded to config file, or should be received from server during an integration
 const DataPort = "8000"
 
 func DispatchBackupStart(paths []string, serverAddress string) {
@@ -21,8 +21,9 @@ func DispatchBackupStart(paths []string, serverAddress string) {
 	backupConfig.SendArchive(transferConnection, tarlocation)
 }
 
-func DispatchRestoreStart() error {
-
+func DispatchRestoreStart(paths []string, serverAddress string) error {
+	log.Debugf("Dispatching restore for paths: ", paths)
+	log.Debugf("Dispatching request from server: ", serverAddress)
 	return nil
 
 }

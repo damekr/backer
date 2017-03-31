@@ -1,10 +1,9 @@
 package repository
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"os"
 	"syscall"
-
-	log "github.com/Sirupsen/logrus"
 )
 
 type Repository struct {
@@ -19,11 +18,8 @@ type DiskStatus struct {
 }
 
 func GetRepository() *Repository {
-	repo, err := CreateRepository()
-	if err != nil {
-		log.Error("Cannot create repository")
-	}
-	return repo
+	log.Debugf("Getting a repository under: ", MainRepository.Location)
+	return MainRepository
 }
 
 func (r *Repository) GetCapacityStatus() (disk DiskStatus) {
@@ -40,9 +36,19 @@ func (r *Repository) GetCapacityStatus() (disk DiskStatus) {
 
 func (r *Repository) CreateClientBucket(name string) error {
 	const bucketsLocation string = "/data/"
-	err := os.Mkdir(r.Location+bucketsLocation+name, 0700)
+	clientBucketLocation := r.Location + bucketsLocation + name
+	log.Debugf("Creating client bucket under: ", clientBucketLocation)
+	err := os.MkdirAll(clientBucketLocation, 0700)
 	if err != nil {
-		log.Debugf("Repository %s exists, skipping", name)
+		log.Debugf("Client bucket %s exists, skipping", name)
+	}
+	return nil
+}
+
+func InitRepository() error {
+	_, err := CreateRepository()
+	if err != nil {
+		log.Println("Cannot create repository, error: ", err.Error())
 		return err
 	}
 	return nil
