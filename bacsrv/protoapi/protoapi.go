@@ -2,11 +2,12 @@ package protoapi
 
 import (
 	"errors"
+	"os"
+
 	log "github.com/Sirupsen/logrus"
 	pb "github.com/damekr/backer/bacsrv/protoapi/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"os"
 )
 
 // TODO - GENERAL - Should be considered if main messages functions should get specific STRUCTs Like BackupMessageConfig
@@ -169,5 +170,25 @@ func SendRestoreRequest(reqcapacity int64, startlistener bool, clntAddress strin
 		return err
 	}
 
+	return nil
+}
+
+func sendGrpcPathsToClient(clnt pb.BaclntClient, paths []*pb.Paths) error {
+	return nil
+}
+
+func SendRestorePaths(paths []string, clientAddr string) error {
+	log.Debugf("Sending paths %s to be restored to client %s", paths, clientAddr)
+	address := clientAddr + clntMgmtPort
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		log.Errorf("Could not establish connection with client: ", address)
+	}
+	grpcPaths := preparePaths(paths)
+	clnt := pb.NewBaclntClient(conn)
+	err = sendGrpcPathsToClient(clnt, grpcPaths)
+	if err != nil {
+		log.Errorf("Error occured during sending paths to be restored, error content: ", err.Error())
+	}
 	return nil
 }

@@ -10,6 +10,7 @@ service Baclnt {
   rpc TriggerRestore (TriggerRestoreMessage) returns (TriggerRestoreResponse) {}
   rpc GetStatusPaths (stream Paths) returns (stream Info) {}
   rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc SendRestorePaths (stream Paths) returns (HelloReply) {}
 }
 
 
