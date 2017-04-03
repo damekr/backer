@@ -5,7 +5,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	pb "github.com/damekr/backer/bacsrv/protoapi/proto"
+	pb "github.com/damekr/backer/common/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )

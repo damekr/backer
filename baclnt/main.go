@@ -7,9 +7,9 @@ import (
 	"syscall"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/baclnt/api"
 	"github.com/damekr/backer/baclnt/archiver"
 	"github.com/damekr/backer/baclnt/config"
+	"github.com/damekr/backer/baclnt/protoapi"
 	// "github.com/damekr/backer/baclnt/dispatcher"
 	"github.com/damekr/backer/baclnt/transfer"
 )
@@ -54,7 +54,7 @@ func mainLoop(clntConfig *config.ClientConfig) (string, error) {
 }
 
 func startProtoAPI(config *config.ClientConfig) {
-	go api.ServeServer(config)
+	go protoapi.ServeServer(config)
 }
 
 func checkConfigFile(configPath string) error {

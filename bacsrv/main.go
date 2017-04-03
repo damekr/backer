@@ -68,7 +68,7 @@ func startRestApi(srvConfig *config.ServerConfig) {
 func startDataServer(srvConfig *config.ServerConfig) {
 	// It should have channel communication to close connection after stopping
 	// Starging a new goroutine
-	go transfer.InitTransferServerDispatcher(srvConfig)
+	go transfer.InitTransferServer(srvConfig)
 }
 
 func checkConfigFile(configPath string) error {
@@ -126,17 +126,7 @@ func main() {
 	clientsconfig.InitClientsConfig(srvConfig)
 	initRepository()
 	initClientsBuckets()
-	// restore := operationshandler.Restore{
-	// 	Saveset: "/opt/bacsrc/ala.100MB",
-	// }
-	// restoreMessage := &operationshandler.RestoreTriggerMessage{
-	// 	ClientName:    "localhost",
-	// 	RestoreConfig: restore,
-	// }
-	// err = manager.SendRestoreTriggerMessage(restoreMessage)
-	// if err != nil {
-	// 	log.Error("BUG")
-	// }
+
 	mainLoop(srvConfig)
 	//fmt.Println("REPO", repo.Location)
 	//fmt.Printf("Repository status: %#v\n", repo.GetCapacityStatus())

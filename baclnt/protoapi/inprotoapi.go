@@ -1,4 +1,4 @@
-package api
+package protoapi
 
 import (
 	"io"
@@ -8,7 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/baclnt/config"
 	"github.com/damekr/backer/baclnt/dispatcher"
-	pb "github.com/damekr/backer/bacsrv/protoapi/proto"
+	pb "github.com/damekr/backer/common/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
