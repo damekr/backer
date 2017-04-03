@@ -5,7 +5,7 @@ import (
 	"github.com/damekr/backer/bacsrv/outprotoapi"
 )
 
-// ResponseClientHello is responsible for proxing restapi reqests to clients
+// ResponseClientHello is sending response to client ping-pong
 func ResponseClientHello(clntAddress string) {
 	out, err := outprotoapi.SayHelloToClient(clntAddress)
 	if err != nil {
