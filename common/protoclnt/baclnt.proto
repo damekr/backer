@@ -15,7 +15,7 @@ service Baclnt {
 
 
 // Each message needs to have specific host name
-
+// TODO Change streams to "Repeated" messages - can send slices
 
 // The request message contains a hostname of requester
 message HelloRequest {
