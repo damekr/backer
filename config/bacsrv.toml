@@ -4,6 +4,7 @@ DataPort = 8000
 RestApiPort = 8080
 LogOutput = "STDOUT"
 Debug = true
+ExternalName = "127.0.0.1" # External name of server, can be hosts/ip/DNS
 
 [repository]
 Localization = "/home/dixi/repository"

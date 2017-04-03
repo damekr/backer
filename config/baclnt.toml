@@ -2,3 +2,4 @@
 LogOutput = "STDOUT"
 Debug = true
 TempDir = "/tmp/backer"
+ExternalName = "127.0.0.1" # External name of client, can be hosts/ip/DNS

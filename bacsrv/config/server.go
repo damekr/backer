@@ -15,6 +15,7 @@ type ServerConfig struct {
 	Debug            bool
 	RepositoryConfig string
 	ClientsConfig    string
+	ExternalName     string
 }
 
 func fillMainConfigStruct() *ServerConfig {
@@ -22,6 +23,7 @@ func fillMainConfigStruct() *ServerConfig {
 		MgmtPort:      viper.GetString("server.MgmtPort"),
 		DataPort:      viper.GetString("server.DataPort"),
 		RestAPIPort:   viper.GetString("server.RestApiPort"),
+		ExternalName:  viper.GetString("server.ExternalName"),
 		LogOutput:     viper.GetString("server.LogOutput"),
 		Debug:         viper.GetBool("server.Debug"),
 		ClientsConfig: viper.GetString("clients.ConfigFile"),
@@ -59,4 +61,8 @@ func GetMgmtPort() string {
 
 func GetTransferPort() string {
 	return GetServerConfig().DataPort
+}
+
+func GetExternalName() string {
+	return GetServerConfig().ExternalName
 }

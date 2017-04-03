@@ -5,6 +5,7 @@ import (
 	// "os"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/bacsrv/config"
 	pb "github.com/damekr/backer/common/protoclnt"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -16,18 +17,6 @@ const (
 	clntMgmtPort = ":9090"
 )
 
-var Name string
-
-func init() {
-	// TODO It needs to be changed because client will not have a connection to hostname always, otherwise hostname must exists in hosts file
-	// name, err := os.Hostname()
-	// if err != nil {
-	// 	log.Error("Cannot get server hostname, setting default")
-	// 	name = "bacsrv"
-	// }
-	Name = "127.0.0.1"
-}
-
 func SayHelloToClient(address string) (string, error) {
 	conn, err := grpc.Dial(address+clntMgmtPort, grpc.WithInsecure())
 	if err != nil {
@@ -37,7 +26,7 @@ func SayHelloToClient(address string) (string, error) {
 	defer conn.Close()
 	c := pb.NewBaclntClient(conn)
 	//Contact the server and print out its response.
-	r, err := c.SayHello(context.Background(), &pb.HelloRequest{Name: Name})
+	r, err := c.SayHello(context.Background(), &pb.HelloRequest{Name: config.GetExternalName()})
 	if err != nil {
 		log.Warningf("Could not get client name: %v", err)
 		return "", err
@@ -79,7 +68,7 @@ func CheckIfPathsExists(paths []string, clientaddr string) {
 
 func makePbPaths(path string) *pb.Paths {
 	return &pb.Paths{
-		Name: Name,
+		Name: config.GetExternalName(),
 		Path: path,
 	}
 }
@@ -127,7 +116,7 @@ func SendBackupRequest(paths []string, clntAddress string) error {
 
 func prepareRestoreTriggerMessage(reqcapacity int64, startlistener bool) *pb.TriggerRestoreMessage {
 	return &pb.TriggerRestoreMessage{
-		Name:          Name,
+		Name:          config.GetExternalName(),
 		Reqcapacity:   reqcapacity,
 		Startlistener: startlistener,
 	}
@@ -204,7 +193,7 @@ func SendRestorePaths(paths []string, clientAddr string) error {
 	clnt := pb.NewBaclntClient(conn)
 	err = sendGrpcPathsToClient(clnt, grpcPaths)
 	if err != nil {
-		log.Errorf("Error occured during sending paths to be restored, error content: ", err.Error())
+		log.Errorf("Error occured during sending paths to be restored, error content: ", err)
 		return err
 	}
 	return nil

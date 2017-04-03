@@ -13,23 +13,12 @@ import (
 	"google.golang.org/grpc"
 )
 
-var HostName string
-
-func init() {
-	// name, err := os.Hostname()
-	// if err != nil {
-	// 	log.Warning("Cannot get hostname, setting default: baclnt")
-	// 	name = "baclnt"
-	// }
-	HostName = "127.0.0.1"
-}
-
 type server struct{}
 
 // SayHello returns hostname of client
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
 	log.Printf("Got request from server: %s", in.Name)
-	return &pb.HelloReply{Name: HostName}, nil
+	return &pb.HelloReply{Name: config.GetExternalName()}, nil
 }
 
 func (s *server) TriggerBackup(stream pb.Baclnt_TriggerBackupServer) error {
@@ -49,7 +38,7 @@ func (s *server) TriggerBackup(stream pb.Baclnt_TriggerBackupServer) error {
 			go dispatcher.DispatchBackupStart(paths, serverName)
 			log.Debug("Recivied all paths, sending OK message to server...")
 			return stream.SendAndClose(&pb.Status{
-				Name:    HostName,
+				Name:    config.GetExternalName(),
 				Message: "OK",
 			})
 		}
@@ -60,7 +49,7 @@ func (s *server) TriggerBackup(stream pb.Baclnt_TriggerBackupServer) error {
 
 func (s *server) TriggerRestore(ctx context.Context, request *pb.TriggerRestoreMessage) (*pb.TriggerRestoreResponse, error) {
 	log.Debug("Got restore trigger with requested capacity", request.Reqcapacity)
-	return &pb.TriggerRestoreResponse{Name: HostName, Ok: true, Listenerok: true}, nil
+	return &pb.TriggerRestoreResponse{Name: config.GetExternalName(), Ok: true, Listenerok: true}, nil
 }
 
 func (s *server) GetStatusPaths(stream pb.Baclnt_GetStatusPathsServer) error {
@@ -98,7 +87,7 @@ func (s *server) SendRestorePaths(pathsStream pb.Baclnt_SendRestorePathsServer) 
 			log.Debugf("Received all paths from server: %s, sending ok message to server", serverAddress)
 			dispatcher.DispatchRestoreStart(paths, serverAddress)
 			return pathsStream.SendAndClose(&pb.HelloReply{
-				Name: HostName,
+				Name: config.GetExternalName(),
 			})
 		}
 	}
