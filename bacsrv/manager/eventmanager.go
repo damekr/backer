@@ -1,0 +1,16 @@
+package manager
+
+import (
+	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/bacsrv/outprotoapi"
+)
+
+// ResponseClientHello is responsible for proxing restapi reqests to clients
+func ResponseClientHello(clntAddress string) {
+	out, err := outprotoapi.SayHelloToClient(clntAddress)
+	if err != nil {
+		log.Errorf("Given client on address %s is not available", clntAddress)
+	}
+	log.Debug("Got name from client: ", out)
+
+}

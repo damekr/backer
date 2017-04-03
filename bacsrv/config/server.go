@@ -10,6 +10,7 @@ const configName = "bacsrv"
 type ServerConfig struct {
 	MgmtPort         string
 	DataPort         string
+	RestAPIPort      string
 	LogOutput        string // STDOUT, FILE, SYSLOG
 	Debug            bool
 	RepositoryConfig string
@@ -20,6 +21,7 @@ func fillMainConfigStruct() *ServerConfig {
 	return &ServerConfig{
 		MgmtPort:      viper.GetString("server.MgmtPort"),
 		DataPort:      viper.GetString("server.DataPort"),
+		RestAPIPort:   viper.GetString("server.RestApiPort"),
 		LogOutput:     viper.GetString("server.LogOutput"),
 		Debug:         viper.GetBool("server.Debug"),
 		ClientsConfig: viper.GetString("clients.ConfigFile"),

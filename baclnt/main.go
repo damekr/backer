@@ -9,8 +9,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/baclnt/archiver"
 	"github.com/damekr/backer/baclnt/config"
-	"github.com/damekr/backer/baclnt/protoapi"
-	// "github.com/damekr/backer/baclnt/dispatcher"
+	"github.com/damekr/backer/baclnt/dispatcher"
+	"github.com/damekr/backer/baclnt/inprotoapi"
 	"github.com/damekr/backer/baclnt/transfer"
 )
 
@@ -54,7 +54,7 @@ func mainLoop(clntConfig *config.ClientConfig) (string, error) {
 }
 
 func startProtoAPI(config *config.ClientConfig) {
-	go protoapi.ServeServer(config)
+	go inprotoapi.ServeServer(config)
 }
 
 func checkConfigFile(configPath string) error {
@@ -83,8 +83,10 @@ func setFlags() {
 }
 
 func testFunc(loc string) {
-	conn := transfer.InitConnection("localhost", "8000")
-	transfer.SendRestoreHeader(conn)
+	err := dispatcher.SendHelloMessageToServer("127.0.0.1")
+	if err != nil {
+		log.Error(err)
+	}
 }
 
 func main() {
@@ -96,7 +98,7 @@ func main() {
 	archiver.CreateTempDir(clntConfig.TempDir)
 	clntConfig.ShowConfig()
 	log.Info("Starting baclnt application...")
-	// testFunc(clntConfig.TempDir)
+	testFunc(clntConfig.TempDir)
 	srv, err := mainLoop(clntConfig)
 	if err != nil {
 		log.Error("Cannot start client application, error: ", err.Error())

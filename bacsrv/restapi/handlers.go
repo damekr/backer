@@ -28,8 +28,8 @@ type Bacsrv struct {
 // StartServerRestAPI starts http server on given port
 func StartServerRestAPI(srvConfig *config.ServerConfig) {
 	router := NewRouter()
-	log.Debug("Starting Server RESTAPi on port: ", srvConfig.MgmtPort)
-	log.Fatal(http.ListenAndServe(":"+srvConfig.MgmtPort, router))
+	log.Debug("Starting Server RESTAPi on port: ", srvConfig.RestAPIPort)
+	log.Fatal(http.ListenAndServe(":"+srvConfig.RestAPIPort, router))
 }
 
 // Index shows basic information about server
@@ -72,11 +72,11 @@ type HelloMessage struct {
 
 // ShowClientStatus simply connects over grpc to client with specified name and read hostname
 func ShowClientStatus(w http.ResponseWriter, r *http.Request) {
-	// TODO It must be somehow specified what will be used, could be a name and during the process read ip address and then send request
+	// // TODO It must be somehow specified what will be used, could be a name and during the process read ip address and then send request
 	vars := mux.Vars(r)
 	clientName := vars["clientName"]
 	log.Debug("Received arguments: ", clientName)
-	clientHostname, err := manager.SendHelloMessage(clientName)
+	clientHostname, err := manager.SendHelloMessageToClient(clientName)
 	if err != nil {
 		errorMessage := &HelloMessage{
 			Hostname: "Error, Cannot find given client",

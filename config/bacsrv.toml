@@ -1,6 +1,7 @@
 [server]
-MgmtPort = 9000
+MgmtPort = 8090
 DataPort = 8000
+RestApiPort = 8080
 LogOutput = "STDOUT"
 Debug = true
 

@@ -6,14 +6,14 @@ import (
 	"github.com/damekr/backer/bacsrv/backupconfig"
 	"github.com/damekr/backer/bacsrv/clientsconfig"
 	"github.com/damekr/backer/bacsrv/operationshandler"
-	"github.com/damekr/backer/bacsrv/protoapi"
+	"github.com/damekr/backer/bacsrv/outprotoapi"
 )
 
-// SendHelloMessage is responsible for proxing restapi reqests to clients
-func SendHelloMessage(address string) (string, error) {
-	clntHostname, err := protoapi.SayHelloToClient(address)
+// SendHelloMessageToClient is responsible for proxing restapi reqests to clients
+func SendHelloMessageToClient(clntAddress string) (string, error) {
+	clntHostname, err := outprotoapi.SayHelloToClient(clntAddress)
 	if err != nil {
-		log.Errorf("Given client on address %s is not available", address)
+		log.Errorf("Given client on address %s is not available", clntAddress)
 		return "", err
 	}
 	return clntHostname, nil
@@ -27,7 +27,7 @@ func IntegrateClient(name string, address string, backupID string) error {
 	//		Address:  address,
 	//		BackupID: backupID,
 	//	}
-	_, err := protoapi.SayHelloToClient(address)
+	_, err := outprotoapi.SayHelloToClient(address)
 	if err != nil {
 		log.Errorf("Client %s is not available", name)
 		return err
@@ -51,7 +51,7 @@ func SendBackupTriggerMessage(backupMessage *backupconfig.BackupTriggerMessage) 
 	if client.Name == "" {
 		return "", errors.New("Client does not exist")
 	}
-	err := protoapi.SendBackupRequest(backupMessage.BackupConfig.Paths, client.Address)
+	err := outprotoapi.SendBackupRequest(backupMessage.BackupConfig.Paths, client.Address)
 	if err != nil {
 		return "", err
 	}
@@ -70,7 +70,7 @@ func SendRestoreTriggerMessage(restoreMessage *operationshandler.RestoreTriggerM
 	// RPC --> checking space, etc
 	restoreMessage.RestoreConfig.SavesetSize = 120
 	log.Printf("Restore Struct: ", restoreMessage)
-	err := protoapi.SendRestoreRequest(restoreMessage.RestoreConfig.SavesetSize, true, restoreMessage.ClientName)
+	err := outprotoapi.SendRestoreRequest(restoreMessage.RestoreConfig.SavesetSize, true, restoreMessage.ClientName)
 	if err != nil {
 		log.Error("Sent restore trigger message failed")
 	}
@@ -80,7 +80,7 @@ func SendRestoreTriggerMessage(restoreMessage *operationshandler.RestoreTriggerM
 
 func SendPathsToBeRestored(paths []string, clientAddr string) error {
 	log.Debugf("Sending paths to client %s to perform the restore", clientAddr)
-	err := protoapi.SendRestorePaths(paths, clientAddr)
+	err := outprotoapi.SendRestorePaths(paths, clientAddr)
 	if err != nil {
 		log.Error("Sent restore paths failed, error: ", err.Error())
 	}

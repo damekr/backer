@@ -11,6 +11,7 @@ import (
 	"github.com/damekr/backer/bacsrv/config"
 	// "github.com/damekr/backer/bacsrv/manager"
 	// "github.com/damekr/backer/bacsrv/operationshandler"
+	"github.com/damekr/backer/bacsrv/inprotoapi"
 	"github.com/damekr/backer/bacsrv/repository"
 	"github.com/damekr/backer/bacsrv/restapi"
 	"github.com/damekr/backer/bacsrv/transfer"
@@ -43,6 +44,7 @@ func mainLoop(srvConfig *config.ServerConfig) (string, error) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 	startDataServer(srvConfig)
+	startProtoApi(srvConfig)
 	startRestApi(srvConfig)
 	for {
 		select {
@@ -63,6 +65,11 @@ func startRestApi(srvConfig *config.ServerConfig) {
 	//paths := []string{"/home/damian/test"}
 	//go api.SendBackupRequest(paths)
 	go restapi.StartServerRestAPI(srvConfig)
+}
+
+func startProtoApi(srvConfig *config.ServerConfig) {
+	// Starting a new goroutine
+	go inprotoapi.ServeServer(srvConfig)
 }
 
 func startDataServer(srvConfig *config.ServerConfig) {
