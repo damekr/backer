@@ -15,7 +15,7 @@ service Baclnt {
 
 
 // Each message needs to have specific host name
-// TODO Change streams to "Repeated" messages - can send slices
+// TODO Change streams to "Repeated" messages - can send slices - https://github.com/grpc/grpc-go/pull/629/files
 
 // The request message contains a hostname of requester
 message HelloRequest {

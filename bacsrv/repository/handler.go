@@ -1,10 +1,16 @@
+// +build linux darwin
+
 package repository
 
 import (
+	"errors"
 	log "github.com/Sirupsen/logrus"
 	"os"
+	"path/filepath"
 	"syscall"
 )
+
+const bucketsLocation string = "/data/"
 
 type Repository struct {
 	Location string
@@ -18,7 +24,7 @@ type DiskStatus struct {
 }
 
 func GetRepository() *Repository {
-	log.Debugf("Getting a repository under: ", MainRepository.Location)
+	log.Debug("Getting a repository under: ", MainRepository.Location)
 	return MainRepository
 }
 
@@ -35,7 +41,6 @@ func (r *Repository) GetCapacityStatus() (disk DiskStatus) {
 }
 
 func (r *Repository) CreateClientBucket(name string) error {
-	const bucketsLocation string = "/data/"
 	clientBucketLocation := r.Location + bucketsLocation + name
 	log.Debugf("Creating client bucket under: ", clientBucketLocation)
 	err := os.MkdirAll(clientBucketLocation, 0700)
@@ -43,6 +48,17 @@ func (r *Repository) CreateClientBucket(name string) error {
 		log.Debugf("Client bucket %s exists, skipping", name)
 	}
 	return nil
+}
+
+func (r *Repository) GetClientBucket(name string) (*ClientBucket, error) {
+	clientLocation := filepath.Join(r.Location, bucketsLocation, name)
+	if !checkIfClientBucketExists(name) {
+		log.Errorf("Client %s bucket does not exist", name)
+		return nil, errors.New("Client bucket does not exists")
+	}
+	return &ClientBucket{
+		Location: clientLocation,
+	}, nil
 }
 
 func InitRepository() error {

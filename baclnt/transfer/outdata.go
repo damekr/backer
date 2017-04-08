@@ -5,10 +5,13 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/baclnt/archiver"
 	"github.com/damekr/backer/baclnt/config"
-	"strings"
+	"github.com/damekr/backer/common/dataproto"
+	"path"
 )
 
 // BUFFERSIZE specifies how big is a chunk of data being sent
@@ -28,14 +31,71 @@ type RestoreConfig struct {
 	ArchiveName string
 }
 
-// InitConnection initialize connection with bacsrv
-func InitConnection(host string, port string) net.Conn {
-	log.Debugf("Trying to intialize transfer connection with %s, on port: %s", host, port)
-	connection, err := net.Dial("tcp", host+":"+port)
+func InitConnectionWithServer(srvAddr, dataPort string) (net.Conn, error) {
+	log.Debug("Starting connection with server: ", srvAddr)
+	conn, err := net.Dial("tcp", net.JoinHostPort(srvAddr, dataPort))
 	if err != nil {
-		log.Fatal("Cannot initialize transfer connection")
+		log.Error("Couldn't establish connection with: ", srvAddr)
+		return nil, err
 	}
-	return connection
+	log.Debugf("Established connection with server: %s on port: %s", srvAddr, dataPort)
+	return conn, nil
+}
+
+func SendTransferTypeHeader(ttype, from string, conn net.Conn) error {
+	log.Debug("Sending transfer type to server")
+	transfer := &dataproto.Transfer{
+		TType: ttype,
+		From:  from,
+	}
+	err := dataproto.SendDataTypeHeader(transfer, conn)
+	if err != nil {
+		log.Error("Encoding transfer header failes")
+		return err
+	}
+	_ = sendFileHeader(conn, "/var/tmp/ala")
+	_ = sendFile(conn, "/var/tmp/ala")
+	return nil
+}
+
+func sendFileHeader(conn net.Conn, fileLocation string) error {
+	log.Debug("Sending file info header")
+	fileHeader, err := archiver.ReadFileHeader(fileLocation)
+	if err != nil {
+		log.Error("File does not exist")
+		return err
+	}
+	err = dataproto.SendFileInfoHeader(fileHeader, conn)
+	if err != nil {
+		log.Error("Encoding and sending file type header failed")
+		return err
+	}
+	return nil
+}
+
+func sendFile(conn net.Conn, fileLocation string) error {
+	log.Debug("Sending file ", path.Base(fileLocation))
+	sendBuffer := make([]byte, BUFFERSIZE)
+	file := openFile(fileLocation)
+	defer file.Close()
+	for {
+		_, err := file.Read(sendBuffer)
+		if err == io.EOF {
+			break
+		}
+		conn.Write(sendBuffer)
+	}
+	log.Debugf("File: %s has been sent", path.Base(fileLocation))
+	return nil
+}
+
+func openFile(fileLocation string) *os.File {
+	// TODO Check if file exists
+	file, err := os.Open(fileLocation)
+	if err != nil {
+		log.Error(err.Error())
+	}
+	return file
 }
 
 // SendArchive sends created archive to the server
@@ -67,7 +127,7 @@ func (b *BackupConfig) SendArchive(transferConn net.Conn, archiveLocation string
 	defer transferConn.Close()
 	// Sending archive
 	sendBuffer := make([]byte, BUFFERSIZE)
-	file := readArchive(archiveLocation)
+	file := openFile(archiveLocation)
 	defer file.Close()
 	for {
 		_, err := file.Read(sendBuffer)
@@ -120,16 +180,6 @@ func SendRestoreHeader(transferConn net.Conn) error {
 	}
 	log.Debug("Sent Archive name size: ", sentArchNameSize)
 	return nil
-}
-
-func readArchive(archiveLocation string) *os.File {
-	// TODO Check if file exists and if is an archive
-	file, err := os.Open(archiveLocation)
-	if err != nil {
-		log.Error(err.Error())
-		panic(err)
-	}
-	return file
 }
 
 func readArchiveMetadataInConnectionFormat(archiveLocation string) (string, string) {

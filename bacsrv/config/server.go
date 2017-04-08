@@ -8,25 +8,27 @@ import (
 const configName = "bacsrv"
 
 type ServerConfig struct {
-	MgmtPort         string
-	DataPort         string
-	RestAPIPort      string
-	LogOutput        string // STDOUT, FILE, SYSLOG
-	Debug            bool
-	RepositoryConfig string
-	ClientsConfig    string
-	ExternalName     string
+	MgmtPort              string
+	DataPort              string
+	RestAPIPort           string
+	LogOutput             string // STDOUT, FILE, SYSLOG
+	Debug                 bool
+	RepositoryConfig      string
+	ClientsConfig         string
+	ExternalName          string
+	DataTransferInterface string
 }
 
 func fillMainConfigStruct() *ServerConfig {
 	return &ServerConfig{
-		MgmtPort:      viper.GetString("server.MgmtPort"),
-		DataPort:      viper.GetString("server.DataPort"),
-		RestAPIPort:   viper.GetString("server.RestApiPort"),
-		ExternalName:  viper.GetString("server.ExternalName"),
-		LogOutput:     viper.GetString("server.LogOutput"),
-		Debug:         viper.GetBool("server.Debug"),
-		ClientsConfig: viper.GetString("clients.ConfigFile"),
+		MgmtPort:              viper.GetString("server.MgmtPort"),
+		DataPort:              viper.GetString("server.DataPort"),
+		RestAPIPort:           viper.GetString("server.RestApiPort"),
+		ExternalName:          viper.GetString("server.ExternalName"),
+		DataTransferInterface: viper.GetString("server.DataTransferInterface"),
+		LogOutput:             viper.GetString("server.LogOutput"),
+		Debug:                 viper.GetBool("server.Debug"),
+		ClientsConfig:         viper.GetString("clients.ConfigFile"),
 	}
 }
 
@@ -65,4 +67,8 @@ func GetTransferPort() string {
 
 func GetExternalName() string {
 	return GetServerConfig().ExternalName
+}
+
+func GetDataTransferInterface() string {
+	return GetServerConfig().DataTransferInterface
 }

@@ -9,7 +9,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/baclnt/archiver"
 	"github.com/damekr/backer/baclnt/config"
-	"github.com/damekr/backer/baclnt/dispatcher"
+	// "github.com/damekr/backer/baclnt/dispatcher"
 	"github.com/damekr/backer/baclnt/inprotoapi"
 	"github.com/damekr/backer/baclnt/transfer"
 )
@@ -83,7 +83,11 @@ func setFlags() {
 }
 
 func testFunc(loc string) {
-	err := dispatcher.SendHelloMessageToServer("127.0.0.1")
+	conn, err := transfer.InitConnectionWithServer("127.0.0.1", "8000")
+	if err != nil {
+		log.Error(err)
+	}
+	err = transfer.SendTransferTypeHeader("fullbackup", "foo", conn)
 	if err != nil {
 		log.Error(err)
 	}

@@ -45,7 +45,7 @@ func mainLoop(srvConfig *config.ServerConfig) (string, error) {
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 	startDataServer(srvConfig)
 	startProtoApi(srvConfig)
-	startRestApi(srvConfig)
+	// startRestApi(srvConfig)
 	for {
 		select {
 		case killSignal := <-interrupt:
@@ -75,7 +75,7 @@ func startProtoApi(srvConfig *config.ServerConfig) {
 func startDataServer(srvConfig *config.ServerConfig) {
 	// It should have channel communication to close connection after stopping
 	// Starging a new goroutine
-	go transfer.InitTransferServer(srvConfig)
+	go transfer.StartTransferServer(srvConfig)
 }
 
 func checkConfigFile(configPath string) error {
@@ -133,7 +133,6 @@ func main() {
 	clientsconfig.InitClientsConfig(srvConfig)
 	initRepository()
 	initClientsBuckets()
-
 	mainLoop(srvConfig)
 	//fmt.Println("REPO", repo.Location)
 	//fmt.Printf("Repository status: %#v\n", repo.GetCapacityStatus())

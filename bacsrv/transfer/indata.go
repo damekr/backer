@@ -4,43 +4,79 @@ import (
 	"io"
 	"net"
 	"os"
-	"strconv"
-	"strings"
+	// "strconv"
+	// "strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
+	"github.com/damekr/backer/bacsrv/repository"
+	"github.com/damekr/backer/common/dataproto"
+	"path"
+	"strings"
 )
 
 // BUFFERSIZE determines how big is piece of data that will be send in one frame
 const BUFFERSIZE = 1024
 
-// InitTransferServer starts main part of transfering data, consider later to running this on demand
-func InitTransferServer(srvConfig *config.ServerConfig) {
-	listener, err := net.Listen("tcp", "localhost:"+srvConfig.DataPort)
-	log.Info("Starting transfer server on addr: ", listener.Addr())
+func StartTransferServer(srvConfig *config.ServerConfig) {
+	lis, err := net.Listen("tcp", net.JoinHostPort(srvConfig.DataTransferInterface, srvConfig.DataPort))
 	if err != nil {
-		log.Error("Cannot start transfer server, error: ", err.Error())
+		log.Errorf("Cannot start data transfer server on interface: %s and port: %s. Error: %s", srvConfig.DataTransferInterface, srvConfig.DataPort, err.Error())
 	}
+	log.Info("Data server started successfully on interface: ", lis.Addr())
 	for {
-		connection, err := listener.Accept()
+		conn, err := lis.Accept()
 		if err != nil {
-			log.Error("Cannot accept conection, error: ", err.Error())
-		} else {
-			log.Debug("A new transfer connection estabilished, from: ", connection.RemoteAddr())
-			fileSize := GetFileSize(connection)
-			fileName := GetFileName(connection)
-			// Part of receiving file
-			ReceiveFile(fileSize, fileName, connection)
+			log.Errorf("Couldn't accept connection from host: %s, error: %s", conn.RemoteAddr(), err.Error())
 		}
+		// Starting gourutine to handle single connection
+		go dataTransferHandler(conn)
 	}
 }
 
-// ReceiveFile is able to read data from buffer and save them in created file.
-// It also checks if retrived file is equeal to sent earlier in first chunks of data.
-func ReceiveFile(fileSize int64, fileName string, connection net.Conn) {
-	newFile, err := os.Create(config.GetMainRepositoryLocation() + fileName)
+func dataTransferHandler(conn net.Conn) {
+	log.Debug("Handling data transfer from: ", conn.RemoteAddr())
+	header, err := dataproto.UnmarshalTransferHeader(conn)
 	if err != nil {
-		log.Panic("Cannot create uniq local file in repository")
+		log.Error("Couldn't read data transfer header")
+	}
+	log.Debug("Transfer from: ", header.From)
+	transferType := strings.ToLower(header.TType)
+	log.Debug("Transfer type: ", transferType)
+	switch transferType {
+	case "fullbackup":
+		log.Info("Starting full backup data transfer")
+		log.Info("Creating new client bucket for data")
+		savesetFullPath, err := repository.CreateClientSaveset(header.From)
+		if err != nil {
+			log.Error("Failed during creation client saveset")
+			conn.Close()
+		}
+		log.Debugf("Using saveset with name: %s for this fullbackup", savesetFullPath)
+		fileInfo, err := dataproto.UnmarshalFileInfoHeader(conn)
+		if err != nil {
+			log.Error("Failed during read fileinfo header")
+			conn.Close()
+		}
+		log.Debugf("Received header %#v about file being transferd", fileInfo)
+		log.Info("Starting receiving file: ", fileInfo.Name)
+		err = receiveFile(fileInfo.Size, savesetFullPath, fileInfo.Name, conn)
+		if err != nil {
+			log.Errorf("File %s has not been properly received", fileInfo.Name)
+		}
+		log.Debug("Closing connection with client: ", conn.RemoteAddr())
+	}
+
+	defer conn.Close()
+}
+
+func receiveFile(fileSize int64, savesetFullPath, fileName string, connection net.Conn) error {
+	log.Debugf("Creating file: %s in saveset: %s", fileName, savesetFullPath)
+	fileUnderSavesetPath := path.Join(savesetFullPath, fileName)
+	log.Debug("File under saveset: ", fileUnderSavesetPath)
+	newFile, err := os.Create(fileUnderSavesetPath)
+	if err != nil {
+		log.Errorf("Cannot create file: %s in repository, error: %s", fileName, err.Error())
 	}
 	defer newFile.Close()
 	var receivedBytes int64
@@ -54,28 +90,5 @@ func ReceiveFile(fileSize int64, fileName string, connection net.Conn) {
 		receivedBytes += BUFFERSIZE
 	}
 	log.Debugf("File %s has been correctly received", fileName)
-}
-
-// GetFileSize gets file size from given buffer --> remember to send and receive data in proper order
-func GetFileSize(connection net.Conn) int64 {
-	bufferFileSize := make([]byte, 10)
-	_, err := connection.Read(bufferFileSize)
-	if err != nil {
-		log.Error("Cannot get file size through transfer, error: ", err.Error())
-	}
-	fileSize, _ := strconv.ParseInt(strings.Trim(string(bufferFileSize), ":"), 10, 64)
-	log.Debug("Received file with size: ", fileSize)
-	return fileSize
-}
-
-// GetFileName returns filename from given connection --> remember to send data and read
-func GetFileName(connection net.Conn) string {
-	bufferFileName := make([]byte, 64)
-	_, err := connection.Read(bufferFileName)
-	if err != nil {
-		log.Error("Cannot read file name, error: ", err.Error())
-	}
-	fileName := strings.Trim(string(bufferFileName), ":")
-	log.Debug("Receiving file name: ", fileName)
-	return fileName
+	return nil
 }

@@ -6,11 +6,12 @@ import (
 )
 
 type ClientConfig struct {
-	MgmtPort     string
-	LogOutput    string // STDOUT, FILE, SYSLOG
-	ExternalName string
-	Debug        bool
-	TempDir      string // Path to store temporary data
+	MgmtPort              string
+	LogOutput             string // STDOUT, FILE, SYSLOG
+	ExternalName          string
+	DataTransferInterface string
+	Debug                 bool
+	TempDir               string // Path to store temporary data
 }
 
 var (
@@ -30,13 +31,18 @@ func GetExternalName() string {
 	return ClntConfig.ExternalName
 }
 
+func GetDataTransferInterface() string {
+	return ClntConfig.DataTransferInterface
+}
+
 func fillConfigData() *ClientConfig {
 	return &ClientConfig{
-		MgmtPort:     MgmtPort,
-		LogOutput:    clntConfViper.GetString("main.LogOutput"),
-		Debug:        clntConfViper.GetBool("main.Debug"),
-		TempDir:      clntConfViper.GetString("main.TempDir"),
-		ExternalName: clntConfViper.GetString("main.ExternalName"),
+		MgmtPort:              MgmtPort,
+		LogOutput:             clntConfViper.GetString("main.LogOutput"),
+		Debug:                 clntConfViper.GetBool("main.Debug"),
+		TempDir:               clntConfViper.GetString("main.TempDir"),
+		ExternalName:          clntConfViper.GetString("main.ExternalName"),
+		DataTransferInterface: clntConfViper.GetString("main.DataTransferInterface"),
 	}
 }
 

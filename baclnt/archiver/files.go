@@ -1,8 +1,12 @@
+// +build linux darwin
+
 package archiver
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/common/dataproto"
 	"os"
+	"path"
 	"path/filepath"
 	"syscall"
 )
@@ -76,4 +80,19 @@ func GetTempAvailableSpace() int64 {
 	free := int64(fs.Bfree) * int64(fs.Bsize)
 	log.Debug("Available space in temporary directory: ", free)
 	return free
+}
+
+func ReadFileHeader(fileLocation string) (*dataproto.FileTransferInfo, error) {
+	var fileHeader dataproto.FileTransferInfo
+	info, err := os.Stat(fileLocation)
+	if err != nil {
+		log.Errorf("File %s does not exist", fileLocation)
+		return &fileHeader, err
+	}
+	fileHeader.Location = fileLocation
+	fileHeader.Mode = info.Mode()
+	fileHeader.Size = info.Size()
+	fileHeader.Name = path.Base(fileLocation)
+
+	return &fileHeader, nil
 }

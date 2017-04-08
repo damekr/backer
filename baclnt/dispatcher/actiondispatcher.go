@@ -17,7 +17,10 @@ func DispatchBackupStart(paths []string, serverAddress string) {
 	backupConfig := &transfer.BackupConfig{
 		Paths: paths,
 	}
-	transferConnection := transfer.InitConnection(serverAddress, DataPort)
+	transferConnection, err := transfer.InitConnectionWithServer(serverAddress, DataPort)
+	if err != nil {
+		log.Error(err.Error())
+	}
 	backupConfig.SendArchive(transferConnection, tarlocation)
 }
 
