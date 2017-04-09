@@ -9,8 +9,9 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/clientsconfig"
 	"github.com/damekr/backer/bacsrv/config"
-	// "github.com/damekr/backer/bacsrv/manager"
+	"github.com/damekr/backer/bacsrv/manager"
 	// "github.com/damekr/backer/bacsrv/operationshandler"
+	"github.com/damekr/backer/bacsrv/backupconfig"
 	"github.com/damekr/backer/bacsrv/inprotoapi"
 	"github.com/damekr/backer/bacsrv/repository"
 	"github.com/damekr/backer/bacsrv/restapi"
@@ -46,6 +47,7 @@ func mainLoop(srvConfig *config.ServerConfig) (string, error) {
 	startDataServer(srvConfig)
 	startProtoApi(srvConfig)
 	// startRestApi(srvConfig)
+	serverTest()
 	for {
 		select {
 		case killSignal := <-interrupt:
@@ -124,6 +126,13 @@ func initClientsBuckets() {
 	}
 }
 
+func serverTest() {
+	backup := &backupconfig.Backup{
+		Paths: []string{"/home/dixi/Keys", "/var/tmp"},
+	}
+	manager.StartBackup(backup, "127.0.0.1")
+}
+
 func main() {
 	log.Printf("COMMIT: %s", commit)
 	setFlags()
@@ -134,6 +143,7 @@ func main() {
 	initRepository()
 	initClientsBuckets()
 	mainLoop(srvConfig)
+
 	//fmt.Println("REPO", repo.Location)
 	//fmt.Printf("Repository status: %#v\n", repo.GetCapacityStatus())
 	//clientBucket := repository.CreateClient("minitx")

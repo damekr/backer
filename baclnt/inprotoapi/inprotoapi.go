@@ -11,9 +11,22 @@ import (
 	pb "github.com/damekr/backer/common/protoclnt"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 type server struct{}
+
+func (s *server) CheckPaths(ctx context.Context, in *pb.Paths) (*pb.Paths, error) {
+	log.Debug("Received a request to check paths")
+	requestedPaths := in.Path
+	log.Debug("Got paths to be checked: ", requestedPaths)
+	log.Debug("Starting checking paths it can take a while...")
+	validateFilesPaths := dispatcher.ValidatePaths(requestedPaths)
+	return &pb.Paths{
+		Name: config.GetExternalName(),
+		Path: validateFilesPaths,
+	}, nil
+}
 
 // SayHello returns hostname of client
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
@@ -21,30 +34,20 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 	return &pb.HelloReply{Name: config.GetExternalName()}, nil
 }
 
-func (s *server) TriggerBackup(stream pb.Baclnt_TriggerBackupServer) error {
-	log.Debug("Backup has been triggered")
-	var paths []string
-	var serverName string
-	for {
-		path, err := stream.Recv()
-		if path != nil {
-			log.Debugf("Received path to backup: %s, from server: %s", path.Path, path.Name)
-			paths = append(paths, path.Path)
-			// TODO It will be overrided on each iteration, should be improved, or each path will have name specification
-			serverName = path.Name
-		}
-		if err == io.EOF {
-			// TODO dispatcher shall be triggered in the same goroutine, the work inside should be in goroutines
-			go dispatcher.DispatchBackupStart(paths, serverName)
-			log.Debug("Recivied all paths, sending OK message to server...")
-			return stream.SendAndClose(&pb.Status{
-				Name:    config.GetExternalName(),
-				Message: "OK",
-			})
-		}
-
+func (s *server) TriggerBackup(ctx context.Context, in *pb.Paths) (*pb.Status, error) {
+	md, ok := metadata.FromContext(ctx)
+	log.Print("OK: ", ok)
+	log.Print("METADATA: ", md)
+	log.Debugf("Backup from %s has been triggered", in.Name)
+	log.Debugf("Got paths to be send: ", in.Path)
+	err := dispatcher.DispatchBackupStart(in.Path, in.Name)
+	if err != nil {
+		log.Error("An error occured during dispatching data transfer, error: ", err.Error())
 	}
-
+	return &pb.Status{
+		Name:    config.GetExternalName(),
+		Message: "ok",
+	}, nil
 }
 
 func (s *server) TriggerRestore(ctx context.Context, request *pb.TriggerRestoreMessage) (*pb.TriggerRestoreResponse, error) {
@@ -54,12 +57,12 @@ func (s *server) TriggerRestore(ctx context.Context, request *pb.TriggerRestoreM
 
 func (s *server) GetStatusPaths(stream pb.Baclnt_GetStatusPathsServer) error {
 	log.Debug("Starting checking paths")
-	var paths []string
+	// var paths []string
 	for {
 		path, err := stream.Recv()
 		if path != nil {
 			log.Debug("Received path to check: ", path.Path)
-			paths = append(paths, path.Path)
+			// paths = append(paths, path.Path)
 		}
 		if err == io.EOF {
 			log.Debug("Received all paths, checking locally paths..")
@@ -78,7 +81,7 @@ func (s *server) SendRestorePaths(pathsStream pb.Baclnt_SendRestorePathsServer) 
 		path, err := pathsStream.Recv()
 		if path != nil {
 			log.Debugf("Received path to be restored: %s", path.Path)
-			paths = append(paths, path.Path)
+			// paths = append(paths, path.Path)
 			//  TODO The same case as in backup, maybe consider sending to messages --> hello with authentication and then paths
 			serverAddress = path.Name
 		}

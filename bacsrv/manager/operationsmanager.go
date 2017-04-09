@@ -1,11 +1,10 @@
 package manager
 
 import (
-	"errors"
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/backupconfig"
 	"github.com/damekr/backer/bacsrv/clientsconfig"
-	"github.com/damekr/backer/bacsrv/operationshandler"
+
 	"github.com/damekr/backer/bacsrv/outprotoapi"
 )
 
@@ -18,6 +17,40 @@ func SendHelloMessageToClient(clntAddress string) (string, error) {
 	}
 	return clntHostname, nil
 
+}
+
+func preBackupChecks(paths []string, clntAddr string) ([]string, error) {
+	log.Debug("Starting executing prebackup checks...")
+	log.Debug("Checking if client repsponds")
+	hostname, err := SendHelloMessageToClient(clntAddr)
+	if err != nil {
+		log.Errorf("Client %s does not responds", clntAddr)
+		return nil, err
+	}
+	log.Debug("Client sent it's own hostname, and it is: ", hostname)
+	checkedPaths, err := outprotoapi.CheckPaths(clntAddr, paths)
+	if err != nil {
+		log.Error("An error ocurred during checking paths, error: ", err.Error())
+		return nil, err
+	}
+	return checkedPaths, nil
+}
+
+func StartBackup(backupConfig *backupconfig.Backup, clntAddr string) error {
+	log.Info("Starting backup of client: ", clntAddr)
+	validatedPaths, err := preBackupChecks(backupConfig.Paths, clntAddr)
+	if err != nil {
+		log.Error("Cannot validate paths on client side")
+		return err
+	}
+	log.Debugf("Got validated paths from client: %s starting backup...", validatedPaths)
+	err = outprotoapi.SendBackupRequest(validatedPaths, clntAddr)
+	if err != nil {
+		log.Error("Triggering backup failed!")
+		return err
+	}
+	log.Info("Backup has been triggered properly!")
+	return nil
 }
 
 // IntegrateClient creates client config and should add it to configuration file
@@ -41,48 +74,4 @@ func IntegrateClient(name string, address string, backupID string) error {
 // GetAllIntegratedClients simply fetching clients from clients configuration file, at least now and shows them
 func GetAllIntegratedClients() []clientsconfig.Client {
 	return clientsconfig.GetAllClients()
-}
-
-// SendBackupTriggerMessage sending a message to client with specific address and does not wait for status
-func SendBackupTriggerMessage(backupMessage *backupconfig.BackupTriggerMessage) (string, error) {
-	// TODO It sould have logic like if client is integrated
-	// TODO Should I send checking paths message before?
-	client := clientsconfig.GetClientInformation(backupMessage.ClientName)
-	if client.Name == "" {
-		return "", errors.New("Client does not exist")
-	}
-	err := outprotoapi.SendBackupRequest(backupMessage.BackupConfig.Paths, client.Address)
-	if err != nil {
-		return "", err
-	}
-	return "Clients is not added into clients config file", nil
-
-}
-
-func triggerRestore(restore *operationshandler.Restore, clientName string) error {
-
-	return nil
-}
-
-func SendRestoreTriggerMessage(restoreMessage *operationshandler.RestoreTriggerMessage) error {
-	// This function will get ready structure with appriopriate saveset from repository
-	// Consider make saveset as struct
-	// RPC --> checking space, etc
-	restoreMessage.RestoreConfig.SavesetSize = 120
-	log.Printf("Restore Struct: ", restoreMessage)
-	err := outprotoapi.SendRestoreRequest(restoreMessage.RestoreConfig.SavesetSize, true, restoreMessage.ClientName)
-	if err != nil {
-		log.Error("Sent restore trigger message failed")
-	}
-	// DataTransfer
-	return nil
-}
-
-func SendPathsToBeRestored(paths []string, clientAddr string) error {
-	log.Debugf("Sending paths to client %s to perform the restore", clientAddr)
-	err := outprotoapi.SendRestorePaths(paths, clientAddr)
-	if err != nil {
-		log.Error("Sent restore paths failed, error: ", err.Error())
-	}
-	return nil
 }

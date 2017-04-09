@@ -83,14 +83,7 @@ func setFlags() {
 }
 
 func testFunc(loc string) {
-	conn, err := transfer.InitConnectionWithServer("127.0.0.1", "8000")
-	if err != nil {
-		log.Error(err)
-	}
-	err = transfer.SendTransferTypeHeader("fullbackup", "foo", conn)
-	if err != nil {
-		log.Error(err)
-	}
+
 }
 
 func main() {
@@ -102,7 +95,7 @@ func main() {
 	archiver.CreateTempDir(clntConfig.TempDir)
 	clntConfig.ShowConfig()
 	log.Info("Starting baclnt application...")
-	testFunc(clntConfig.TempDir)
+	// testFunc(clntConfig.TempDir)
 	srv, err := mainLoop(clntConfig)
 	if err != nil {
 		log.Error("Cannot start client application, error: ", err.Error())

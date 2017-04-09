@@ -2,6 +2,7 @@ package dispatcher
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/baclnt/archiver"
 	"github.com/damekr/backer/baclnt/outprotoapi"
 )
 
@@ -13,4 +14,12 @@ func SendHelloMessageToServer(srvAddress string) error {
 	}
 	log.Debugf("Client %s is saying hello", out)
 	return nil
+}
+
+// ValidatePaths got paths and checks if they exist in the system, returns only available.
+func ValidatePaths(paths []string) []string {
+	log.Debug("Starting paths validation, received paths: ", paths)
+	validatedPaths := archiver.GetAbsolutePaths(paths)
+	log.Debug("Checked and resolved all files: ", validatedPaths)
+	return validatedPaths
 }

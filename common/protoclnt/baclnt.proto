@@ -6,11 +6,12 @@ package protoclnt;
 
 service Baclnt {
 
-  rpc TriggerBackup (stream Paths) returns (Status) {}
+  rpc TriggerBackup (Paths) returns (Status) {}
   rpc TriggerRestore (TriggerRestoreMessage) returns (TriggerRestoreResponse) {}
   rpc GetStatusPaths (stream Paths) returns (stream Info) {}
   rpc SayHello (HelloRequest) returns (HelloReply) {}
   rpc SendRestorePaths (stream Paths) returns (HelloReply) {}
+  rpc CheckPaths (Paths) returns (Paths) {}
 }
 
 
@@ -31,7 +32,7 @@ message HelloReply {
 // The request message containing the user's name.
 message Paths {
   string name = 1;
-  string path = 2;
+  repeated string path = 2;
 }
 
 // The response message containing the greetings

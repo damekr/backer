@@ -19,6 +19,9 @@ type FileInfo struct {
 	Exists bool
 }
 
+// GetAbsolutePaths makes actually two things resolve files in given paths and checks if exist.
+// TODO Refactor me :)
+// FIXME: If an element is empty fails
 func GetAbsolutePaths(paths []string) []string {
 	log.Debug("Checking absolutive paths for: ", paths)
 	fileList := []string{}

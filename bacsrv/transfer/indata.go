@@ -18,6 +18,7 @@ import (
 // BUFFERSIZE determines how big is piece of data that will be send in one frame
 const BUFFERSIZE = 1024
 
+// StartTransferServer setup listener on specified port
 func StartTransferServer(srvConfig *config.ServerConfig) {
 	lis, err := net.Listen("tcp", net.JoinHostPort(srvConfig.DataTransferInterface, srvConfig.DataPort))
 	if err != nil {
@@ -34,6 +35,7 @@ func StartTransferServer(srvConfig *config.ServerConfig) {
 	}
 }
 
+// FIXME: it receives only one file, needs to be fixed
 func dataTransferHandler(conn net.Conn) {
 	log.Debug("Handling data transfer from: ", conn.RemoteAddr())
 	header, err := dataproto.UnmarshalTransferHeader(conn)
@@ -67,7 +69,7 @@ func dataTransferHandler(conn net.Conn) {
 		log.Debug("Closing connection with client: ", conn.RemoteAddr())
 	}
 
-	defer conn.Close()
+	// defer conn.Close()
 }
 
 func receiveFile(fileSize int64, savesetFullPath, fileName string, connection net.Conn) error {

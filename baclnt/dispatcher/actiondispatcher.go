@@ -2,26 +2,21 @@ package dispatcher
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/baclnt/archiver"
 	"github.com/damekr/backer/baclnt/transfer"
 )
 
 // DataPort TODO shall be excluded to config file, or should be received from server during an integration
 const DataPort = "8000"
 
-func DispatchBackupStart(paths []string, serverAddress string) {
-	archive := archiver.NewArchive(paths)
-	tarlocation := archive.MakeArchive()
-	log.Debugf("An archive has been created at location %s", tarlocation)
+func DispatchBackupStart(paths []string, serverAddress string) error {
 	log.Debugf("Establishing connection with: %s, on port %s", serverAddress, DataPort)
-	backupConfig := &transfer.BackupConfig{
-		Paths: paths,
-	}
-	transferConnection, err := transfer.InitConnectionWithServer(serverAddress, DataPort)
+	err := transfer.SendFullBackupWithPaths(paths, serverAddress)
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("An error occured during sending backup files")
+		return err
 	}
-	backupConfig.SendArchive(transferConnection, tarlocation)
+	return nil
+
 }
 
 func DispatchRestoreStart(paths []string, serverAddress string) error {

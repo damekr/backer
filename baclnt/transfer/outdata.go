@@ -42,7 +42,33 @@ func InitConnectionWithServer(srvAddr, dataPort string) (net.Conn, error) {
 	return conn, nil
 }
 
-func SendTransferTypeHeader(ttype, from string, conn net.Conn) error {
+func SendFullBackupWithPaths(paths []string, srvAddr string) error {
+	conn, err := InitConnectionWithServer(srvAddr, "8000")
+	if err != nil {
+		log.Error(err)
+	}
+	defer conn.Close()
+	err = sendTransferTypeHeader("fullbackup", "foo", conn)
+	if err != nil {
+		log.Error(err)
+	}
+	for _, v := range paths {
+		log.Debug("Sending file: ", v)
+		err = sendFileHeader(conn, v)
+		if err != nil {
+			log.Errorf("An error occured during sending file: %s header, erorr: %s", v, err.Error())
+		}
+		err = sendFile(conn, v)
+		if err != nil {
+			log.Errorf("An error occured during sending file: %s, error: %s", v, err.Error())
+		}
+
+	}
+	return nil
+
+}
+
+func sendTransferTypeHeader(ttype, from string, conn net.Conn) error {
 	log.Debug("Sending transfer type to server")
 	transfer := &dataproto.Transfer{
 		TType: ttype,
@@ -53,8 +79,7 @@ func SendTransferTypeHeader(ttype, from string, conn net.Conn) error {
 		log.Error("Encoding transfer header failes")
 		return err
 	}
-	_ = sendFileHeader(conn, "/var/tmp/ala")
-	_ = sendFile(conn, "/var/tmp/ala")
+
 	return nil
 }
 

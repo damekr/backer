@@ -9,23 +9,38 @@ import (
 	pb "github.com/damekr/backer/common/protoclnt"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+	"net"
+	"time"
 )
 
 // TODO - GENERAL - Should be considered if main messages functions should get specific STRUCTs Like BackupMessageConfig
 
 const (
-	clntMgmtPort = ":9090"
+	clntMgmtPort    = "9090"
+	timestampFormat = time.StampNano
 )
 
-func SayHelloToClient(address string) (string, error) {
-	conn, err := grpc.Dial(address+clntMgmtPort, grpc.WithInsecure())
+func establishConnection(clntAddr string) (*grpc.ClientConn, error) {
+	log.Debug("Establishing grpc connection with: ", clntAddr)
+	conn, err := grpc.Dial(net.JoinHostPort(clntAddr, clntMgmtPort), grpc.WithInsecure())
 	if err != nil {
-		log.Warningf("Cannot connect to address %s", address)
+		log.Error("Cannot establish connection with client: ", clntAddr)
+		return nil, err
+	}
+	log.Debug("Successfully established grpc connection with client: ", clntAddr)
+
+	return conn, nil
+}
+
+func SayHelloToClient(clntAddress string) (string, error) {
+	conn, err := establishConnection(clntAddress)
+	if err != nil {
+		log.Warningf("Cannot connect to address %s", clntAddress)
 		return "", err
 	}
 	defer conn.Close()
 	c := pb.NewBaclntClient(conn)
-	//Contact the server and print out its response.
 	r, err := c.SayHello(context.Background(), &pb.HelloRequest{Name: config.GetExternalName()})
 	if err != nil {
 		log.Warningf("Could not get client name: %v", err)
@@ -33,6 +48,50 @@ func SayHelloToClient(address string) (string, error) {
 	}
 	log.Debugf("Received client name: %s", r.Name)
 	return r.Name, nil
+}
+
+func CheckPaths(clntAddr string, paths []string) ([]string, error) {
+	log.Debug("Starting checking paths on client: ", clntAddr)
+	md := metadata.Pairs("ServerExternalName", config.GetExternalName())
+	ctx := metadata.NewContext(context.Background(), md)
+	conn, err := establishConnection(clntAddr)
+	if err != nil {
+		log.Error("Cannot connect to client: ", clntAddr)
+	}
+	defer conn.Close()
+	con := pb.NewBaclntClient(conn)
+	availableFiles, err := con.CheckPaths(ctx, makePbPaths(paths))
+	if err != nil {
+		log.Error("Cannot check paths, got error: ", err.Error())
+		return nil, err
+	}
+	log.Debug("Client respond with his name: ", availableFiles.Name)
+	log.Debug("Got validated, resolved paths of requested files: ", availableFiles.Path)
+	return availableFiles.Path, nil
+}
+
+// SendBackupRequest creates connection to client with specified address and trigger a backup
+func SendBackupRequest(paths []string, clntAddress string) error {
+	log.Debug("Starting backup on client: ", clntAddress)
+	md := metadata.Pairs("ServerExternalName", config.GetExternalName())
+	ctx := metadata.NewContext(context.Background(), md)
+	conn, err := establishConnection(clntAddress)
+	if err != nil {
+		log.Warningf("Cannot connect to address %s", clntAddress)
+		return err
+	}
+	defer conn.Close()
+	c := pb.NewBaclntClient(conn)
+	status, err := c.TriggerBackup(ctx, &pb.Paths{
+		Name: config.GetExternalName(),
+		Path: paths,
+	})
+	if err != nil {
+		log.Error("Couldn't send trigger backup message")
+		return err
+	}
+	log.Debugf("Got status message: %#v from client: %s", status, clntAddress)
+	return nil
 }
 
 func triggerCheckingPaths(client pb.BaclntClient, paths []*pb.Paths) {
@@ -54,64 +113,23 @@ func triggerCheckingPaths(client pb.BaclntClient, paths []*pb.Paths) {
 
 }
 
-func CheckIfPathsExists(paths []string, clientaddr string) {
-	address := clientaddr + clntMgmtPort
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		log.Warnf("Cannot connect to client: %s", err)
-	}
-	defer conn.Close()
-	c := pb.NewBaclntClient(conn)
-	pbpaths := preparePaths(paths)
-	log.Debug(c, pbpaths)
-}
+// func CheckIfPathsExists(paths []string, clientaddr string) {
+// 	address := clientaddr + clntMgmtPort
+// 	conn, err := grpc.Dial(address, grpc.WithInsecure())
+// 	if err != nil {
+// 		log.Warnf("Cannot connect to client: %s", err)
+// 	}
+// 	defer conn.Close()
+// 	c := pb.NewBaclntClient(conn)
+// 	pbpaths := preparePaths(paths)
+// 	log.Debug(c, pbpaths)
+// }
 
-func makePbPaths(path string) *pb.Paths {
+func makePbPaths(path []string) *pb.Paths {
 	return &pb.Paths{
 		Name: config.GetExternalName(),
 		Path: path,
 	}
-}
-
-func preparePaths(paths []string) []*pb.Paths {
-	var pbpaths []*pb.Paths
-	for _, l := range paths {
-		pbpaths = append(pbpaths, makePbPaths(l))
-	}
-	return pbpaths
-}
-
-func triggerBackup(client pb.BaclntClient, paths []*pb.Paths) {
-	stream, err := client.TriggerBackup(context.Background())
-	if err != nil {
-		log.Errorf("Could not greet: %v", err)
-	}
-	for _, path := range paths {
-		if err := stream.Send(path); err != nil {
-			log.Errorf("Error %v", err)
-		}
-	}
-	reply, err := stream.CloseAndRecv()
-	if err != nil {
-		log.Errorf("An error occured: %v", err)
-	}
-	log.Debugf("Route summary: %v", reply)
-}
-
-// SendBackupRequest creates connection to client with specified address and trigger a backup
-func SendBackupRequest(paths []string, clntAddress string) error {
-	address := clntAddress + clntMgmtPort
-	log.Debug("Sending backup request to client: ", address)
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		log.Errorf("Could not connect to client: %s", address)
-		return err
-	}
-	defer conn.Close()
-	c := pb.NewBaclntClient(conn)
-	pbpaths := preparePaths(paths)
-	triggerBackup(c, pbpaths)
-	return nil
 }
 
 func prepareRestoreTriggerMessage(reqcapacity int64, startlistener bool) *pb.TriggerRestoreMessage {
@@ -181,20 +199,20 @@ func sendGrpcPathsToClient(clnt pb.BaclntClient, paths []*pb.Paths) error {
 	return nil
 }
 
-func SendRestorePaths(paths []string, clientAddr string) error {
-	log.Debugf("Sending paths %s to be restored to client %s", paths, clientAddr)
-	address := clientAddr + clntMgmtPort
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		log.Errorf("Could not establish connection with client: ", address)
-		return err
-	}
-	grpcPaths := preparePaths(paths)
-	clnt := pb.NewBaclntClient(conn)
-	err = sendGrpcPathsToClient(clnt, grpcPaths)
-	if err != nil {
-		log.Errorf("Error occured during sending paths to be restored, error content: ", err)
-		return err
-	}
-	return nil
-}
+// func SendRestorePaths(paths []string, clientAddr string) error {
+// 	log.Debugf("Sending paths %s to be restored to client %s", paths, clientAddr)
+// 	address := clientAddr + clntMgmtPort
+// 	conn, err := grpc.Dial(address, grpc.WithInsecure())
+// 	if err != nil {
+// 		log.Errorf("Could not establish connection with client: ", address)
+// 		return err
+// 	}
+// 	grpcPaths := preparePaths(paths)
+// 	clnt := pb.NewBaclntClient(conn)
+// 	err = sendGrpcPathsToClient(clnt, grpcPaths)
+// 	if err != nil {
+// 		log.Errorf("Error occured during sending paths to be restored, error content: ", err)
+// 		return err
+// 	}
+// 	return nil
+// }
