@@ -5,8 +5,10 @@ import (
 	"net"
 	"os"
 	// "strconv"
-	// "strings"
+	"errors"
 
+	"crypto/md5"
+	"encoding/hex"
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/repository"
@@ -35,7 +37,6 @@ func StartTransferServer(srvConfig *config.ServerConfig) {
 	}
 }
 
-// FIXME: it receives only one file, needs to be fixed
 func dataTransferHandler(conn net.Conn) {
 	log.Debug("Handling data transfer from: ", conn.RemoteAddr())
 	header, err := dataproto.UnmarshalTransferHeader(conn)
@@ -54,25 +55,54 @@ func dataTransferHandler(conn net.Conn) {
 			log.Error("Failed during creation client saveset")
 			conn.Close()
 		}
-		log.Debugf("Using saveset with name: %s for this fullbackup", savesetFullPath)
-		fileInfo, err := dataproto.UnmarshalFileInfoHeader(conn)
-		if err != nil {
-			log.Error("Failed during read fileinfo header")
-			conn.Close()
-		}
-		log.Debugf("Received header %#v about file being transferd", fileInfo)
-		log.Info("Starting receiving file: ", fileInfo.Name)
-		err = receiveFile(fileInfo.Size, savesetFullPath, fileInfo.Name, conn)
-		if err != nil {
-			log.Errorf("File %s has not been properly received", fileInfo.Name)
-		}
+		receiveFiles(conn, savesetFullPath)
 		log.Debug("Closing connection with client: ", conn.RemoteAddr())
 	}
 
 	// defer conn.Close()
 }
 
-func receiveFile(fileSize int64, savesetFullPath, fileName string, connection net.Conn) error {
+func receiveFiles(conn net.Conn, savesetFullPath string) {
+	log.Debugf("Using saveset with name: %s for this fullbackup", savesetFullPath)
+	for {
+		fileInfo, err := dataproto.UnmarshalFileInfoHeader(conn)
+		if err == io.EOF {
+			log.Debug("Received last file, stopping transfer")
+			break
+			// TODO - handle random errors, repeate file transfer?
+		}
+		log.Debugf("Received header %#v about file being transferd", fileInfo)
+		log.Info("Starting receiving file: ", fileInfo.Name)
+		err = receiveFile(fileInfo.Size, savesetFullPath, fileInfo.Name, fileInfo.Checksum, conn)
+		if err != nil {
+			log.Error("Received error: ", err.Error())
+			log.Errorf("File %s has not been properly received", fileInfo.Name)
+		}
+
+	}
+}
+
+func checkFileChecksum(fileLocation, checksum string) error {
+	log.Debugf("Checking received %s file checksum", checksum)
+	file, err := os.Open(fileLocation)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return err
+	}
+	hashInBytes := hash.Sum(nil)[:16]
+	returnMD5String := hex.EncodeToString(hashInBytes)
+	if returnMD5String != checksum {
+		log.Errorf("Calculation of checksum failed - was: %s is: %s", checksum, returnMD5String)
+	}
+	log.Debugf("Calculation of checksum of file: %s passsed", file.Name())
+	return nil
+}
+
+func receiveFile(fileSize int64, savesetFullPath, fileName, checksum string, connection net.Conn) error {
 	log.Debugf("Creating file: %s in saveset: %s", fileName, savesetFullPath)
 	fileUnderSavesetPath := path.Join(savesetFullPath, fileName)
 	log.Debug("File under saveset: ", fileUnderSavesetPath)
@@ -90,6 +120,10 @@ func receiveFile(fileSize int64, savesetFullPath, fileName string, connection ne
 		}
 		io.CopyN(newFile, connection, BUFFERSIZE)
 		receivedBytes += BUFFERSIZE
+	}
+	if checkFileChecksum(fileUnderSavesetPath, checksum) != nil {
+		log.Error("File does not match checksum")
+		return errors.New("Checksum does not match")
 	}
 	log.Debugf("File %s has been correctly received", fileName)
 	return nil

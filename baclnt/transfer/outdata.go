@@ -43,6 +43,7 @@ func InitConnectionWithServer(srvAddr, dataPort string) (net.Conn, error) {
 }
 
 func SendFullBackupWithPaths(paths []string, srvAddr string) error {
+	delimiter := make([]byte, 1)
 	conn, err := InitConnectionWithServer(srvAddr, "8000")
 	if err != nil {
 		log.Error(err)
@@ -58,12 +59,17 @@ func SendFullBackupWithPaths(paths []string, srvAddr string) error {
 		if err != nil {
 			log.Errorf("An error occured during sending file: %s header, erorr: %s", v, err.Error())
 		}
+		d, err := conn.Read(delimiter)
+		if err != nil {
+			log.Debug("Correct read delimiter, starting data transfer")
+		}
+		log.Debug("Read delimiter size: ", d)
 		err = sendFile(conn, v)
 		if err != nil {
 			log.Errorf("An error occured during sending file: %s, error: %s", v, err.Error())
 		}
-
 	}
+	log.Info("Closing file transfer connection")
 	return nil
 
 }

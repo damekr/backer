@@ -83,7 +83,8 @@ func setFlags() {
 }
 
 func testFunc(loc string) {
-
+	delimiter := []byte("\n")
+	log.Println(len(delimiter))
 }
 
 func main() {

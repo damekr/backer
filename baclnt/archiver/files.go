@@ -3,8 +3,11 @@
 package archiver
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/common/dataproto"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -18,6 +21,8 @@ type FileInfo struct {
 	Size   int64
 	Exists bool
 }
+
+// TODO: GENERAL: Proper handling files privilages.
 
 // GetAbsolutePaths makes actually two things resolve files in given paths and checks if exist.
 // TODO Refactor me :)
@@ -85,6 +90,22 @@ func GetTempAvailableSpace() int64 {
 	return free
 }
 
+func calculateMD5Sum(fileLocation string) (string, error) {
+	log.Debugf("Calculating file %s md5 checksum", fileLocation)
+	file, err := os.Open(fileLocation)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+	hashInBytes := hash.Sum(nil)[:16]
+	returnMD5String := hex.EncodeToString(hashInBytes)
+	return returnMD5String, nil
+}
+
 func ReadFileHeader(fileLocation string) (*dataproto.FileTransferInfo, error) {
 	var fileHeader dataproto.FileTransferInfo
 	info, err := os.Stat(fileLocation)
@@ -92,10 +113,15 @@ func ReadFileHeader(fileLocation string) (*dataproto.FileTransferInfo, error) {
 		log.Errorf("File %s does not exist", fileLocation)
 		return &fileHeader, err
 	}
+	checksum, err := calculateMD5Sum(fileLocation)
+	if err != nil {
+		log.Error("Was not able to calculate checksum, setting 0")
+		checksum = "0"
+	}
+	fileHeader.Checksum = checksum
 	fileHeader.Location = fileLocation
 	fileHeader.Mode = info.Mode()
 	fileHeader.Size = info.Size()
 	fileHeader.Name = path.Base(fileLocation)
-
 	return &fileHeader, nil
 }

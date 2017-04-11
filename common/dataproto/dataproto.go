@@ -3,6 +3,7 @@ package dataproto
 import (
 	"encoding/gob"
 	log "github.com/Sirupsen/logrus"
+	"io"
 	"net"
 	"os"
 )
@@ -24,6 +25,7 @@ type FileTransferInfo struct {
 	UID      int
 	GID      int
 	Mode     os.FileMode
+	Checksum string
 }
 
 // SendDataTypeHeader encoding data to be send over socket as first chunk of data
@@ -69,9 +71,18 @@ func UnmarshalFileInfoHeader(conn net.Conn) (*FileTransferInfo, error) {
 	var fileInfo FileTransferInfo
 	dec := gob.NewDecoder(conn)
 	err := dec.Decode(&fileInfo)
-	if err != nil {
+	switch {
+	case err == io.EOF:
+		return &fileInfo, err
+
+	case err != nil:
 		log.Error("Cannot decode file info header, error: ", err.Error())
 		return &fileInfo, err
 	}
+	s, err := conn.Write([]byte("\n"))
+	if err != nil {
+		log.Error("ERORR: ", err.Error())
+	}
+	log.Debug("Responded: ", s)
 	return &fileInfo, nil
 }
