@@ -82,7 +82,7 @@ func sendTransferTypeHeader(ttype, from string, conn net.Conn) error {
 	}
 	err := dataproto.SendDataTypeHeader(transfer, conn)
 	if err != nil {
-		log.Error("Encoding transfer header failes")
+		log.Error("Encoding transfer header failed")
 		return err
 	}
 

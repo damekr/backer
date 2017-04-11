@@ -55,7 +55,7 @@ func UnmarshalTransferHeader(conn net.Conn) (*Transfer, error) {
 
 // SendFileInfoHeader sends each time before file trsansfer information about file being transfered
 func SendFileInfoHeader(fileInfo *FileTransferInfo, conn net.Conn) error {
-	log.Debugf("Sending file %s info", fileInfo.Name)
+	log.Debugf("Sending file header:  %#v", fileInfo)
 	enc := gob.NewEncoder(conn)
 	err := enc.Encode(fileInfo)
 	if err != nil {

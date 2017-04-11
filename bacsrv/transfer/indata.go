@@ -73,7 +73,7 @@ func receiveFiles(conn net.Conn, savesetFullPath string) {
 		}
 		log.Debugf("Received header %#v about file being transferd", fileInfo)
 		log.Info("Starting receiving file: ", fileInfo.Name)
-		err = receiveFile(fileInfo.Size, savesetFullPath, fileInfo.Name, fileInfo.Checksum, conn)
+		err = receiveFile(fileInfo.Size, savesetFullPath, fileInfo.Name, fileInfo.Location, fileInfo.Checksum, conn)
 		if err != nil {
 			log.Error("Received error: ", err.Error())
 			log.Errorf("File %s has not been properly received", fileInfo.Name)
@@ -102,9 +102,15 @@ func checkFileChecksum(fileLocation, checksum string) error {
 	return nil
 }
 
-func receiveFile(fileSize int64, savesetFullPath, fileName, checksum string, connection net.Conn) error {
+func receiveFile(fileSize int64, savesetFullPath, fileName, fileLocation, checksum string, connection net.Conn) error {
 	log.Debugf("Creating file: %s in saveset: %s", fileName, savesetFullPath)
-	fileUnderSavesetPath := path.Join(savesetFullPath, fileName)
+	log.Debug("Creating proper path under saveset: ", fileLocation)
+	err := os.MkdirAll(path.Join(savesetFullPath, fileLocation), 0700)
+	if err != nil {
+		log.Error("Couldn't create proper file path under saveset")
+		return err
+	}
+	fileUnderSavesetPath := path.Join(savesetFullPath, fileLocation, fileName)
 	log.Debug("File under saveset: ", fileUnderSavesetPath)
 	newFile, err := os.Create(fileUnderSavesetPath)
 	if err != nil {

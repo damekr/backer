@@ -128,7 +128,7 @@ func initClientsBuckets() {
 
 func serverTest() {
 	backup := &backupconfig.Backup{
-		Paths: []string{"/home/dixi"},
+		Paths: []string{"/home/dixi/dev"},
 	}
 	manager.StartBackup(backup, "127.0.0.1")
 }
