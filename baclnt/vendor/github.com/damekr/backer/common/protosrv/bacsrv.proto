@@ -1,0 +1,23 @@
+
+syntax = "proto3";
+
+
+package protosrv;
+
+service Bacsrv {
+
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
+
+}
+
+
+// The request message contains a hostname of requester
+message HelloRequest {
+  string name = 1;
+}
+
+// The response for hello contains a hostname of replayer
+message HelloReply {
+  string name = 1;
+}
+
