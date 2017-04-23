@@ -1,6 +1,6 @@
 // +build linux darwin
 
-package archiver
+package backup
 
 import (
 	"crypto/md5"
@@ -11,10 +11,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"syscall"
 )
 
-var TempDir string
+var AbsoluteFilesPaths []string
 
 type FileInfo struct {
 	Path   string
@@ -22,29 +21,44 @@ type FileInfo struct {
 	Exists bool
 }
 
+func checkPathForRegularFile(path string, f os.FileInfo, err error) error {
+	if f.Mode().IsRegular() {
+		log.Debugf("Adding file %s to list", path)
+		AbsoluteFilesPaths = append(AbsoluteFilesPaths, path)
+	} else {
+		log.Debug("Found not regular file: ", path)
+	}
+	return nil
+}
+
 // TODO: GENERAL: Proper handling files privilages.
 
 // GetAbsolutePaths makes actually two things resolve files in given paths and checks if exist.
 // TODO Refactor me :)
-// FIXME: If an element is empty fails
 func GetAbsolutePaths(paths []string) []string {
 	log.Debug("Checking absolutive paths for: ", paths)
-	fileList := []string{}
-	for i := range paths {
-		err := filepath.Walk(paths[i], func(path string, f os.FileInfo, err error) error {
-			if f.Mode().IsRegular() {
-				log.Debugf("Adding file %s to list", path)
-				fileList = append(fileList, path)
-			} else {
-				log.Debug("Found not regular file: ", path)
-			}
-			return nil
-		})
+	validatedPaths := ValidatePaths(paths)
+	for i := range validatedPaths {
+		err := filepath.Walk(validatedPaths[i], checkPathForRegularFile)
 		if err != nil {
 			log.Error(err)
 		}
 	}
-	return fileList
+	return AbsoluteFilesPaths
+}
+
+func ValidatePaths(paths []string) []string {
+	validatedPaths := []string{}
+	for _, path := range paths {
+		log.Printf("Checking path %s", path)
+		_, err := os.Stat(path)
+		if err != nil {
+			log.Printf("Path %s does not exist\n", path)
+		} else {
+			validatedPaths = append(validatedPaths, path)
+		}
+	}
+	return validatedPaths
 }
 
 func GetFilesInformations(paths []string) []FileInfo {
@@ -68,27 +82,27 @@ func GetFilesInformations(paths []string) []FileInfo {
 	return filesInfo
 }
 
-func CreateTempDir(location string) {
-	log.Debugf("Creating temporary catalouge to store temp data in: %s", location)
-	err := os.MkdirAll(location, 0700)
-	if err != nil {
-		log.Errorf("Cannot create temporary catalogue for storing data, exiting...")
-		os.Exit(5)
-	}
-	TempDir = location
-}
+// func CreateTempDir(location string) {
+// 	log.Debugf("Creating temporary catalouge to store temp data in: %s", location)
+// 	err := os.MkdirAll(location, 0700)
+// 	if err != nil {
+// 		log.Errorf("Cannot create temporary catalogue for storing data, exiting...")
+// 		os.Exit(5)
+// 	}
+// 	TempDir = location
+// }
 
-func GetTempAvailableSpace() int64 {
-	log.Debug("Checking if temporary directory has enough space for restore")
-	fs := syscall.Statfs_t{}
-	err := syscall.Statfs(TempDir, &fs)
-	if err != nil {
-		log.Error("Cannot check file system capacity")
-	}
-	free := int64(fs.Bfree) * int64(fs.Bsize)
-	log.Debug("Available space in temporary directory: ", free)
-	return free
-}
+// func GetTempAvailableSpace() int64 {
+// 	log.Debug("Checking if temporary directory has enough space for restore")
+// 	fs := syscall.Statfs_t{}
+// 	err := syscall.Statfs(TempDir, &fs)
+// 	if err != nil {
+// 		log.Error("Cannot check file system capacity")
+// 	}
+// 	free := int64(fs.Bfree) * int64(fs.Bsize)
+// 	log.Debug("Available space in temporary directory: ", free)
+// 	return free
+// }
 
 func calculateMD5Sum(fileLocation string) (string, error) {
 	log.Debugf("Calculating file %s md5 checksum", fileLocation)

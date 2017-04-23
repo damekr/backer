@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/baclnt/archiver"
+	"github.com/damekr/backer/baclnt/backup"
 	"github.com/damekr/backer/baclnt/config"
 	"github.com/damekr/backer/common/dataproto"
 	"path"
@@ -91,7 +91,7 @@ func sendTransferTypeHeader(ttype, from string, conn net.Conn) error {
 
 func sendFileHeader(conn net.Conn, fileLocation string) error {
 	log.Debug("Sending file info header")
-	fileHeader, err := archiver.ReadFileHeader(fileLocation)
+	fileHeader, err := backup.ReadFileHeader(fileLocation)
 	if err != nil {
 		log.Error("File does not exist")
 		return err
@@ -107,7 +107,11 @@ func sendFileHeader(conn net.Conn, fileLocation string) error {
 func sendFile(conn net.Conn, fileLocation string) error {
 	log.Debug("Sending file ", path.Base(fileLocation))
 	sendBuffer := make([]byte, BUFFERSIZE)
-	file := openFile(fileLocation)
+	file, err := openFile(fileLocation)
+	if err != nil {
+		log.Errorf("Couldn't read file %s, skipping", fileLocation)
+		return nil
+	}
 	defer file.Close()
 	for {
 		_, err := file.Read(sendBuffer)
@@ -120,14 +124,17 @@ func sendFile(conn net.Conn, fileLocation string) error {
 	return nil
 }
 
-func openFile(fileLocation string) *os.File {
+func openFile(fileLocation string) (*os.File, error) {
 	// TODO Check if file exists
 	file, err := os.Open(fileLocation)
 	if err != nil {
 		log.Error(err.Error())
+		return nil, err
 	}
-	return file
+	return file, nil
 }
+
+// OLD PART
 
 // SendArchive sends created archive to the server
 func (b *BackupConfig) SendArchive(transferConn net.Conn, archiveLocation string) {
@@ -158,7 +165,7 @@ func (b *BackupConfig) SendArchive(transferConn net.Conn, archiveLocation string
 	defer transferConn.Close()
 	// Sending archive
 	sendBuffer := make([]byte, BUFFERSIZE)
-	file := openFile(archiveLocation)
+	file, _ := openFile(archiveLocation)
 	defer file.Close()
 	for {
 		_, err := file.Read(sendBuffer)
