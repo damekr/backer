@@ -102,15 +102,16 @@ func checkFileChecksum(fileLocation, checksum string) error {
 	return nil
 }
 
-func receiveFile(fileSize int64, savesetFullPath, fileName, fileLocation, checksum string, connection net.Conn) error {
+func receiveFile(fileSize int64, savesetFullPath, fileName, fileFullLocation, checksum string, connection net.Conn) error {
 	log.Debugf("Creating file: %s in saveset: %s", fileName, savesetFullPath)
-	log.Debug("Creating proper path under saveset: ", fileLocation)
-	err := os.MkdirAll(path.Join(savesetFullPath, fileLocation), 0700)
+	fileDir, _ := path.Split(fileFullLocation)
+	log.Debug("Creating proper path under saveset: ", fileDir)
+	err := os.MkdirAll(path.Join(savesetFullPath, fileDir), 0700)
 	if err != nil {
 		log.Error("Couldn't create proper file path under saveset")
 		return err
 	}
-	fileUnderSavesetPath := path.Join(savesetFullPath, fileLocation, fileName)
+	fileUnderSavesetPath := path.Join(savesetFullPath, fileFullLocation)
 	log.Debug("File under saveset: ", fileUnderSavesetPath)
 	newFile, err := os.Create(fileUnderSavesetPath)
 	if err != nil {
@@ -120,6 +121,10 @@ func receiveFile(fileSize int64, savesetFullPath, fileName, fileLocation, checks
 	var receivedBytes int64
 	for {
 		if (fileSize - receivedBytes) < BUFFERSIZE {
+			if fileSize == 0 {
+				// Fast fix for empty files
+				break
+			}
 			io.CopyN(newFile, connection, (fileSize - receivedBytes))
 			connection.Read(make([]byte, (receivedBytes+BUFFERSIZE)-fileSize))
 			break

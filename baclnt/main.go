@@ -7,7 +7,7 @@ import (
 	"syscall"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/baclnt/archiver"
+	"github.com/damekr/backer/baclnt/backup"
 	"github.com/damekr/backer/baclnt/config"
 	// "github.com/damekr/backer/baclnt/dispatcher"
 	"github.com/damekr/backer/baclnt/inprotoapi"
@@ -83,8 +83,9 @@ func setFlags() {
 }
 
 func testFunc(loc string) {
-	delimiter := []byte("\n")
-	log.Println(len(delimiter))
+
+	paths := backup.GetAbsolutePaths([]string{"/tmp"})
+	log.Println(paths)
 }
 
 func main() {
@@ -93,7 +94,6 @@ func main() {
 	clntConfig := config.ReadConfigFile(*configFlag)
 	setLogger(clntConfig)
 	transfer.Config = clntConfig
-	archiver.CreateTempDir(clntConfig.TempDir)
 	clntConfig.ShowConfig()
 	log.Info("Starting baclnt application...")
 	// testFunc(clntConfig.TempDir)
