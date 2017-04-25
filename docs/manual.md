@@ -139,13 +139,13 @@ Feature component FC_4 requires to provide an interface for an administrator whe
 
 ### 5.1.2. Repository part
 | Configuration key name  |  Type of data   |  Default Value  |  Remark  |
-|---|---|---|---|---|
+|---|---|---|---|
 | Localization | path |   | required |
 
 
 ### 5.1.3. Clients part
 | Configuration key name  |  Type of data   |  Default Value  |  Remark  |
-|---|---|---|---|---|
+|---|---|---|---|
 | ConfigFile | path | /etc/backer/backer.d/clients/ |
 
 ### 5.1.4. Example
@@ -169,4 +169,4 @@ ConfigFile = "/mnt/c/Users/Damian Rajca/dev/go/src/github.com/damekr/backer/conf
 
 ## 5.2. Jobs config file
 | Configuration key name  |  Type of data   |  Default Value  |  Remark  |
-|---|---|---|---|---|
+|---|---|---|---|
