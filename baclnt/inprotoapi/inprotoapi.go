@@ -97,13 +97,14 @@ func (s *server) SendRestorePaths(pathsStream pb.Baclnt_SendRestorePathsServer) 
 }
 
 // ServeServer method starts a grpc server on specific port
-func ServeServer(config *config.ClientConfig) {
-	lis, err := net.Listen("tcp", ":"+config.MgmtPort)
+func ServeServer() {
+	lis, err := net.Listen("tcp", ":"+config.GetClientMgmtPort())
 	log.Info("Starting baclnt protoapi on addr: ", lis.Addr())
 	if err != nil {
 		log.Errorf("Failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
+	log.Printf("From serve: %s", config.GetServerMgmtPort())
 	pb.RegisterBaclntServer(s, &server{})
 	s.Serve(lis)
 }

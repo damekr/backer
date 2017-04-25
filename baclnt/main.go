@@ -11,7 +11,6 @@ import (
 	"github.com/damekr/backer/baclnt/config"
 	// "github.com/damekr/backer/baclnt/dispatcher"
 	"github.com/damekr/backer/baclnt/inprotoapi"
-	"github.com/damekr/backer/baclnt/transfer"
 )
 
 var configFlag = flag.String("config", "", "Configuration file")
@@ -21,25 +20,25 @@ func init() {
 	flag.StringVar(configFlag, "c", "", "Configuration file")
 }
 
-func setLogger(clntConfig *config.ClientConfig) {
+func setLogger() {
 	log.SetFormatter(&log.TextFormatter{})
-	switch clntConfig.LogOutput {
+	switch config.ClntConfig.LogOutput {
 
 	case "STDOUT":
 		log.SetOutput(os.Stdout)
 	case "SYSLOG":
 		//TODO
 	}
-	if clntConfig.Debug {
+	if config.ClntConfig.Debug {
 		log.SetLevel(log.DebugLevel)
 	}
 }
 
-func mainLoop(clntConfig *config.ClientConfig) (string, error) {
+func mainLoop() (string, error) {
 	log.Debug("Entering into main loop...")
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
-	startProtoAPI(clntConfig)
+	startProtoAPI()
 	for {
 		select {
 		case killSignal := <-interrupt:
@@ -53,8 +52,8 @@ func mainLoop(clntConfig *config.ClientConfig) (string, error) {
 	}
 }
 
-func startProtoAPI(config *config.ClientConfig) {
-	go inprotoapi.ServeServer(config)
+func startProtoAPI() {
+	go inprotoapi.ServeServer()
 }
 
 func checkConfigFile(configPath string) error {
@@ -91,12 +90,12 @@ func testFunc(loc string) {
 func main() {
 	setFlags()
 	log.Debugf("COMMIT: %s", commit)
-	clntConfig := config.ReadConfigFile(*configFlag)
-	setLogger(clntConfig)
-	transfer.Config = clntConfig
-	clntConfig.ShowConfig()
+	config.ReadInConfigFile(*configFlag)
+	setLogger()
+	config.ClntConfig.ShowConfig()
+	log.Print(config.GetServerConfig())
 	log.Info("Starting baclnt application...")
-	srv, err := mainLoop(clntConfig)
+	srv, err := mainLoop()
 	if err != nil {
 		log.Error("Cannot start client application, error: ", err.Error())
 		os.Exit(1)

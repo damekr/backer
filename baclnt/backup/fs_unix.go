@@ -82,27 +82,6 @@ func GetFilesInformations(paths []string) []FileInfo {
 	return filesInfo
 }
 
-// func CreateTempDir(location string) {
-// 	log.Debugf("Creating temporary catalouge to store temp data in: %s", location)
-// 	err := os.MkdirAll(location, 0700)
-// 	if err != nil {
-// 		log.Errorf("Cannot create temporary catalogue for storing data, exiting...")
-// 		os.Exit(5)
-// 	}
-// 	TempDir = location
-// }
-
-// func GetTempAvailableSpace() int64 {
-// 	log.Debug("Checking if temporary directory has enough space for restore")
-// 	fs := syscall.Statfs_t{}
-// 	err := syscall.Statfs(TempDir, &fs)
-// 	if err != nil {
-// 		log.Error("Cannot check file system capacity")
-// 	}
-// 	free := int64(fs.Bfree) * int64(fs.Bsize)
-// 	log.Debug("Available space in temporary directory: ", free)
-// 	return free
-// }
 
 func calculateMD5Sum(fileLocation string) (string, error) {
 	log.Debugf("Calculating file %s md5 checksum", fileLocation)

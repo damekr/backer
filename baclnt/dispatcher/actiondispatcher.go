@@ -10,7 +10,7 @@ const DataPort = "8000"
 
 func DispatchBackupStart(paths []string, serverAddress string) error {
 	log.Debugf("Establishing connection with: %s, on port %s", serverAddress, DataPort)
-	err := transfer.SendFullBackupWithPaths(paths, serverAddress)
+	err := transfer.StartFullBackup(paths, serverAddress)
 	if err != nil {
 		log.Error("An error occured during sending backup files")
 		return err
