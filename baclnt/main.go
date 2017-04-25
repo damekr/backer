@@ -96,7 +96,6 @@ func main() {
 	transfer.Config = clntConfig
 	clntConfig.ShowConfig()
 	log.Info("Starting baclnt application...")
-	// testFunc(clntConfig.TempDir)
 	srv, err := mainLoop(clntConfig)
 	if err != nil {
 		log.Error("Cannot start client application, error: ", err.Error())
