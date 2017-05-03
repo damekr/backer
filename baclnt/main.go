@@ -7,8 +7,9 @@ import (
 	"syscall"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/baclnt/backup"
+	// "github.com/damekr/backer/baclnt/backup"
 	"github.com/damekr/backer/baclnt/config"
+	"github.com/damekr/backer/baclnt/integration"
 	// "github.com/damekr/backer/baclnt/dispatcher"
 	"github.com/damekr/backer/baclnt/inprotoapi"
 )
@@ -39,6 +40,7 @@ func mainLoop() (string, error) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 	startProtoAPI()
+	config.ClntConfig.ShowConfig()
 	for {
 		select {
 		case killSignal := <-interrupt:
@@ -82,9 +84,7 @@ func setFlags() {
 }
 
 func testFunc(loc string) {
-
-	paths := backup.GetAbsolutePaths([]string{"/tmp"})
-	log.Println(paths)
+	log.Println(integration.GetCID())
 }
 
 func main() {
@@ -95,6 +95,7 @@ func main() {
 	config.ClntConfig.ShowConfig()
 	log.Print(config.GetServerConfig())
 	log.Info("Starting baclnt application...")
+	testFunc("")
 	srv, err := mainLoop()
 	if err != nil {
 		log.Error("Cannot start client application, error: ", err.Error())

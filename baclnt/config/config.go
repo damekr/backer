@@ -1,8 +1,8 @@
 package config
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/viper"
-	"log"
 )
 
 // TODO GENERAL Comment configuration reading now works without any validation. Needs to be done before real work of the application.
@@ -17,6 +17,7 @@ type ClientConfig struct {
 	DataTransferInterface string
 	Debug                 bool
 	TempDir               string // Path to store temporary data
+	CID                   string
 }
 
 // ServerConfig specifies configuration of server to which client is integrated
@@ -31,6 +32,8 @@ var (
 	ClntConfig ClientConfig
 	// SrvConfig is a struct with data read from configuration file
 	SrvConfig ServerConfig
+	// MainConfigFile means config file localization
+	MainConfigFile string
 )
 
 // GetServerConfig return fullfiled server config struct with data from config file
@@ -84,8 +87,13 @@ func (c *ClientConfig) ShowConfig() {
 }
 
 func setConfigPath(path string) {
-	// Viper can cooperate with Cobra arg parser consider reading config file path from arg
+	MainConfigFile = path
 	clntConfViper.SetConfigFile(path)
+}
+
+// UpdateGlobalConfig updates config in memory
+func UpdateGlobalConfig() {
+	clntConfViper.ReadInConfig()
 }
 
 // ReadInConfigFile reads file into memory at the beginning of application start
