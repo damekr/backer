@@ -1,16 +1,16 @@
 package repository
 
 import (
-	"os"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
+	"os"
 )
 
 /*
 REPOSITORY SCHEMA (TEMPORARY)
 
 /.meta
+/.meta/db
 /.meta/init
 /data
 /data/<client_name>
@@ -18,7 +18,14 @@ REPOSITORY SCHEMA (TEMPORARY)
 
 */
 
-var MainRepository *Repository
+type Repository struct {
+	Location string
+	// Size uint64
+}
+
+var (
+	MainRepository *Repository
+)
 
 func checkIfRepoExists(repolocation string) bool {
 	log.Debugf("Checking if %s repository exists...", repolocation)
@@ -26,9 +33,8 @@ func checkIfRepoExists(repolocation string) bool {
 	if err == nil && repo.IsDir() {
 		// TODO make more repository validations
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
 func CreateRepository() (*Repository, error) {
@@ -53,6 +59,11 @@ func CreateRepository() (*Repository, error) {
 	if erri != nil {
 		log.Error("Cannot create locks directory inside repository")
 		return nil, erri
+	}
+	errdb := os.MkdirAll(repolocation+"/.meta/db", 0700)
+	if erri != nil {
+		log.Error("Cannot create dbs directory inside repository")
+		return nil, errdb
 	}
 	log.Infof("Repository %s has been created successfully", repolocation)
 	MainRepository = &Repository{Location: repolocation}

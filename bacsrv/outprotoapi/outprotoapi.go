@@ -5,11 +5,13 @@ import (
 	// "os"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/bacsrv/clientsconfig"
 	"github.com/damekr/backer/bacsrv/config"
 	pb "github.com/damekr/backer/common/protoclnt"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+
 	"net"
 	"time"
 )
@@ -113,18 +115,6 @@ func triggerCheckingPaths(client pb.BaclntClient, paths []*pb.Paths) {
 
 }
 
-// func CheckIfPathsExists(paths []string, clientaddr string) {
-// 	address := clientaddr + clntMgmtPort
-// 	conn, err := grpc.Dial(address, grpc.WithInsecure())
-// 	if err != nil {
-// 		log.Warnf("Cannot connect to client: %s", err)
-// 	}
-// 	defer conn.Close()
-// 	c := pb.NewBaclntClient(conn)
-// 	pbpaths := preparePaths(paths)
-// 	log.Debug(c, pbpaths)
-// }
-
 func makePbPaths(path []string) *pb.Paths {
 	return &pb.Paths{
 		Name: config.GetExternalName(),
@@ -159,7 +149,7 @@ func triggerRestore(client pb.BaclntClient, pbMessage *pb.TriggerRestoreMessage)
 
 func SendRestoreRequest(reqcapacity int64, startlistener bool, clntAddress string) error {
 	address := clntAddress + clntMgmtPort
-	log.Debug("Sending restore request to client: ", address)
+	log.Debug("Sending restore rpc request to client: ", address)
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	defer conn.Close()
 
@@ -199,20 +189,26 @@ func sendGrpcPathsToClient(clnt pb.BaclntClient, paths []*pb.Paths) error {
 	return nil
 }
 
-// func SendRestorePaths(paths []string, clientAddr string) error {
-// 	log.Debugf("Sending paths %s to be restored to client %s", paths, clientAddr)
-// 	address := clientAddr + clntMgmtPort
-// 	conn, err := grpc.Dial(address, grpc.WithInsecure())
-// 	if err != nil {
-// 		log.Errorf("Could not establish connection with client: ", address)
-// 		return err
-// 	}
-// 	grpcPaths := preparePaths(paths)
-// 	clnt := pb.NewBaclntClient(conn)
-// 	err = sendGrpcPathsToClient(clnt, grpcPaths)
-// 	if err != nil {
-// 		log.Errorf("Error occured during sending paths to be restored, error content: ", err)
-// 		return err
-// 	}
-// 	return nil
-// }
+// SendIntegrationRequest sends a request to client to get needed vales from the client
+func SendIntegrationRequest(client *clientsconfig.Client) (*clientsconfig.Client, error) {
+	log.Debug("Sending rpc integration messagee to client with address: ", client.Address)
+	md := metadata.Pairs("ServerExternalName", config.GetExternalName())
+	ctx := metadata.NewContext(context.Background(), md)
+	conn, err := establishConnection(client.Address)
+	if err != nil {
+		log.Error("Couldn't establish rpc connection with client: ", client.Address)
+		return client, err
+	}
+	defer conn.Close()
+	c := pb.NewBaclntClient(conn)
+	clientInfo, err := c.TriggerIntegration(ctx, &pb.HelloRequest{Name: config.GetExternalName()})
+	if err != nil {
+		log.Errorf("Couldn't read client CID from remote client")
+		return client, err
+	}
+	log.Debug("Got information about client: %#v", clientInfo)
+	client.Name = clientInfo.Name
+	client.CID = clientInfo.Cid
+	client.Platform = clientInfo.Platform
+	return client, nil
+}

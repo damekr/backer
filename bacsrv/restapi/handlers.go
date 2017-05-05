@@ -10,7 +10,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/backupconfig"
 	"github.com/damekr/backer/bacsrv/config"
-	"github.com/damekr/backer/bacsrv/manager"
+	"github.com/damekr/backer/bacsrv/operations"
 	"github.com/damekr/backer/bacsrv/status"
 	"github.com/gorilla/mux"
 )
@@ -60,7 +60,7 @@ func StatusIndex(w http.ResponseWriter, r *http.Request) {
 // ShowClients responds all information about added clients
 func ShowClients(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", ContentType)
-	if err := json.NewEncoder(w).Encode(manager.GetAllIntegratedClients()); err != nil {
+	if err := json.NewEncoder(w).Encode(operations.GetAllIntegratedClients()); err != nil {
 		log.Error("Cannot encode clients structs")
 	}
 }
@@ -76,7 +76,7 @@ func ShowClientStatus(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	clientName := vars["clientName"]
 	log.Debug("Received arguments: ", clientName)
-	clientHostname, err := manager.SendHelloMessageToClient(clientName)
+	clientHostname, err := operations.SendHelloMessageToClient(clientName)
 	if err != nil {
 		errorMessage := &HelloMessage{
 			Hostname: "Error, Cannot find given client",

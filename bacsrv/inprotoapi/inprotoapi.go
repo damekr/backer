@@ -3,7 +3,7 @@ package inprotoapi
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
-	"github.com/damekr/backer/bacsrv/manager"
+	"github.com/damekr/backer/bacsrv/operations"
 	"github.com/damekr/backer/common/protosrv"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -20,7 +20,7 @@ func (s *server) SayHello(ctx context.Context, in *protosrv.HelloRequest) (*prot
 	md, ok := metadata.FromContext(ctx)
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
-	go manager.SendHelloMessageToClient(in.Name)
+	go operations.SendHelloMessageToClient(in.Name)
 	return &protosrv.HelloReply{Name: config.GetExternalName()}, nil
 }
 

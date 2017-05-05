@@ -55,6 +55,20 @@ func (s *server) TriggerRestore(ctx context.Context, request *pb.TriggerRestoreM
 	return &pb.TriggerRestoreResponse{Name: config.GetExternalName(), Ok: true, Listenerok: true}, nil
 }
 
+func (s *server) TriggerIntegration(ctx context.Context, request *pb.HelloRequest) (*pb.ClientInfo, error) {
+	md, ok := metadata.FromContext(ctx)
+	log.Debug("OK: ", ok)
+	log.Debug("Metadata: ", md)
+	log.Debug("Integration process has been triggered from server: ", request.Name)
+	clientInfo := dispatcher.DispatchIntegration()
+	return &pb.ClientInfo{
+		Name:     clientInfo.Name,
+		Cid:      clientInfo.CID,
+		Platform: clientInfo.Platform,
+	}, nil
+
+}
+
 func (s *server) GetStatusPaths(stream pb.Baclnt_GetStatusPathsServer) error {
 	log.Debug("Starting checking paths")
 	// var paths []string

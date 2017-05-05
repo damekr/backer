@@ -8,6 +8,7 @@ service Baclnt {
 
   rpc TriggerBackup (Paths) returns (Status) {}
   rpc TriggerRestore (TriggerRestoreMessage) returns (TriggerRestoreResponse) {}
+  rpc TriggerIntegration (HelloRequest) returns (ClientInfo) {}
   rpc GetStatusPaths (stream Paths) returns (stream Info) {}
   rpc SayHello (HelloRequest) returns (HelloReply) {}
   rpc SendRestorePaths (stream Paths) returns (HelloReply) {}
@@ -35,7 +36,6 @@ message Paths {
   repeated string path = 2;
 }
 
-// The response message containing the greetings
 message Status {
   string name = 1;
   string message = 2;
@@ -58,4 +58,10 @@ message TriggerRestoreResponse {
   string name = 1;
   bool ok = 2;
   bool listenerok = 3;
+}
+
+message ClientInfo {
+  string name = 1;
+  string cid = 2;
+  string platform = 3;
 }

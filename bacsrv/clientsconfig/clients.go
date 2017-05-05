@@ -12,6 +12,8 @@ type Client struct {
 	Name     string `json:"clientName"`
 	Address  string `json:"clientAddress"`
 	BackupID string `json:"backupId"`
+	Platform string `json:"platform"`
+	CID      string `json:"cid"`
 }
 
 // TODO - GENERAL - It needs to be refactored, remove repeated functions checking executing. Error creating instead of returning nil in case of error.

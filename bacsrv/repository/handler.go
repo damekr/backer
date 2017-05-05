@@ -12,11 +12,6 @@ import (
 
 const bucketsLocation string = "/data/"
 
-type Repository struct {
-	Location string
-	// Size uint64
-}
-
 type DiskStatus struct {
 	All  uint64
 	Used uint64
@@ -59,6 +54,10 @@ func (r *Repository) GetClientBucket(name string) (*ClientBucket, error) {
 	return &ClientBucket{
 		Location: clientLocation,
 	}, nil
+}
+
+func (r *Repository) GetMetadataPath() string {
+	return filepath.Join(r.Location, ".meta/db")
 }
 
 func InitRepository() error {

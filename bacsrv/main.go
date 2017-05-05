@@ -9,9 +9,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/clientsconfig"
 	"github.com/damekr/backer/bacsrv/config"
-	"github.com/damekr/backer/bacsrv/manager"
-	// "github.com/damekr/backer/bacsrv/operationshandler"
-	"github.com/damekr/backer/bacsrv/backupconfig"
+	"github.com/damekr/backer/bacsrv/db"
 	"github.com/damekr/backer/bacsrv/inprotoapi"
 	"github.com/damekr/backer/bacsrv/repository"
 	"github.com/damekr/backer/bacsrv/restapi"
@@ -127,10 +125,16 @@ func initClientsBuckets() {
 }
 
 func serverTest() {
-	backup := &backupconfig.Backup{
-		Paths: []string{"/var/log"},
+	client := &clientsconfig.Client{
+		Name:    "foo",
+		Address: "127.0.0.1",
 	}
-	manager.StartBackup(backup, "127.0.0.1")
+
+	err := db.AddClient(client)
+	if err != nil {
+		log.Error(err)
+	}
+
 }
 
 func main() {

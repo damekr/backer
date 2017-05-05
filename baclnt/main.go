@@ -40,7 +40,6 @@ func mainLoop() (string, error) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 	startProtoAPI()
-	config.ClntConfig.ShowConfig()
 	for {
 		select {
 		case killSignal := <-interrupt:
@@ -84,7 +83,7 @@ func setFlags() {
 }
 
 func testFunc(loc string) {
-	log.Println(integration.GetCID())
+	log.Println(integration.GetClientInfo())
 }
 
 func main() {
