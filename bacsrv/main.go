@@ -114,6 +114,7 @@ func initRepository() {
 	err := repository.InitRepository()
 	if err != nil {
 		log.Panic("Cannot create repository")
+		os.Exit(1)
 	}
 }
 
@@ -121,20 +122,29 @@ func initClientsBuckets() {
 	err := repository.InitClientsBuckets()
 	if err != nil {
 		log.Panic("Cannot initialize clients buckets")
+		os.Exit(2)
+	}
+}
+
+func initDatabases() {
+	_, err := db.InitDBs()
+	if err != nil {
+		log.Panic("Cannot init Databases")
+		os.Exit(3)
 	}
 }
 
 func serverTest() {
-	client := &clientsconfig.Client{
-		Name:    "foo",
-		Address: "127.0.0.1",
-	}
+	// client := &clientsconfig.Client{
+	// 	Name:     "ALA",
+	// 	Address:  "127.0.0.1",
+	// 	BackupID: "1234",
+	// }
 
-	err := db.AddClient(client)
+	err := db.RemoveClient("ALA")
 	if err != nil {
-		log.Error(err)
+		log.Error(err.Error())
 	}
-
 }
 
 func main() {
@@ -146,6 +156,7 @@ func main() {
 	clientsconfig.InitClientsConfig(srvConfig)
 	initRepository()
 	initClientsBuckets()
+	initDatabases()
 	mainLoop(srvConfig)
 
 	//fmt.Println("REPO", repo.Location)

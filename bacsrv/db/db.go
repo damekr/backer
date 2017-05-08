@@ -1,15 +1,16 @@
 package db
 
 import (
-	"github.com/HouzuoGuo/tiedot/db"
-	"github.com/HouzuoGuo/tiedot/dberr"
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
+	"github.com/damekr/backer/tiedot/db"
+	"github.com/damekr/backer/tiedot/dberr"
 	"path/filepath"
 )
 
 const (
 	clientsDocName = "clients"
+	backupsDocName = "backups"
 	dbLocation     = ".meta"
 )
 
@@ -23,6 +24,9 @@ func InitDBs() (*db.DB, error) {
 	if err := createClientsDBDoc(DB); err != nil {
 		log.Error("Cannot fully initialize DB because of clients DOC")
 	}
+	if err := createBackupsDBDoc(DB); err != nil {
+		log.Error("Cannot fully initialize DB because of clients DOC")
+	}
 	return DB, nil
 }
 
@@ -31,7 +35,17 @@ func createClientsDBDoc(db *db.DB) error {
 	err := db.Create(clientsDocName)
 	if dberr.Type(err) == dberr.ErrorIO {
 		log.Warning("IO Error during creating Clients DOC")
-		return nil
+		return err
+	}
+	return nil
+}
+
+func createBackupsDBDoc(db *db.DB) error {
+	log.Debug("Creating backups doc in DB")
+	err := db.Create(backupsDocName)
+	if dberr.Type(err) == dberr.ErrorIO {
+		log.Warning("IO Error during creating Backups DOC")
+		return err
 	}
 	return nil
 }
