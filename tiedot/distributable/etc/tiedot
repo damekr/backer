@@ -1,0 +1,6 @@
+HTTP_PORT=19993
+HTTP_DB_DIR=/var/lib/tiedot/default_db
+
+# Put additional CLI parameters here in order to launch tiedot with HTTPS, JWT, or verbose logging, and other options.
+# Consult tiedot documentation and/or `tiedot -h` for a complete list of acceptable CLI parameters.
+HTTP_EXTRA_ARGS=""
