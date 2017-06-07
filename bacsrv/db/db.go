@@ -1,61 +1,44 @@
 package db
 
 import (
+	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/boltdb/bolt"
 	"github.com/damekr/backer/bacsrv/config"
-	"github.com/damekr/backer/tiedot/db"
-	"github.com/damekr/backer/tiedot/dberr"
+	"os"
 	"path/filepath"
 )
 
 const (
-	clientsDocName = "clients"
-	backupsDocName = "backups"
-	dbLocation     = ".meta"
+	clientsBucket = "clients"
 )
 
-func InitDBs() (*db.DB, error) {
-	repoLocation := config.GetMainRepositoryLocation()
-	DB, err := db.OpenDB(filepath.Join(repoLocation, dbLocation))
-	if dberr.Type(err) == dberr.ErrorIO {
-		log.Error("Cannot create DB")
-		return nil, err
-	}
-	if err := createClientsDBDoc(DB); err != nil {
-		log.Error("Cannot fully initialize DB because of clients DOC")
-	}
-	if err := createBackupsDBDoc(DB); err != nil {
-		log.Error("Cannot fully initialize DB because of clients DOC")
-	}
-	return DB, nil
-}
+var (
+	db *bolt.DB
+)
 
-func createClientsDBDoc(db *db.DB) error {
-	log.Debug("Creating clients doc in DB")
-	err := db.Create(clientsDocName)
-	if dberr.Type(err) == dberr.ErrorIO {
-		log.Warning("IO Error during creating Clients DOC")
-		return err
-	}
+func createClientsBucket() error {
+	var err error
+	db.Update(func(tx *bolt.Tx) error {
+		_, err = tx.CreateBucketIfNotExists([]byte(clientsBucket))
+		if err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		return nil
+	})
 	return nil
 }
 
-func createBackupsDBDoc(db *db.DB) error {
-	log.Debug("Creating backups doc in DB")
-	err := db.Create(backupsDocName)
-	if dberr.Type(err) == dberr.ErrorIO {
-		log.Warning("IO Error during creating Backups DOC")
-		return err
+func InitDB() {
+	var err error
+	db, err = bolt.Open(filepath.Join(config.GetDBLocation(), "server.db"), 0600, nil)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(4)
 	}
-	return nil
-}
-
-func OpenDB() (*db.DB, error) {
-	repoLocation := config.GetMainRepositoryLocation()
-	db, err := db.OpenDB(filepath.Join(repoLocation, dbLocation))
-	if dberr.Type(err) == dberr.ErrorIO {
-		log.Error("Cannot create DB")
-		return nil, err
+	err = createClientsBucket()
+	if err != nil {
+		log.Fatal("Fatal error during creating clients bucket in DB")
+		os.Exit(5)
 	}
-	return db, nil
 }

@@ -7,6 +7,10 @@ import (
 
 const configName = "bacsrv"
 
+var (
+	server *ServerConfig
+)
+
 type ServerConfig struct {
 	MgmtPort              string
 	DataPort              string
@@ -17,6 +21,7 @@ type ServerConfig struct {
 	ClientsConfig         string
 	ExternalName          string
 	DataTransferInterface string
+	DBLocation            string
 }
 
 func fillMainConfigStruct() *ServerConfig {
@@ -29,6 +34,7 @@ func fillMainConfigStruct() *ServerConfig {
 		LogOutput:             viper.GetString("server.LogOutput"),
 		Debug:                 viper.GetBool("server.Debug"),
 		ClientsConfig:         viper.GetString("clients.ConfigFile"),
+		DBLocation:            viper.GetString("server.DBLocation"),
 	}
 }
 
@@ -45,8 +51,8 @@ func SetConfigPath(path string) {
 
 func GetServerConfig() *ServerConfig {
 	ReadConfigFile()
-	config := fillMainConfigStruct()
-	return config
+	server = fillMainConfigStruct()
+	return server
 }
 
 func ReadConfigFile() {
@@ -71,4 +77,8 @@ func GetExternalName() string {
 
 func GetDataTransferInterface() string {
 	return GetServerConfig().DataTransferInterface
+}
+
+func GetDBLocation() string {
+	return server.DBLocation
 }

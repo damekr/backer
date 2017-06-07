@@ -2,10 +2,6 @@ package main
 
 import (
 	"flag"
-	"os"
-	"os/signal"
-	"syscall"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/clientsconfig"
 	"github.com/damekr/backer/bacsrv/config"
@@ -14,6 +10,9 @@ import (
 	"github.com/damekr/backer/bacsrv/repository"
 	"github.com/damekr/backer/bacsrv/restapi"
 	"github.com/damekr/backer/bacsrv/transfer"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 var commit string
@@ -81,6 +80,7 @@ func startDataServer(srvConfig *config.ServerConfig) {
 func checkConfigFile(configPath string) error {
 	// It works for one file, as viper supports directory with given extensions,
 	// it shall be extended by this feature
+
 	_, err := os.Stat(configPath)
 	if err == nil {
 		return nil
@@ -126,25 +126,35 @@ func initClientsBuckets() {
 	}
 }
 
-func initDatabases() {
-	_, err := db.InitDBs()
-	if err != nil {
-		log.Panic("Cannot init Databases")
-		os.Exit(3)
-	}
-}
-
 func serverTest() {
-	// client := &clientsconfig.Client{
-	// 	Name:     "ALA",
-	// 	Address:  "127.0.0.1",
-	// 	BackupID: "1234",
-	// }
+	client := &clientsconfig.Client{
+		Name:     "ALA",
+		Address:  "127.0.0.1",
+		BackupID: "1234",
+		CID:      "ASDsad",
+	}
 
-	err := db.RemoveClient("ALA")
+	client2 := &clientsconfig.Client{
+		Name:     "ALA1",
+		Address:  "127.0.0.1",
+		BackupID: "1234",
+		CID:      "ASDsad1",
+	}
+	err := db.AddClient(client)
 	if err != nil {
 		log.Error(err.Error())
 	}
+
+	err = db.AddClient(client2)
+	if err != nil {
+		log.Error(err.Error())
+	}
+
+	value, err := db.GetClient(client2.CID)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Debug(value)
 }
 
 func main() {
@@ -156,7 +166,8 @@ func main() {
 	clientsconfig.InitClientsConfig(srvConfig)
 	initRepository()
 	initClientsBuckets()
-	initDatabases()
+	db.InitDB()
+	serverTest()
 	mainLoop(srvConfig)
 
 	//fmt.Println("REPO", repo.Location)
