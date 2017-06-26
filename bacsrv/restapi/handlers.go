@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/bacsrv/backupconfig"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/operations"
 	"github.com/damekr/backer/bacsrv/status"
@@ -138,7 +137,7 @@ func TriggerClientBackup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	clientName := vars["clientName"]
 	log.Debug("Received arguments: ", clientName)
-	var backupConfigMassage backupconfig.Backup
+	var backupConfigMassage config.Backup
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		log.Error("Cannot read body of Trigger message backup")
@@ -153,7 +152,7 @@ func TriggerClientBackup(w http.ResponseWriter, r *http.Request) {
 			log.Errorf("Cannot decode json, check header")
 		}
 	}
-	clientBackupMessage := &backupconfig.BackupTriggerMessage{
+	clientBackupMessage := &config.BackupTriggerMessage{
 		ClientName:   clientName,
 		BackupConfig: backupConfigMassage,
 	}

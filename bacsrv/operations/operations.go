@@ -2,8 +2,7 @@ package operations
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/bacsrv/backupconfig"
-	"github.com/damekr/backer/bacsrv/clientsconfig"
+	"github.com/damekr/backer/bacsrv/config"
 
 	"github.com/damekr/backer/bacsrv/outprotoapi"
 )
@@ -20,7 +19,7 @@ func SendHelloMessageToClient(clntAddress string) (string, error) {
 }
 
 // IntegrateClient performs client integration with all operatinos
-func IntegrateClient(client *clientsconfig.Client) error {
+func IntegrateClient(client *config.Client) error {
 	log.Infof("Starting %s integration...", client.Name)
 	clntHostname, err := SendHelloMessageToClient(client.Address)
 	if err != nil {
@@ -37,7 +36,7 @@ func IntegrateClient(client *clientsconfig.Client) error {
 }
 
 // StartBackup start backup on client with given configuration
-func StartBackup(backupConfig *backupconfig.Backup, clntAddr string) error {
+func StartBackup(backupConfig *config.Backup, clntAddr string) error {
 	log.Info("Starting backup of client: ", clntAddr)
 	validatedPaths, err := preBackupChecks(backupConfig.Paths, clntAddr)
 	if err != nil {
@@ -55,6 +54,6 @@ func StartBackup(backupConfig *backupconfig.Backup, clntAddr string) error {
 }
 
 // GetAllIntegratedClients simply fetching clients from clients configuration file, at least now and shows them
-func GetAllIntegratedClients() []clientsconfig.Client {
-	return clientsconfig.GetAllClients()
+func GetAllIntegratedClients() []config.Client {
+	return config.GetAllClients()
 }

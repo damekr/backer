@@ -1,3 +1,5 @@
+// +build ignore
+
 package db
 
 import (
@@ -6,7 +8,7 @@ import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
-	"github.com/damekr/backer/bacsrv/clientsconfig"
+	"github.com/damekr/backer/bacsrv/config"
 )
 
 var (
@@ -16,7 +18,7 @@ var (
 )
 
 // AddClient adds client into database, assumes that CID is uniq.
-func AddClient(clnt *clientsconfig.Client) error {
+func AddClient(clnt *config.Client) error {
 	/* ClientResources Schema
 	name: <name>,
 	address: <ip_address>,
@@ -40,8 +42,8 @@ func AddClient(clnt *clientsconfig.Client) error {
 	return nil
 }
 
-func GetClient(cid string) (*clientsconfig.Client, error) {
-	client := &clientsconfig.Client{}
+func GetClient(cid string) (*config.Client, error) {
+	client := &config.Client{}
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(clientsBucket))
 		v := b.Get([]byte(cid))

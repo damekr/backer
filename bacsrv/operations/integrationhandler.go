@@ -2,7 +2,7 @@ package operations
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/bacsrv/clientsconfig"
+	"github.com/damekr/backer/bacsrv/config"
 )
 
 func init() {
@@ -13,6 +13,6 @@ func getClientCID(address string) (string, error) {
 	return "", nil
 }
 
-func saveClientInformation(client *clientsconfig.Client) error {
+func saveClientInformation(client *config.Client) error {
 	return nil
 }

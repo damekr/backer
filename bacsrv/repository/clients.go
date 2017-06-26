@@ -3,7 +3,7 @@ package repository
 import (
 	"errors"
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/bacsrv/clientsconfig"
+	"github.com/damekr/backer/bacsrv/config"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -30,7 +30,7 @@ func checkIfClientBucketExists(name string) bool {
 
 func InitClientsBuckets() error {
 	repo := GetRepository()
-	allClients := clientsconfig.GetAllClients()
+	allClients := config.GetAllClients()
 	log.Debug("Number of integrated clients: ", len(allClients))
 	for _, v := range allClients {
 		log.Printf("Client info: %s", v.Name)

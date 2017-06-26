@@ -5,7 +5,6 @@ import (
 	// "os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/bacsrv/clientsconfig"
 	"github.com/damekr/backer/bacsrv/config"
 	pb "github.com/damekr/backer/common/protoclnt"
 	"golang.org/x/net/context"
@@ -190,7 +189,7 @@ func sendGrpcPathsToClient(clnt pb.BaclntClient, paths []*pb.Paths) error {
 }
 
 // SendIntegrationRequest sends a request to client to get needed vales from the client
-func SendIntegrationRequest(client *clientsconfig.Client) (*clientsconfig.Client, error) {
+func SendIntegrationRequest(client *config.Client) (*config.Client, error) {
 	log.Debug("Sending rpc integration messagee to client with address: ", client.Address)
 	md := metadata.Pairs("ServerExternalName", config.GetExternalName())
 	ctx := metadata.NewContext(context.Background(), md)
