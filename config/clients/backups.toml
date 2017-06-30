@@ -1,0 +1,11 @@
+[tmp]
+ID = 1
+Paths = ["/tmp"]
+Excluded = [""]
+Retention = 10
+
+[etc]
+ID = 2
+Paths = ["/etc"]
+Excluded = ["/etc/hosts"]
+Retention = 20

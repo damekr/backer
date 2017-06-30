@@ -135,6 +135,7 @@ func main() {
 	setLogger(srvConfig)
 	srvConfig.ShowConfig()
 	config.InitClientsConfig(srvConfig)
+	config.InitBackupConfig(srvConfig)
 	initRepository()
 	initClientsBuckets()
 	serverTest()

@@ -1,6 +1,6 @@
 # Prerequisite: GOROOT and GOARCH must be defined
 
-TARG=bacmgr
+TARG=bacli
 
 # build main executable
 

@@ -11,6 +11,7 @@ type Client struct {
 	Name     string `json:"clientName"`
 	Address  string `json:"clientAddress"`
 	BackupID string `json:"backupId"`
+	// TODO BackupID must be an integer
 	Platform string `json:"platform"`
 	CID      string `json:"cid"`
 }
@@ -24,7 +25,7 @@ var ClientsConfigInstance = viper.New()
 func InitClientsConfig(srvConfig *ServerConfig) {
 	log.Info("Client config path: ", srvConfig.ClientsConfig)
 	// TODO Add checking file
-	ClientsConfigInstance.SetConfigName("config")
+	ClientsConfigInstance.SetConfigName("clients")
 	ClientsConfigInstance.AddConfigPath(srvConfig.ClientsConfig)
 	err := ClientsConfigInstance.ReadInConfig()
 	if err != nil {

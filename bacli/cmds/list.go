@@ -2,7 +2,10 @@ package cmds
 
 import (
 	"fmt"
+	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/bacli/client"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 func init() {
@@ -22,9 +25,17 @@ var listClients = &cobra.Command{
 	Short: "List all clients",
 	Long:  `List all of the clients`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-
-		fmt.Println("Listing clients")
-
+		log.Println("Listing clients")
+		clnt := client.ClientGRPC{
+			Server: server,
+			Port:   port,
+		}
+		clients, err := clnt.ListAllInSecure()
+		if err != nil {
+			log.Error("Could not list clients")
+			os.Exit(1)
+		}
+		fmt.Println(clients)
 		return nil
 
 	},

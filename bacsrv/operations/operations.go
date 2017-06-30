@@ -36,6 +36,7 @@ func IntegrateClient(client *config.Client) error {
 }
 
 // StartBackup start backup on client with given configuration
+// This function should require only BackupJob Struct
 func StartBackup(backupConfig *config.Backup, clntAddr string) error {
 	log.Info("Starting backup of client: ", clntAddr)
 	validatedPaths, err := preBackupChecks(backupConfig.Paths, clntAddr)
@@ -43,6 +44,7 @@ func StartBackup(backupConfig *config.Backup, clntAddr string) error {
 		log.Error("Cannot validate paths on client side")
 		return err
 	}
+	// TODO Here paths can be removed bases on excluded
 	log.Debugf("Got validated paths from client: %s starting backup...", validatedPaths)
 	err = outprotoapi.SendBackupRequest(validatedPaths, clntAddr)
 	if err != nil {

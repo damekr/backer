@@ -11,7 +11,7 @@ import (
 )
 
 // GENERAL COMMENT: This file needs to use types of message from bacsrv proto file
-// METADATA: Using metadata of grpc can be done authentication, below example how to proceed - https://github.com/grpc/grpc-go/pull/629/files
+// METADATA: Using metadata of grpc can be used for authentication, example how to do it - https://github.com/grpc/grpc-go/pull/629/files
 const (
 	srvMgmtPort     = ":8090"
 	timestampFormat = time.StampNano

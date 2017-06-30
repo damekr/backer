@@ -19,6 +19,7 @@ type ServerConfig struct {
 	Debug                 bool
 	RepositoryConfig      string
 	ClientsConfig         string
+	BackupsConfig         string
 	ExternalName          string
 	DataTransferInterface string
 	DBLocation            string
@@ -34,6 +35,7 @@ func fillMainConfigStruct() *ServerConfig {
 		LogOutput:             viper.GetString("server.LogOutput"),
 		Debug:                 viper.GetBool("server.Debug"),
 		ClientsConfig:         viper.GetString("clients.ConfigFile"),
+		BackupsConfig:         viper.GetString("backups.ConfigFile"),
 		DBLocation:            viper.GetString("server.DBLocation"),
 	}
 }
@@ -50,6 +52,9 @@ func SetConfigPath(path string) {
 }
 
 func GetServerConfig() *ServerConfig {
+	if server != nil {
+		return server
+	}
 	ReadConfigFile()
 	server = fillMainConfigStruct()
 	return server
@@ -61,6 +66,10 @@ func ReadConfigFile() {
 
 func GetClientconfigPath() string {
 	return GetServerConfig().ClientsConfig
+}
+
+func GetBackupsConfigPath() string {
+	return GetServerConfig().BackupsConfig
 }
 
 func GetMgmtPort() string {

@@ -2,7 +2,9 @@ package cmds
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/damekr/backer/bacli/client"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var pingCmd = &cobra.Command{
@@ -17,4 +19,14 @@ var pingCmd = &cobra.Command{
 
 func sendServerPing() {
 	log.Info("Sending ping to server: ", server)
+	clnt := client.ClientGRPC{
+		Server: server,
+		Port:   port,
+	}
+	response, err := clnt.PingInSecure()
+	if err != nil {
+		log.Error("Could not ping server: ", server)
+		os.Exit(1)
+	}
+	log.Info("Server response: ", response)
 }

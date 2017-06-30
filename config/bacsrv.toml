@@ -13,3 +13,6 @@ Localization = "/home/dixi/repository"
 
 [clients]
 ConfigFile = "/mnt/c/Users/Damian Rajca/dev/go/src/github.com/damekr/backer/config/clients"
+
+[backups]
+ConfigFile = "/mnt/c/Users/Damian Rajca/dev/go/src/github.com/damekr/backer/config/clients"

@@ -20,8 +20,34 @@ func (s *server) SayHello(ctx context.Context, in *protosrv.HelloRequest) (*prot
 	md, ok := metadata.FromContext(ctx)
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
-	go operations.SendHelloMessageToClient(in.Name)
+	// go operations.SendHelloMessageToClient(in.Name)
 	return &protosrv.HelloReply{Name: config.GetExternalName()}, nil
+}
+
+func (s *server) ListClients(ctx context.Context, in *protosrv.HelloRequest) (*protosrv.ClientsList, error) {
+	log.Debug("Received a request to check paths")
+	client := in.Name
+	log.Debug("Got request from: ", client)
+	log.Debug("Starting checking integrated clients")
+	clientsL := operations.GetAllIntegratedClients()
+	clients := []string{}
+	for _, v := range clientsL {
+		clients = append(clients, v.Name)
+	}
+	return &protosrv.ClientsList{
+		Clients: clients,
+	}, nil
+}
+
+func (s *server) RunBackup(ctx context.Context, in *protosrv.Client) (*protosrv.Status, error) {
+	log.Debug("Received a request to run backup of client: ", in.Cname)
+	client := in.Name
+	log.Debug("Got request from: ", client)
+	log.Debug("Starting backup of: ", in.Cname)
+	// clientsL := operations.GetAllIntegratedClients()
+	return &protosrv.Status{
+		Backup: true,
+	}, nil
 }
 
 // ServeServer method starts a grpc server on specific port

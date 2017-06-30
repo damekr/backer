@@ -5,11 +5,14 @@ import (
 	"os"
 )
 
+const mgmtPort = "8090"
+
 var (
-	logging    bool
-	verbose    bool
-	verboseLog bool
-	quiet      bool
+	logging     bool
+	verbose     bool
+	verboseLog  bool
+	quiet       bool
+	disableAuth bool
 )
 
 var (
@@ -17,6 +20,7 @@ var (
 	server   string
 	user     string
 	password string
+	port     string
 )
 var RootCmd = &cobra.Command{
 	Use:   "bacmgr",
@@ -27,7 +31,6 @@ var RootCmd = &cobra.Command{
 // Execute adds all child commands to the root command HugoCmd and sets flags appropriately.
 func Execute() {
 	// RootCmd.SetGlobalNormalizationFunc(helpers.NormalizeHugoFlags)
-
 	RootCmd.SilenceUsage = true
 
 	AddCommands()
@@ -39,11 +42,12 @@ func Execute() {
 	}
 }
 
-// AddCommands adds child commands to the root command HugoCmd.
+// AddCommands adds child commands to the root command.
 func AddCommands() {
 	RootCmd.AddCommand(versionCmd)
 	RootCmd.AddCommand(pingCmd)
 	RootCmd.AddCommand(listCmd)
+	RootCmd.AddCommand(runCmd)
 }
 
 func init() {
@@ -52,6 +56,8 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&logFile, "logFile", "", "log File path (if set, logging enabled automatically)")
 	RootCmd.PersistentFlags().BoolVar(&verboseLog, "verboseLog", false, "verbose logging")
 	RootCmd.PersistentFlags().StringVarP(&server, "server", "s", "127.0.0.1", "ip or host of backer server")
-	RootCmd.PersistentFlags().StringVarP(&user, "user", "u", "admin", "username to authenticate to server")
-	RootCmd.PersistentFlags().StringVarP(&password, "password", "p", "admin", "password to authenticate to server")
+	RootCmd.PersistentFlags().StringVar(&user, "user", "admin", "username to authenticate to server")
+	RootCmd.PersistentFlags().StringVar(&password, "password", "admin", "password to authenticate to server")
+	RootCmd.PersistentFlags().StringVarP(&port, "port", "p", mgmtPort, "port for management interface of bacsrv")
+	RootCmd.PersistentFlags().BoolVar(&disableAuth, "disableAuth", false, "disable authentication to server")
 }

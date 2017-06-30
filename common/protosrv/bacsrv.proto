@@ -7,7 +7,8 @@ package protosrv;
 service Bacsrv {
 
   rpc SayHello (HelloRequest) returns (HelloReply) {}
-
+  rpc ListClients (HelloRequest) returns (ClientsList) {}
+  rpc RunBackup (Client) returns (Status) {}
 }
 
 
@@ -21,3 +22,16 @@ message HelloReply {
   string name = 1;
 }
 
+
+message ClientsList {
+  repeated string clients = 1;
+}
+
+message Client {
+  string name = 1;
+  string cname = 2;
+}
+
+message Status {
+  bool backup = 1;
+}
