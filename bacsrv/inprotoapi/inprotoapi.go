@@ -44,7 +44,14 @@ func (s *server) RunBackup(ctx context.Context, in *protosrv.Client) (*protosrv.
 	client := in.Name
 	log.Debug("Got request from: ", client)
 	log.Debug("Starting backup of: ", in.Cname)
-	// clientsL := operations.GetAllIntegratedClients()
+	clientInfo := config.GetClientInformation(in.Cname)
+	log.Debug("Running backup of client address: ", client)
+
+	backup := &confi
+	err := operations.StartBackup(backup, clientHost)
+	if err != nil {
+		log.Error("Cannot start backup, error: ", err)
+	}
 	return &protosrv.Status{
 		Backup: true,
 	}, nil
