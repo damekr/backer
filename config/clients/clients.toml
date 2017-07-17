@@ -1,9 +1,9 @@
 [foo]
 IP = "10.0.0.1"
-BackupID = "1"
+BackupID = 1
 
 [boo]
 IP = "10.0.0.2"
-BackupID = "2"
+BackupID = 2
 
 

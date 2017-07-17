@@ -1,2 +1,10 @@
 [hourly]
 Description = "Example hourly schedule"
+
+[daily]
+Description = "Example daily schedule"
+Run = 07:32:00
+
+[weakly]
+Description  = "Example weakly schedule"
+Run = "07:32:00-mon"
