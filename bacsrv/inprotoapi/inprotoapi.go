@@ -3,7 +3,7 @@ package inprotoapi
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
-	"github.com/damekr/backer/bacsrv/operations"
+	"github.com/damekr/backer/bacsrv/job"
 	"github.com/damekr/backer/common/protosrv"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -20,7 +20,7 @@ func (s *server) SayHello(ctx context.Context, in *protosrv.HelloRequest) (*prot
 	md, ok := metadata.FromContext(ctx)
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
-	// go operations.SendHelloMessageToClient(in.Name)
+	// go job.SendHelloMessageToClient(in.Name)
 	return &protosrv.HelloReply{Name: config.GetExternalName()}, nil
 }
 
@@ -29,7 +29,7 @@ func (s *server) ListClients(ctx context.Context, in *protosrv.HelloRequest) (*p
 	client := in.Name
 	log.Debug("Got request from: ", client)
 	log.Debug("Starting checking integrated clients")
-	clientsL := operations.GetAllIntegratedClients()
+	clientsL := job.GetAllIntegratedClients()
 	clients := []string{}
 	for _, v := range clientsL {
 		clients = append(clients, v.Name)
@@ -43,14 +43,33 @@ func (s *server) RunBackup(ctx context.Context, in *protosrv.Client) (*protosrv.
 	log.Debug("Received a request to run backup of client: ", in.Cname)
 	client := in.Name
 	log.Debug("Got request from: ", client)
-	log.Debug("Starting backup of: ", in.Cname)
-	clientInfo := config.GetClientInformation(in.Cname)
-	log.Debug("Running backup of client address: ", client)
+	log.Info("Starting backup of: ", in.Cname)
+	clientConfig := config.GetClientInformation(in.Cname)
 
-	backup := &confi
-	err := operations.StartBackup(backup, clientHost)
+	// Getting client backup config
+	log.Info("Getting backup attached to the client")
+	backupConfig, err := config.GetBackupConfigByID(clientConfig.BackupID)
 	if err != nil {
-		log.Error("Cannot start backup, error: ", err)
+		log.Error("There is no attached backup config to this client")
+		return &protosrv.Status{
+			Backup: false,
+		}, err
+	}
+
+	log.Debug("Backup attached to client: ", backupConfig)
+	log.Info("Found all client metadata, executing backup...")
+
+	// Creating job for backup
+	backupJob := job.BackupJob{
+		BackupConfig: backupConfig,
+		ClientConfig: clientConfig,
+	}
+	err = backupJob.Start()
+	if err != nil {
+		log.Error("Backup has not finished successfully, error: ", err)
+		return &protosrv.Status{
+			Backup: false,
+		}, err
 	}
 	return &protosrv.Status{
 		Backup: true,

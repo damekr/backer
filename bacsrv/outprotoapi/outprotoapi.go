@@ -66,7 +66,7 @@ func CheckPaths(clntAddr string, paths []string) ([]string, error) {
 		log.Error("Cannot check paths, got error: ", err.Error())
 		return nil, err
 	}
-	log.Debug("Client respond with his name: ", availableFiles.Name)
+	log.Debug("ClientConfig respond with his name: ", availableFiles.Name)
 	log.Debug("Got validated, resolved paths of requested files: ", availableFiles.Path)
 	return availableFiles.Path, nil
 }
@@ -136,7 +136,7 @@ func triggerRestore(client pb.BaclntClient, pbMessage *pb.TriggerRestoreMessage)
 		return err
 	}
 	if response.Ok {
-		log.Debug("Client %s has enough space", response.Name)
+		log.Debug("ClientConfig %s has enough space", response.Name)
 	} else if response.Listenerok {
 		log.Debug("Sterted data listener on client %s side", response.Name)
 	} else {
@@ -189,7 +189,7 @@ func sendGrpcPathsToClient(clnt pb.BaclntClient, paths []*pb.Paths) error {
 }
 
 // SendIntegrationRequest sends a request to client to get needed vales from the client
-func SendIntegrationRequest(client *config.Client) (*config.Client, error) {
+func SendIntegrationRequest(client *config.ClientConfig) (*config.ClientConfig, error) {
 	log.Debug("Sending rpc integration messagee to client with address: ", client.Address)
 	md := metadata.Pairs("ServerExternalName", config.GetExternalName())
 	ctx := metadata.NewContext(context.Background(), md)

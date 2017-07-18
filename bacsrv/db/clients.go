@@ -18,7 +18,7 @@ var (
 )
 
 // AddClient adds client into database, assumes that CID is uniq.
-func AddClient(clnt *config.Client) error {
+func AddClient(clnt *config.ClientConfig) error {
 	/* ClientResources Schema
 	name: <name>,
 	address: <ip_address>,
@@ -42,8 +42,8 @@ func AddClient(clnt *config.Client) error {
 	return nil
 }
 
-func GetClient(cid string) (*config.Client, error) {
-	client := &config.Client{}
+func GetClient(cid string) (*config.ClientConfig, error) {
+	client := &config.ClientConfig{}
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(clientsBucket))
 		v := b.Get([]byte(cid))

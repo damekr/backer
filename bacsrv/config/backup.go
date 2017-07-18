@@ -5,8 +5,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Backup specifies a backup
-type Backup struct {
+// BackupConfig specifies a backup
+type BackupConfig struct {
 	ID        string   `json:"id"`
 	Paths     []string `json:"paths"`
 	Excluded  []string `json:"excludedPaths"`
@@ -15,7 +15,7 @@ type Backup struct {
 
 type BackupTriggerMessage struct {
 	ClientName   string `json:"clientName"`
-	BackupConfig Backup
+	BackupConfig BackupConfig
 }
 
 var BackupConfigInstance = viper.New()
@@ -33,13 +33,13 @@ func InitBackupConfig(srvConfig *ServerConfig) {
 	showNumberOfAddedBackupsDefinitions()
 }
 
-func GetAllBackupConfigs() []Backup {
-	var backups []Backup
+func GetAllBackupConfigs() []BackupConfig {
+	var backups []BackupConfig
 	backupsAll := BackupConfigInstance.AllSettings()
 	for k, v := range backupsAll {
 		backupPropertySlices := BackupConfigInstance.GetStringMapStringSlice(k)
 		backupPropertyString := BackupConfigInstance.GetStringMapString(k)
-		backups = append(backups, Backup{
+		backups = append(backups, BackupConfig{
 			ID:        backupPropertyString["id"],
 			Paths:     backupPropertySlices["paths"],
 			Excluded:  backupPropertySlices["excluded"],
@@ -51,17 +51,17 @@ func GetAllBackupConfigs() []Backup {
 	return backups
 }
 
-func GetBackupConfigInformation(name string) *Backup {
+func GetBackupConfigInformation(name string) *BackupConfig {
 	backupStrings := BackupConfigInstance.GetStringMapString(name)
 	backupSlices := BackupConfigInstance.GetStringMapStringSlice(name)
-	return &Backup{
+	return &BackupConfig{
 		Paths:     backupSlices["paths"],
 		Excluded:  backupSlices["excluded"],
 		Retention: backupStrings["retention"],
 	}
 }
 
-func GetBackupConfigByID(id string) (*Backup, error) {
+func GetBackupConfigByID(id string) (*BackupConfig, error) {
 	log.Debug("Getting backup config with ID: ", id)
 	backupConfigs := GetAllBackupConfigs()
 	for _, v := range backupConfigs {

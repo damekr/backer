@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Client struct {
+type ClientConfig struct {
 	Name     string `json:"clientName"`
 	Address  string `json:"clientAddress"`
 	BackupID string `json:"backupId"`
@@ -23,7 +23,7 @@ var ClientsConfigInstance = viper.New()
 
 // InitClientsConfig creating a new instance of Viper configuration with read
 func InitClientsConfig(srvConfig *ServerConfig) {
-	log.Info("Client config path: ", srvConfig.ClientsConfig)
+	log.Info("ClientConfig config path: ", srvConfig.ClientsConfig)
 	// TODO Add checking file
 	ClientsConfigInstance.SetConfigName("clients")
 	ClientsConfigInstance.AddConfigPath(srvConfig.ClientsConfig)
@@ -34,12 +34,12 @@ func InitClientsConfig(srvConfig *ServerConfig) {
 	}
 }
 
-func GetAllClients() []Client {
-	var Clients []Client
+func GetAllClients() []ClientConfig {
+	var Clients []ClientConfig
 	clients := ClientsConfigInstance.AllSettings()
 	for k, v := range clients {
 		clientProperty := ClientsConfigInstance.GetStringMapString(k)
-		Clients = append(Clients, Client{
+		Clients = append(Clients, ClientConfig{
 			Name:     k,
 			Address:  clientProperty["ip"],
 			BackupID: clientProperty["backupid"],
@@ -50,12 +50,12 @@ func GetAllClients() []Client {
 	return Clients
 }
 
-func GetClientInformation(name string) *Client {
+func GetClientInformation(name string) *ClientConfig {
 	if !DoesClientExist(name) {
-		return &Client{}
+		return &ClientConfig{}
 	}
 	client := ClientsConfigInstance.GetStringMapString(name)
-	return &Client{
+	return &ClientConfig{
 		Name:     name,
 		Address:  client["ip"],
 		BackupID: client["backupid"],
@@ -67,7 +67,7 @@ func DoesClientExistWithIP(address string) bool {
 	clients := GetAllClients()
 	for _, v := range clients {
 		if v.Address == address {
-			log.Debugf("Client: %s with address: %s exists", v.Name, address)
+			log.Debugf("ClientConfig: %s with address: %s exists", v.Name, address)
 			return true
 		}
 	}
@@ -78,7 +78,7 @@ func DoesClientExistWithIP(address string) bool {
 func GetClientIP(name string) (string, error) {
 	client := GetClientInformation(name)
 	if client.Address == "" {
-		return "", errors.New("Client does not exist")
+		return "", errors.New("ClientConfig does not exist")
 	}
 	return client.Address, nil
 }

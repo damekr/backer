@@ -9,7 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
-	"github.com/damekr/backer/bacsrv/operations"
+	"github.com/damekr/backer/bacsrv/job"
 	"github.com/damekr/backer/bacsrv/status"
 	"github.com/gorilla/mux"
 )
@@ -59,7 +59,7 @@ func StatusIndex(w http.ResponseWriter, r *http.Request) {
 // ShowClients responds all information about added clients
 func ShowClients(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", ContentType)
-	if err := json.NewEncoder(w).Encode(operations.GetAllIntegratedClients()); err != nil {
+	if err := json.NewEncoder(w).Encode(job.GetAllIntegratedClients()); err != nil {
 		log.Error("Cannot encode clients structs")
 	}
 }
@@ -75,7 +75,7 @@ func ShowClientStatus(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	clientName := vars["clientName"]
 	log.Debug("Received arguments: ", clientName)
-	clientHostname, err := operations.SendHelloMessageToClient(clientName)
+	clientHostname, err := job.SendHelloMessageToClient(clientName)
 	if err != nil {
 		errorMessage := &HelloMessage{
 			Hostname: "Error, Cannot find given client",
@@ -137,7 +137,7 @@ func TriggerClientBackup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	clientName := vars["clientName"]
 	log.Debug("Received arguments: ", clientName)
-	var backupConfigMassage config.Backup
+	var backupConfigMassage config.BackupConfig
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		log.Error("Cannot read body of Trigger message backup")
