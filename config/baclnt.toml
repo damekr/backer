@@ -7,7 +7,6 @@ TempDir = "/tmp/backer"
 ExternalName = "foo" # External name of client, can be hosts/ip/DNS
 DataTransferInterface = "127.0.0.1" # IP addres on which data server will listen
 
-
 [server]
 ExternalName = "127.0.0.1" # External name of server to allow integration of this client
 DataPort = 8000
