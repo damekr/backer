@@ -102,23 +102,5 @@ func main() {
 	}
 	log.Info(srv)
 
-	// fmt.Println("OK")
-	// // startInterfaceClient()
-	// host := "localhost"
-	// port := 27001
-	// paths := []string{
-	//     "/tmp",
-	//     "/home/damian/dupa",
-	// }
-	// archivename := "tmp.tar"
-	// connection := TransferConnection{
-	//     Port: port,
-	//     Host: host,
-	// }
-
-	// backup := BackupConfig{
-	//     TRConn: connection,
-	// }
-	// backup.CreateArchive(paths, archivename)
 
 }

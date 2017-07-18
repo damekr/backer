@@ -7,13 +7,16 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/baclnt/backup"
-	"github.com/damekr/backer/baclnt/config"
 	"github.com/damekr/backer/common/dataproto"
 	"path"
+	"github.com/damekr/backer/baclnt/config"
 )
 
 // BUFFERSIZE specifies how big is a chunk of data being sent
-const BUFFERSIZE = 1024
+const (
+	BUFFERSIZE = 1024
+	SRVDATAPORT = "8000"
+)
 
 type BackupConfig struct {
 	Paths       []string
@@ -34,31 +37,44 @@ func initDataConnectionWithServer(srvAddr, dataPort string) (net.Conn, error) {
 		log.Error("Couldn't establish connection with: ", srvAddr)
 		return nil, err
 	}
-	log.Debug("Sending transfer type header")
-	transferHeader := &dataproto.Transfer{
-		TType: "fullbackup",
-		From:  "foo",
-	}
-	err = sendTransferTypeHeader(transferHeader, conn)
-	if err != nil {
-		log.Error(err)
-	}
 	log.Debugf("Established connection with server: %s on port: %s", srvAddr, dataPort)
 	return conn, nil
 }
 
+func initFullBackupDataConnection(srvAddr, dataPort string) (net.Conn, error){
+	conn, err := initDataConnectionWithServer(srvAddr, dataPort)
+	if err != nil {
+		log.Error("Cannot init full backup connection")
+		return nil, err
+	}
+	clientName := config.GetExternalName()
+	log.Debugf("Using client name: %s to communicate with server", clientName)
+	log.Debug("Sending transfer type header")
+	transferHeader := dataproto.CreateFullBackupTypeHeader(clientName)
+	err = transferHeader.SendTypeHeader(conn, srvAddr)
+	if err != nil {
+		log.Error("Sending transfer header failed with error: ", err)
+		return nil, err
+	}
+	return conn, nil
+
+}
+
 func StartFullBackup(paths []string, srvAddr string) error {
 	delimiter := make([]byte, 1)
-	conn, err := initDataConnectionWithServer(config.GetServerExternalName(), "8000")
+
+	// Initializing full backup connection
+	conn, err := initFullBackupDataConnection(srvAddr, SRVDATAPORT)
 	if err != nil {
 		log.Error(err)
 	}
 	defer conn.Close()
+
 	for _, v := range paths {
 		log.Debug("Sending file: ", v)
 		err = sendFileHeader(conn, v)
 		if err != nil {
-			log.Errorf("An error occured during sending file: %s header, erorr: %s", v, err.Error())
+			log.Errorf("An error occured during sending file: %s header, error: %s", v, err.Error())
 		}
 		d, err := conn.Read(delimiter)
 		if err != nil {

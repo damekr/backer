@@ -8,6 +8,10 @@ import (
 	"os"
 )
 
+const (
+	FILEDELIMITER = "\r\n"
+)
+
 func init() {
 	log.Debug("Initializing transfer protocol")
 }
@@ -85,4 +89,30 @@ func UnmarshalFileInfoHeader(conn net.Conn) (*FileTransferInfo, error) {
 	}
 	log.Debug("Responded: ", s)
 	return &fileInfo, nil
+}
+
+func WriteFileDelimiter(conn net.Conn) error {
+	s, err := conn.Write([]byte(FILEDELIMITER))
+	if err != nil {
+		log.Error("ERORR: ", err.Error())
+	}
+	log.Debug("Got file delimiter response: ", s)
+}
+
+func CreateFullBackupTypeHeader(clientName string) *Transfer {
+		return &Transfer{
+			TType: "fullbackup",
+			From:  clientName,
+		}
+
+	}
+
+func (t *Transfer) SendTypeHeader(conn net.Conn, srvAddr string) error {
+	log.Debug("Sending transfer type to server")
+	err := SendDataTypeHeader(t, conn)
+	if err != nil {
+		log.Error("Encoding transfer header failed")
+		return err
+	}
+	return nil
 }
