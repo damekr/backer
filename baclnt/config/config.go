@@ -24,6 +24,7 @@ type ClientConfig struct {
 type ServerConfig struct {
 	MgmtPort string
 	DataPort string
+	ExternalName string
 }
 
 var (
@@ -41,6 +42,7 @@ func GetServerConfig() *ServerConfig {
 	return &ServerConfig{
 		MgmtPort: clntConfViper.GetString("server.MgmtPort"),
 		DataPort: clntConfViper.GetString("server.DataPort"),
+		ExternalName: clntConfViper.GetString("server.ExternalName"),
 	}
 }
 
@@ -54,6 +56,9 @@ func GetServerDataPort() string {
 	return clntConfViper.GetString("server.DataPort")
 }
 
+func GetServerExternalName() string {
+	return clntConfViper.GetString("server.ExternalName")
+}
 func GetTempDir() string {
 	return clntConfViper.GetString("main.TempDir")
 }

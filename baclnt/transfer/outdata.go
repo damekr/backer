@@ -7,6 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/baclnt/backup"
+	"github.com/damekr/backer/baclnt/config"
 	"github.com/damekr/backer/common/dataproto"
 	"path"
 )
@@ -48,7 +49,7 @@ func initDataConnectionWithServer(srvAddr, dataPort string) (net.Conn, error) {
 
 func StartFullBackup(paths []string, srvAddr string) error {
 	delimiter := make([]byte, 1)
-	conn, err := initDataConnectionWithServer(srvAddr, "8000")
+	conn, err := initDataConnectionWithServer(config.GetServerExternalName(), "8000")
 	if err != nil {
 		log.Error(err)
 	}
