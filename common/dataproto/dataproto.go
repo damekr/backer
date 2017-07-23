@@ -6,20 +6,26 @@ import (
 	"io"
 	"net"
 	"os"
+	"github.com/damekr/backer/baclnt/backup"
+	"path"
+	"encoding/hex"
+	md5 "crypto/md5"
+	"errors"
 )
 
 const (
-	FILEDELIMITER = "\r\n"
+	DELIMITER = "\r\n"
+	BUFFERSIZE = 1024
 )
 
 func init() {
 	log.Debug("Initializing transfer protocol")
 }
 
-// Transfer is a header of transfer connection, always is send at the beginning of data transfer
+
 type Transfer struct {
-	TType string
-	From  string
+	From	string
+	Connection net.Conn
 }
 
 type FileTransferInfo struct {
@@ -32,35 +38,228 @@ type FileTransferInfo struct {
 	Checksum string
 }
 
-// SendDataTypeHeader encoding data to be send over socket as first chunk of data
-func SendDataTypeHeader(transfer *Transfer, conn net.Conn) error {
+type ReturnMessage struct {
+	Status bool
+	Message	string
+}
+
+func sendDataTypeHeader(transferType string, conn net.Conn) error {
 	log.Debug("Marshaling data for header transfer")
 	enc := gob.NewEncoder(conn)
-	err := enc.Encode(transfer)
+	err := enc.Encode(transferType)
 	if err != nil {
-		log.Errorf("Cannot encode transfer header with type: %s, and from: %s", transfer.TType, transfer.From)
+		log.Errorf("Cannot encode transfer header with type: %s", transferType)
 		return err
 	}
 	return nil
 }
 
-// UnmarshalTransferHeader gets buffered data and decode them
-func UnmarshalTransferHeader(conn net.Conn) (*Transfer, error) {
-	log.Debug("Unmarshaling data from transfered header")
-	var transfer Transfer
+func receiveDataTypeHeader(conn net.Conn) (string, error) {
+	log.Debug("Receiving transfer type header")
+	var transferType string
 	dec := gob.NewDecoder(conn)
-	err := dec.Decode(&transfer)
+	err := dec.Decode(transferType)
 	if err != nil {
 		log.Error("Cannot decode transfer header data")
-		return &transfer, err
+		return nil, err
 	}
-	return &transfer, nil
+	return transferType, nil
 }
 
-// SendFileInfoHeader sends each time before file trsansfer information about file being transfered
-func SendFileInfoHeader(fileInfo *FileTransferInfo, conn net.Conn) error {
+
+func sendDelimiter(conn net.Conn) error {
+	log.Debug("Sending delimiter")
+	s, err := conn.Write([]byte(DELIMITER))
+	if err != nil {
+		log.Error("Error while sending delimiter: ", err.Error())
+		return err
+	}
+	log.Debug("Sent delimiter size: ", s)
+	return nil
+}
+
+func receiveDelimiter(conn net.Conn) error {
+	log.Debug("Receiving delimiter")
+	s, err := conn.Read([]byte(len(DELIMITER)))
+	if err != nil {
+		log.Error("Error while receiving delimiter: ", err.Error())
+		return err
+	}
+	log.Debug("Received delimiter size: ", s)
+	return nil
+}
+
+func CreateTransferConnection(from string, conn net.Conn) *Transfer {
+		return &Transfer{
+			From:         from,
+			Connection: 		conn,
+		}
+	}
+
+func (t *Transfer) SendTypeHeader(transferType string) error {
+	log.Debugf("Sending transfer type: %s to server", transferType)
+	err := sendDataTypeHeader(transferType, t.Connection)
+	if err != nil {
+		log.Error("Encoding transfer header failed")
+		return err
+	}
+	err = sendDelimiter(t.Connection)
+	if err != nil {
+		log.Error("Error when sending delimiter after data type header")
+	}
+	return nil
+}
+
+func (t *Transfer) ReceiveTypeHeader() (string, error){
+	log.Debug("Receiving transfer type header")
+	transferType, err := receiveDataTypeHeader(t.Connection)
+	if err != nil {
+		log.Error("Could not decode transfer type header, closing connection")
+		t.Connection.Close()
+		return nil, err
+	}
+	log.Debug("Received transfer type: ", transferType)
+	err = receiveDelimiter(t.Connection)
+	if err != nil{
+		return nil, err
+	}
+	return transferType, nil
+}
+
+func (t *Transfer) SendFile(fileLocation string) error {
+	log.Debug("Sending file ", path.Base(fileLocation))
+	err := t.sendFileHeader(fileLocation)
+	fileBuffer := make([]byte, BUFFERSIZE)
+	file, err := openFile(fileLocation)
+	if err != nil {
+		log.Errorf("Couldn't read file %s, skipping", fileLocation)
+		return nil
+	}
+	defer file.Close()
+
+	for {
+		_, err := file.Read(fileBuffer)
+		if err == io.EOF {
+			break
+		}
+		t.Connection.Write(fileBuffer)
+	}
+	log.Debugf("File: %s has been sent", path.Base(fileLocation))
+	err = sendDelimiter(t.Connection)
+	if err != nil {
+		log.Error("Error when sending delimiter after file transfer")
+	}
+	return nil
+}
+
+
+
+func (t *Transfer) ReceiveFile(saveFullDirectory string) error {
+	log.Debug("Starting receiving file, writing it to directory: ", saveFullDirectory)
+	fileInfo, err := receiveFileInfoHeader(t.Connection)
+	if err != nil {
+		log.Error("Error while reading file header, error: ", err.Error())
+	}
+	receivingFile, err := os.Create(path.Join(saveFullDirectory, fileInfo.Name))
+	if err != nil {
+		log.Error("Cannot create file to writing in: ", saveFullDirectory)
+	}
+	defer receivingFile.Close()
+	log.Debug("Created file to write: ", receivingFile.Name())
+	var receivedBytes int64
+	for {
+		if (fileInfo.Size - receivedBytes) < BUFFERSIZE {
+			if fileInfo.Size == 0 {
+				break
+			}
+			io.CopyN(receivingFile, t.Connection, fileInfo.Size - receivedBytes)
+			t.Connection.Read(make([]byte, (receivedBytes+BUFFERSIZE)-fileInfo.Size))
+			break
+		}
+		io.CopyN(receivingFile, t.Connection, BUFFERSIZE)
+		receivedBytes += BUFFERSIZE
+	}
+	err = receiveDelimiter(t.Connection)
+	if err != nil {
+		log.Error("Error while reading delimiter in file receving")
+	}
+	if checkFileChecksum(receivingFile.Name(), fileInfo.Checksum) != nil {
+		log.Error("File does not match checksum")
+		return errors.New("Checksum does not match")
+	}
+	log.Debugf("File %s has been correctly received", receivingFile.Name())
+	return nil
+}
+
+
+func (t *Transfer) sendFileHeader(fileLocation string) error {
+	log.Debug("Sending file info header")
+	fileHeader, err := backup.ReadFileHeader(fileLocation)
+	if err != nil {
+		log.Error("File does not exist")
+		return err
+	}
+	err = sendFileInfoHeader(fileHeader, t.Connection)
+	if err != nil {
+		log.Error("Encoding and sending file type header failed")
+		return err
+	}
+
+	err = sendDelimiter(t.Connection)
+	if err != nil {
+		log.Error("Could not send delimiter")
+		return err
+	}
+	return nil
+}
+
+func (t *Transfer) receiveFileHeader() (FileTransferInfo, error) {
+	log.Debug("Receiving file info header")
+	fileInfo, err := receiveFileInfoHeader(t.Connection)
+
+	if err == io.EOF {
+		log.Debug("No more files to receive, closing connection")
+		t.Connection.Close()
+		return nil, err
+	} else if err != nil {
+		log.Error("Error while receiving file info header, error: ", err.Error())
+		return nil, err
+	}
+	log.Debug("Received file info header: ", fileInfo)
+
+	err = receiveDelimiter(t.Connection)
+	if err != nil {
+		log.Error("Could not receive delimiter")
+		return nil, err
+	}
+	return fileInfo, nil
+}
+
+
+func receiveFileInfoHeader(conn net.Conn) (FileTransferInfo, error) {
+	log.Debug("Reading file header")
+	var fileInfo FileTransferInfo
+	dec := createDecoder(conn)
+	err := dec.Decode(fileInfo)
+	if err != nil {
+		log.Error("Could not decode file info header")
+		return nil, err
+	}
+	return fileInfo, err
+}
+
+func createEncoder(conn net.Conn) *gob.Encoder {
+	log.Debug("Creating encoder")
+	return gob.NewEncoder(conn)
+}
+
+func createDecoder(conn net.Conn) *gob.Decoder {
+	log.Debug("Creating decoder")
+	return gob.NewDecoder(conn)
+}
+func sendFileInfoHeader(fileInfo *FileTransferInfo, conn net.Conn) error {
 	log.Debugf("Sending file header:  %#v", fileInfo)
-	enc := gob.NewEncoder(conn)
+	enc := createEncoder(conn)
 	err := enc.Encode(fileInfo)
 	if err != nil {
 		log.Error("Could not encode file info header")
@@ -69,50 +268,33 @@ func SendFileInfoHeader(fileInfo *FileTransferInfo, conn net.Conn) error {
 	return nil
 }
 
-// UnmarshalFileInfoHeader getting information from connection about file being transfered
-func UnmarshalFileInfoHeader(conn net.Conn) (*FileTransferInfo, error) {
-	log.Debug("Unmarshaling file info header")
-	var fileInfo FileTransferInfo
-	dec := gob.NewDecoder(conn)
-	err := dec.Decode(&fileInfo)
-	switch {
-	case err == io.EOF:
-		return &fileInfo, err
 
-	case err != nil:
-		log.Error("Cannot decode file info header, error: ", err.Error())
-		return &fileInfo, err
-	}
-	s, err := conn.Write([]byte("\n"))
+func openFile(fileLocation string) (*os.File, error) {
+	// TODO Check if file exists
+	file, err := os.Open(fileLocation)
 	if err != nil {
-		log.Error("ERORR: ", err.Error())
+		log.Error(err.Error())
+		return nil, err
 	}
-	log.Debug("Responded: ", s)
-	return &fileInfo, nil
+	return file, nil
 }
 
-func WriteFileDelimiter(conn net.Conn) error {
-	s, err := conn.Write([]byte(FILEDELIMITER))
+func checkFileChecksum(fileLocation, checksum string) error {
+	log.Debugf("Checking received %s file checksum", checksum)
+	file, err := os.Open(fileLocation)
 	if err != nil {
-		log.Error("ERORR: ", err.Error())
-	}
-	log.Debug("Got file delimiter response: ", s)
-}
-
-func CreateFullBackupTypeHeader(clientName string) *Transfer {
-		return &Transfer{
-			TType: "fullbackup",
-			From:  clientName,
-		}
-
-	}
-
-func (t *Transfer) SendTypeHeader(conn net.Conn, srvAddr string) error {
-	log.Debug("Sending transfer type to server")
-	err := SendDataTypeHeader(t, conn)
-	if err != nil {
-		log.Error("Encoding transfer header failed")
 		return err
 	}
+	defer file.Close()
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return err
+	}
+	hashInBytes := hash.Sum(nil)[:16]
+	returnMD5String := hex.EncodeToString(hashInBytes)
+	if returnMD5String != checksum {
+		log.Errorf("Calculation of checksum failed - was: %s is: %s", checksum, returnMD5String)
+	}
+	log.Debugf("Calculation of checksum of file: %s passsed", file.Name())
 	return nil
 }

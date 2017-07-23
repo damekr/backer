@@ -44,7 +44,7 @@ func dataTransferHandler(conn net.Conn) {
 		log.Error("Couldn't read data transfer header")
 	}
 	log.Debug("Transfer from: ", header.From)
-	transferType := strings.ToLower(header.TType)
+	transferType := strings.ToLower(header.TransferType)
 	log.Debug("Transfer type: ", transferType)
 	switch transferType {
 	case "fullbackup":
@@ -82,25 +82,7 @@ func receiveFiles(conn net.Conn, savesetFullPath string) {
 	}
 }
 
-func checkFileChecksum(fileLocation, checksum string) error {
-	log.Debugf("Checking received %s file checksum", checksum)
-	file, err := os.Open(fileLocation)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	hash := md5.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return err
-	}
-	hashInBytes := hash.Sum(nil)[:16]
-	returnMD5String := hex.EncodeToString(hashInBytes)
-	if returnMD5String != checksum {
-		log.Errorf("Calculation of checksum failed - was: %s is: %s", checksum, returnMD5String)
-	}
-	log.Debugf("Calculation of checksum of file: %s passsed", file.Name())
-	return nil
-}
+
 
 func receiveFile(fileSize int64, savesetFullPath, fileName, fileFullLocation, checksum string, connection net.Conn) error {
 	log.Debugf("Creating file: %s in saveset: %s", fileName, savesetFullPath)

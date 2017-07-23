@@ -50,7 +50,7 @@ func initFullBackupDataConnection(srvAddr, dataPort string) (net.Conn, error){
 	clientName := config.GetExternalName()
 	log.Debugf("Using client name: %s to communicate with server", clientName)
 	log.Debug("Sending transfer type header")
-	transferHeader := dataproto.CreateFullBackupTypeHeader(clientName)
+	transferHeader := dataproto.CreateTransferConnection(clientName)
 	err = transferHeader.SendTypeHeader(conn, srvAddr)
 	if err != nil {
 		log.Error("Sending transfer header failed with error: ", err)
@@ -102,47 +102,3 @@ func sendTransferTypeHeader(transfer *dataproto.Transfer, conn net.Conn) error {
 	return nil
 }
 
-func sendFileHeader(conn net.Conn, fileLocation string) error {
-	log.Debug("Sending file info header")
-	fileHeader, err := backup.ReadFileHeader(fileLocation)
-	if err != nil {
-		log.Error("File does not exist")
-		return err
-	}
-	err = dataproto.SendFileInfoHeader(fileHeader, conn)
-	if err != nil {
-		log.Error("Encoding and sending file type header failed")
-		return err
-	}
-	return nil
-}
-
-func sendFile(conn net.Conn, fileLocation string) error {
-	log.Debug("Sending file ", path.Base(fileLocation))
-	sendBuffer := make([]byte, BUFFERSIZE)
-	file, err := openFile(fileLocation)
-	if err != nil {
-		log.Errorf("Couldn't read file %s, skipping", fileLocation)
-		return nil
-	}
-	defer file.Close()
-	for {
-		_, err := file.Read(sendBuffer)
-		if err == io.EOF {
-			break
-		}
-		conn.Write(sendBuffer)
-	}
-	log.Debugf("File: %s has been sent", path.Base(fileLocation))
-	return nil
-}
-
-func openFile(fileLocation string) (*os.File, error) {
-	// TODO Check if file exists
-	file, err := os.Open(fileLocation)
-	if err != nil {
-		log.Error(err.Error())
-		return nil, err
-	}
-	return file, nil
-}
