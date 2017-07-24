@@ -83,11 +83,14 @@ func receiveDelimiter(conn net.Conn) error {
 	log.Debug("Receiving delimiter")
 	buff := make([]byte, len(DELIMITER))
 	s, err := conn.Read(buff)
-	if err == io.EOF{
-		log.Debug("Client closed connection")
-	} else  {
-		log.Error("Error while reading delimiter: ", err.Error())
-		return err
+	log.Debug("Read delimiter size: ", s)
+	if err != nil {
+		if err == io.EOF {
+			log.Debug("Client closed connection")
+		} else {
+			log.Error("Error while reading delimiter: ", err.Error())
+			return err
+		}
 	}
 	log.Debug("Received delimiter size: ", s)
 	return nil
@@ -134,7 +137,6 @@ func (t *Transfer) SendFile(fileLocation string) error {
 		return nil
 	}
 	defer file.Close()
-
 	for {
 		_, err := file.Read(fileBuffer)
 		if err == io.EOF {
@@ -143,6 +145,8 @@ func (t *Transfer) SendFile(fileLocation string) error {
 		t.Connection.Write(fileBuffer)
 	}
 	log.Debugf("File: %s has been sent", path.Base(fileLocation))
+
+	log.Debug("Sending delimiter after file send")
 	err = sendDelimiter(t.Connection)
 	if err != nil {
 		log.Error("Error when sending delimiter after file transfer")
@@ -177,9 +181,10 @@ func (t *Transfer) ReceiveFile(saveFullDirectory string) error {
 		io.CopyN(receivingFile, t.Connection, BUFFERSIZE)
 		receivedBytes += BUFFERSIZE
 	}
+	log.Debug("Reading delimiter after file transfer")
 	err = receiveDelimiter(t.Connection)
 	if err != nil {
-		log.Error("Error while reading delimiter in file receving")
+		log.Error("Error while reading delimiter in file receiving")
 	}
 	if checkFileChecksum(receivingFile.Name(), fileInfo.Checksum) != nil {
 		log.Error("File does not match checksum")
@@ -191,18 +196,19 @@ func (t *Transfer) ReceiveFile(saveFullDirectory string) error {
 
 
 func (t *Transfer) sendFileHeader(fileLocation string) error {
-	log.Debug("Sending file info header")
+	log.Debug("Reading file info header")
 	fileHeader, err := backup.ReadFileHeader(fileLocation)
 	if err != nil {
 		log.Error("File does not exist")
 		return err
 	}
+	log.Debug("Sending file info header")
 	err = sendFileInfoHeader(fileHeader, t.Connection)
 	if err != nil {
 		log.Error("Encoding and sending file type header failed")
 		return err
 	}
-
+	log.Debug("Sending delimiter after file header")
 	err = sendDelimiter(t.Connection)
 	if err != nil {
 		log.Error("Could not send delimiter")
@@ -214,20 +220,18 @@ func (t *Transfer) sendFileHeader(fileLocation string) error {
 func (t *Transfer) receiveFileHeader() (backup.FileTransferInfo, error) {
 	log.Debug("Receiving file info header")
 	fileInfo, err := receiveFileInfoHeader(t.Connection)
-
 	if err == io.EOF {
-		log.Debug("No more files to receive, closing connection")
-		t.Connection.Close()
+		log.Debug("No more files to receive, waiting for client to close connection")
 		return fileInfo, err
 	} else if err != nil {
 		log.Error("Error while receiving file info header, error: ", err.Error())
 		return fileInfo, err
 	}
 	log.Debug("Received file info header: ", fileInfo)
-
+	log.Debug("Reading delimiter after file header")
 	err = receiveDelimiter(t.Connection)
 	if err != nil {
-		log.Error("Could not receive delimiter")
+		log.Error("Could not receive delimiter after file header")
 		return fileInfo, err
 	}
 	return fileInfo, nil
@@ -238,7 +242,7 @@ func receiveFileInfoHeader(conn net.Conn) (backup.FileTransferInfo, error) {
 	log.Debug("Reading file header")
 	var fileInfo backup.FileTransferInfo
 	dec := createDecoder(conn)
-	err := dec.Decode(fileInfo)
+	err := dec.Decode(&fileInfo)
 	if err != nil {
 		log.Error("Could not decode file info header")
 		return fileInfo, err
@@ -291,7 +295,8 @@ func checkFileChecksum(fileLocation, checksum string) error {
 	returnMD5String := hex.EncodeToString(hashInBytes)
 	if returnMD5String != checksum {
 		log.Errorf("Calculation of checksum failed - was: %s is: %s", checksum, returnMD5String)
+	} else {
+		log.Debugf("Calculation of checksum of file: %s passsed", file.Name())
 	}
-	log.Debugf("Calculation of checksum of file: %s passsed", file.Name())
 	return nil
 }

@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"crypto/rand"
 	"os"
+	"path"
+	"github.com/Sirupsen/logrus"
 )
 
 const PORT = ":12000"
@@ -78,7 +80,31 @@ func sendTransferHeader(transferType string){
 	transfer := New("localhost", conn)
 	transfer.SendTypeHeader(transferType)
 }
+func sendFile(fileLocation string) error {
+	conn, err := net.Dial("tcp", PORT)
+	if err != nil {
+		fmt.Print("Error while connecting")
+	}
+	transfer := New("client", conn)
+	err = transfer.SendFile(fileLocation)
+	conn.Close()
+	return err
+}
 
+func prepareSendFile() (string, error) {
+	fileSize := 1024000 << 1 // 250MB
+	tmpFile := tempFile{
+		Name: "dummyFile",
+		Size: fileSize,
+	}
+	fileName, err := tmpFile.create()
+	if err != nil {
+		fmt.Errorf("Could not create temp file")
+		return "", err
+	}
+	fmt.Println("Created temp file: ", fileName)
+	return fileName, nil
+}
 
 func TestTransfer_SendTypeHeader(t *testing.T) {
 	ln := startServer()
@@ -108,32 +134,40 @@ func TestTransfer_SendTypeHeader(t *testing.T) {
 	}
 }
 
-
-//func sendFile() {
-//	conn, err := net.Dial("tcp", PORT)
-//	if err != nil {
-//		fmt.Print("Error while connecting")
-//	}
-//	defer conn.Close()
-//	transfer := New("client", conn)
-//	transfer.SendFile()
-//}
-
 func TestTransfer_SendFile(t *testing.T) {
-	fileSize := 1024000 << 8 // 250MB
+	logrus.SetLevel(logrus.DebugLevel)
+	//fileName, err := prepareSendFile()
+	//if err != nil {
+	//	t.Fatalf("Could not create temp file skipping")
+	//}
+	ln := startServer()
+	go func() {
+		sendFile("/tmp/kk")
+	}()
+	defer ln.Close()
+	//defer func(){
+	//	err = os.Remove(fileName)
+	//	if err != nil {
+	//		t.Errorf("Could not remove sent file")
+	//	}
+	//	err = os.Remove(path.Join(os.TempDir(), "received", path.Base(fileName)))
+	//	if err != nil {
+	//		t.Errorf("Could not remove received file")
+	//	}
+	//}()
 
-	tmpFile := tempFile{
-		Name: "dummyFile",
-		Size: fileSize,
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			fmt.Errorf("Error while listening")
+		}
+		transfer2 := New("client", conn)
+		err = transfer2.ReceiveFile(path.Join(os.TempDir(), "received"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return
+
 	}
-	fileName, err := tmpFile.create()
-	if err != nil {
-		t.Fatal("Could not create temp file")
-	}
-	t.Log("Created temp file: ", fileName)
-	t.Log("Cleaning up")
-	err = tmpFile.cleanup(fileName)
-	if err != nil{
-		t.Fatal(err)
-	}
+
 }
