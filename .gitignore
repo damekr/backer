@@ -26,3 +26,9 @@ _testmain.go
 *.prof
 ./baclnt/baclnt
 ./bacsrv/bacsrv
+.idea/backer.iml
+.idea/dictionaries/
+.idea/libraries/GOPATH__backer_2.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/workspace.xml
