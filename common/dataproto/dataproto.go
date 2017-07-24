@@ -4,7 +4,7 @@ import (
 	"encoding/gob"
 	log "github.com/Sirupsen/logrus"
 	"io"
-	"net"
+	net "net"
 	"os"
 	"github.com/damekr/backer/baclnt/backup"
 	"path"
@@ -28,20 +28,21 @@ type Transfer struct {
 	Connection net.Conn
 }
 
-type FileTransferInfo struct {
-	Name     string
-	Location string
-	Size     int64
-	UID      int
-	GID      int
-	Mode     os.FileMode
-	Checksum string
-}
+
 
 type ReturnMessage struct {
 	Status bool
 	Message	string
 }
+
+
+func New(from string, conn net.Conn) *Transfer {
+	return &Transfer{
+		From:         from,
+		Connection: 		conn,
+	}
+}
+
 
 func sendDataTypeHeader(transferType string, conn net.Conn) error {
 	log.Debug("Marshaling data for header transfer")
@@ -58,10 +59,10 @@ func receiveDataTypeHeader(conn net.Conn) (string, error) {
 	log.Debug("Receiving transfer type header")
 	var transferType string
 	dec := gob.NewDecoder(conn)
-	err := dec.Decode(transferType)
+	err := dec.Decode(&transferType)
 	if err != nil {
 		log.Error("Cannot decode transfer header data")
-		return nil, err
+		return "", err
 	}
 	return transferType, nil
 }
@@ -80,21 +81,18 @@ func sendDelimiter(conn net.Conn) error {
 
 func receiveDelimiter(conn net.Conn) error {
 	log.Debug("Receiving delimiter")
-	s, err := conn.Read([]byte(len(DELIMITER)))
-	if err != nil {
-		log.Error("Error while receiving delimiter: ", err.Error())
+	buff := make([]byte, len(DELIMITER))
+	s, err := conn.Read(buff)
+	if err == io.EOF{
+		log.Debug("Client closed connection")
+	} else  {
+		log.Error("Error while reading delimiter: ", err.Error())
 		return err
 	}
 	log.Debug("Received delimiter size: ", s)
 	return nil
 }
 
-func CreateTransferConnection(from string, conn net.Conn) *Transfer {
-		return &Transfer{
-			From:         from,
-			Connection: 		conn,
-		}
-	}
 
 func (t *Transfer) SendTypeHeader(transferType string) error {
 	log.Debugf("Sending transfer type: %s to server", transferType)
@@ -116,12 +114,12 @@ func (t *Transfer) ReceiveTypeHeader() (string, error){
 	if err != nil {
 		log.Error("Could not decode transfer type header, closing connection")
 		t.Connection.Close()
-		return nil, err
+		return "", err
 	}
 	log.Debug("Received transfer type: ", transferType)
 	err = receiveDelimiter(t.Connection)
 	if err != nil{
-		return nil, err
+		return "", err
 	}
 	return transferType, nil
 }
@@ -213,37 +211,37 @@ func (t *Transfer) sendFileHeader(fileLocation string) error {
 	return nil
 }
 
-func (t *Transfer) receiveFileHeader() (FileTransferInfo, error) {
+func (t *Transfer) receiveFileHeader() (backup.FileTransferInfo, error) {
 	log.Debug("Receiving file info header")
 	fileInfo, err := receiveFileInfoHeader(t.Connection)
 
 	if err == io.EOF {
 		log.Debug("No more files to receive, closing connection")
 		t.Connection.Close()
-		return nil, err
+		return fileInfo, err
 	} else if err != nil {
 		log.Error("Error while receiving file info header, error: ", err.Error())
-		return nil, err
+		return fileInfo, err
 	}
 	log.Debug("Received file info header: ", fileInfo)
 
 	err = receiveDelimiter(t.Connection)
 	if err != nil {
 		log.Error("Could not receive delimiter")
-		return nil, err
+		return fileInfo, err
 	}
 	return fileInfo, nil
 }
 
 
-func receiveFileInfoHeader(conn net.Conn) (FileTransferInfo, error) {
+func receiveFileInfoHeader(conn net.Conn) (backup.FileTransferInfo, error) {
 	log.Debug("Reading file header")
-	var fileInfo FileTransferInfo
+	var fileInfo backup.FileTransferInfo
 	dec := createDecoder(conn)
 	err := dec.Decode(fileInfo)
 	if err != nil {
 		log.Error("Could not decode file info header")
-		return nil, err
+		return fileInfo, err
 	}
 	return fileInfo, err
 }
@@ -257,7 +255,7 @@ func createDecoder(conn net.Conn) *gob.Decoder {
 	log.Debug("Creating decoder")
 	return gob.NewDecoder(conn)
 }
-func sendFileInfoHeader(fileInfo *FileTransferInfo, conn net.Conn) error {
+func sendFileInfoHeader(fileInfo *backup.FileTransferInfo, conn net.Conn) error {
 	log.Debugf("Sending file header:  %#v", fileInfo)
 	enc := createEncoder(conn)
 	err := enc.Encode(fileInfo)
@@ -267,7 +265,6 @@ func sendFileInfoHeader(fileInfo *FileTransferInfo, conn net.Conn) error {
 	}
 	return nil
 }
-
 
 func openFile(fileLocation string) (*os.File, error) {
 	// TODO Check if file exists

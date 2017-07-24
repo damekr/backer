@@ -6,7 +6,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/common/dataproto"
 	"io"
 	"os"
 	"path"
@@ -19,6 +18,16 @@ type FileInfo struct {
 	Path   string
 	Size   int64
 	Exists bool
+}
+
+type FileTransferInfo struct {
+	Name     string
+	Location string
+	Size     int64
+	UID      int
+	GID      int
+	Mode     os.FileMode
+	Checksum string
 }
 
 func checkPathForRegularFile(path string, f os.FileInfo, err error) error {
@@ -99,8 +108,8 @@ func calculateMD5Sum(fileLocation string) (string, error) {
 	return returnMD5String, nil
 }
 
-func ReadFileHeader(fileLocation string) (*dataproto.FileTransferInfo, error) {
-	var fileHeader dataproto.FileTransferInfo
+func ReadFileHeader(fileLocation string) (*FileTransferInfo, error) {
+	var fileHeader FileTransferInfo
 	info, err := os.Stat(fileLocation)
 	if err != nil {
 		log.Errorf("File %s does not exist", fileLocation)
