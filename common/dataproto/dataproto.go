@@ -82,6 +82,7 @@ func sendDelimiter(conn net.Conn) error {
 func receiveDelimiter(conn net.Conn) error {
 	log.Debug("Receiving delimiter")
 	buff := make([]byte, len(DELIMITER))
+	log.Debug("Received delimiter buffer size: ", len(DELIMITER))
 	s, err := conn.Read(buff)
 	log.Debug("Read delimiter size: ", s)
 	if err != nil {
@@ -130,6 +131,10 @@ func (t *Transfer) ReceiveTypeHeader() (string, error){
 func (t *Transfer) SendFile(fileLocation string) error {
 	log.Debug("Sending file ", path.Base(fileLocation))
 	err := t.sendFileHeader(fileLocation)
+	if err != nil {
+		log.Error("Could not send file header, error: ", err.Error())
+	}
+
 	fileBuffer := make([]byte, BUFFERSIZE)
 	file, err := openFile(fileLocation)
 	if err != nil {
@@ -140,17 +145,16 @@ func (t *Transfer) SendFile(fileLocation string) error {
 	for {
 		_, err := file.Read(fileBuffer)
 		if err == io.EOF {
+			log.Debug("Sending delimiter after file send")
+			err = sendDelimiter(t.Connection)
+			if err != nil {
+				log.Error("Error when sending delimiter after file transfer")
+			}
 			break
 		}
 		t.Connection.Write(fileBuffer)
 	}
 	log.Debugf("File: %s has been sent", path.Base(fileLocation))
-
-	log.Debug("Sending delimiter after file send")
-	err = sendDelimiter(t.Connection)
-	if err != nil {
-		log.Error("Error when sending delimiter after file transfer")
-	}
 	return nil
 }
 
@@ -158,10 +162,11 @@ func (t *Transfer) SendFile(fileLocation string) error {
 
 func (t *Transfer) ReceiveFile(saveFullDirectory string) error {
 	log.Debug("Starting receiving file, writing it to directory: ", saveFullDirectory)
-	fileInfo, err := receiveFileInfoHeader(t.Connection)
+	fileInfo, err := t.receiveFileHeader()
 	if err != nil {
 		log.Error("Error while reading file header, error: ", err.Error())
 	}
+
 	receivingFile, err := os.Create(path.Join(saveFullDirectory, fileInfo.Name))
 	if err != nil {
 		log.Error("Cannot create file to writing in: ", saveFullDirectory)
@@ -171,11 +176,11 @@ func (t *Transfer) ReceiveFile(saveFullDirectory string) error {
 	var receivedBytes int64
 	for {
 		if (fileInfo.Size - receivedBytes) < BUFFERSIZE {
+			log.Debug("Copying rest of file, bytes: ", fileInfo.Size - receivedBytes)
 			if fileInfo.Size == 0 {
 				break
 			}
 			io.CopyN(receivingFile, t.Connection, fileInfo.Size - receivedBytes)
-			t.Connection.Read(make([]byte, (receivedBytes+BUFFERSIZE)-fileInfo.Size))
 			break
 		}
 		io.CopyN(receivingFile, t.Connection, BUFFERSIZE)

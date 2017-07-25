@@ -92,7 +92,7 @@ func sendFile(fileLocation string) error {
 }
 
 func prepareSendFile() (string, error) {
-	fileSize := 1024000 << 1 // 250MB
+	fileSize := 1025000 << 1 // 250MB
 	tmpFile := tempFile{
 		Name: "dummyFile",
 		Size: fileSize,
@@ -136,13 +136,13 @@ func TestTransfer_SendTypeHeader(t *testing.T) {
 
 func TestTransfer_SendFile(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
-	//fileName, err := prepareSendFile()
-	//if err != nil {
-	//	t.Fatalf("Could not create temp file skipping")
-	//}
+	fileName, err := prepareSendFile()
+	if err != nil {
+		t.Fatalf("Could not create temp file skipping")
+	}
 	ln := startServer()
 	go func() {
-		sendFile("/tmp/kk")
+		sendFile(fileName)
 	}()
 	defer ln.Close()
 	//defer func(){
