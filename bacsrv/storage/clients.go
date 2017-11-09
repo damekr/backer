@@ -22,7 +22,7 @@ func checkIfClientBucketExists(name string) bool {
 	repo, err := os.Stat(bucketFolder)
 	if err == nil && repo.IsDir() {
 		// TODO make more validations
-		log.Infof("Client %s bucket exists", name)
+		log.Infof("clientDefinition %s bucket exists", name)
 		return true
 	}
 	return false
@@ -33,9 +33,9 @@ func InitClientsBuckets() error {
 	allClients := config.GetAllClients()
 	log.Debug("Number of integrated clients: ", len(allClients))
 	for _, v := range allClients {
-		log.Printf("Client info: %s", v.Name)
+		log.Printf("clientDefinition info: %s", v.Name)
 		if !checkIfClientBucketExists(v.Name) {
-			log.Infof("Client %s bucket does not exist, creating...", v.Name)
+			log.Infof("clientDefinition %s bucket does not exist, creating...", v.Name)
 			err := repo.CreateClientBucket(v.Name)
 			if err != nil {
 				log.Errorf("Could not create client %s bucket", v.Name)

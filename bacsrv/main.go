@@ -6,7 +6,6 @@ import (
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/test"
 	"os"
-
 )
 
 var commit string
@@ -16,6 +15,7 @@ var configFlag = flag.String("config", "", "Configuration file")
 func init() {
 	flag.StringVar(configFlag, "c", "", "Configuration file")
 }
+
 //
 //func setLogger(srvConfig *config.ServerConfig) {
 //	log.SetFormatter(&log.TextFormatter{})
@@ -97,7 +97,6 @@ func setFlags() {
 
 }
 
-
 //
 //func initRepository() {
 //	err := storage.InitRepository()
@@ -119,7 +118,7 @@ func setFlags() {
 //
 //}
 
-func initConfigs(mainConfigPath string) error{
+func initConfigs(mainConfigPath string) error {
 	err := config.ReadInServerConfig(mainConfigPath)
 	if err != nil {
 		log.Println("Please setup configuration file")
@@ -129,12 +128,11 @@ func initConfigs(mainConfigPath string) error{
 	err = config.ReadInClientsConfig(config.MainConfig.ClientsConfigFilePath, config.MainConfig.BackupsConfigFilePath,
 		config.MainConfig.SchedulesConfigFilePath)
 	if err != nil {
-		log.Println("Could not read clients config, error: ",  err)
+		log.Println("Could not read clients config, error: ", err)
 		return err
 	}
 	return nil
 }
-
 
 func main() {
 	log.Printf("COMMIT: %s", commit)
@@ -143,8 +141,8 @@ func main() {
 	if err != nil {
 		log.Panicln("Cannot init bacsrv configurations")
 	}
-	test.ShowConfig()
-	test.StartBackup()
+	config.ReadInClientsConfig("C:/dev/go/src/github.com/damekr/backer/config/clients/clients.toml", "C:/dev/go/src/github.com/damekr/backer/config/clients/backups.toml", "C:/dev/go/src/github.com/damekr/backer/config/clients/schedules.toml")
+	test.ShowClientsConfig()
 	//config.InitClientsConfig(srvConfig)
 	//config.InitBackupConfig(srvConfig)
 	//initRepository()
@@ -155,6 +153,6 @@ func main() {
 	//fmt.Println("REPO", repo.Location)
 	//fmt.Printf("Storage status: %#v\n", repo.GetCapacityStatus())
 	//clientBucket := storage.CreateClient("minitx")
-	//fmt.Printf("Client %#v\n", clientBucket)
+	//fmt.Printf("clientDefinition %#v\n", clientBucket)
 
 }

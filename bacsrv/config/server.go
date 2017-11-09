@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/spf13/viper"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -10,22 +10,24 @@ var (
 	MainConfig      = ServerConfig{}
 )
 
-
 type ServerConfig struct {
-	MgmtPort              string
-	DataPort              string
-	RestAPIPort           string
-	LogOutput             string // STDOUT, FILE, SYSLOG
-	Debug                 bool
-	RepositoryConfig      string
-	ClientsConfigFilePath string
-	BackupsConfigFilePath string
+	MgmtPort                string
+	DataPort                string
+	RestAPIPort             string
+	LogOutput               string // STDOUT, FILE, SYSLOG
+	Debug                   bool
+	RepositoryConfig        string
+	ClientsConfigFilePath   string
+	BackupsConfigFilePath   string
 	SchedulesConfigFilePath string
-	ExternalName          string
-	DataTransferInterface string
-	DBLocation            string
+	ExternalName            string
+	DataTransferInterface   string
+	DBLocation              string
 }
 
+type RepositoryConfig struct {
+	Localization string
+}
 
 func ReadInServerConfig(path string) error {
 	viper.SetConfigFile(path)
@@ -44,12 +46,10 @@ func ReadInServerConfig(path string) error {
 		DataTransferInterface: viper.GetString("server.DataTransferInterface"),
 		LogOutput:             viper.GetString("server.LogOutput"),
 		Debug:                 viper.GetBool("server.Debug"),
-		ClientsConfigFilePath: viper.GetString("clients.ConfigFile"),
-		BackupsConfigFilePath: viper.GetString("backups.ConfigFile"),
+		ClientsConfigFilePath:   viper.GetString("clients.ConfigFile"),
+		BackupsConfigFilePath:   viper.GetString("backups.ConfigFile"),
 		SchedulesConfigFilePath: viper.GetString("schedules.ConfigFile"),
-		DBLocation:            viper.GetString("server.DBLocation"),
+		DBLocation:              viper.GetString("server.DBLocation"),
 	}
 	return nil
 }
-
-

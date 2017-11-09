@@ -2,43 +2,38 @@ package job
 
 import (
 	"github.com/damekr/backer/bacsrv/task"
-	"github.com/damekr/backer/bacsrv/task/backup"
 )
-
-
-
-
 
 type Job struct {
 	Task []task.Task
-	ID        int
+	ID   int
 }
 
 var Jobs []*Job
 
-
 // TODO Now can be many jobs, but must be possible to define many tasks for one particular job
 var jobs2 map[*Job][]*task.Task
+
 //
+//
+//func New(task task.Task) *Job{
+//	switch task {
+//	case task.(*backup.Backup):
+//		job := &Job{
+//			ID:    1,
+//		}
+//		Jobs = append(Jobs, job)
+//		return job
+//	}
+//	return nil
+//}
 
-func New(task task.Task) *Job{
-	switch task {
-	case task.(*backup.Backup):
-		job := &Job{
-			ID:    1,
-		}
-		Jobs = append(Jobs, job)
-		return job
-	}
-	return nil
-}
-
-func (j *Job)AddTask(task task.Task) error {
+func (j *Job) AddTask(task task.Task) error {
 	j.Task = append(j.Task, task)
 	return nil
 }
 
-func GetAllTasks()[]*Job{
+func GetAllTasks() []*Job {
 	return Jobs
 }
 
@@ -46,8 +41,6 @@ func GetAllTasks()[]*Job{
 //	BackupConfig	*config.Backup
 //	ClientConfig	*config.Client
 //}
-
-
 
 //func (b *BackupJob) Start() error{
 //	log.Info("Starting backup job of client: ", b.ClientConfig.Address)

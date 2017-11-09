@@ -33,19 +33,19 @@ var routes = Routes{
 		ShowClients,
 	},
 	Route{
-		"Client Status",
+		"ClientDefinition Status",
 		"GET",
 		"/clients/{clientName}",
 		ShowClientStatus,
 	},
 	Route{
-		"Client Integration",
+		"ClientDefinition Integration",
 		"POST",
 		"/clients/integrate",
 		IntegrateNewClient,
 	},
 	Route{
-		"Client Backup Trigger",
+		"ClientDefinition Backup Trigger",
 		"POST",
 		"/client/{clientName}/backup",
 		TriggerClientBackup,

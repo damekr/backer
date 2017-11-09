@@ -1,11 +1,13 @@
 [tmp]
 ID = 1
+Description = "asd"
 Paths = ["/tmp"]
 Excluded = [""]
 Retention = 10
 
 [etc]
 ID = 2
+Description = "asd"
 Paths = ["/etc"]
 Excluded = ["/etc/hosts"]
 Retention = 20

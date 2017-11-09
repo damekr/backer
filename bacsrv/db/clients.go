@@ -12,13 +12,13 @@ import (
 )
 
 var (
-	errClientExist        = errors.New("Client exists in database")
-	errClientDoesNotExist = errors.New("Client does not exist")
+	errClientExist        = errors.New("ClientDefinition exists in database")
+	errClientDoesNotExist = errors.New("ClientDefinition does not exist")
 	errClientResource     = errors.New("Cannot add client resources")
 )
 
 // AddClient adds client into database, assumes that CID is uniq.
-func AddClient(clnt *config.Client) error {
+func AddClient(clnt *config.clientDefinition) error {
 	/* ClientResources Schema
 	name: <name>,
 	address: <ip_address>,
@@ -38,12 +38,12 @@ func AddClient(clnt *config.Client) error {
 		return nil
 	})
 
-	log.Debugf("Client %s has been successfully added into DB", clnt.Name)
+	log.Debugf("ClientDefinition %s has been successfully added into DB", clnt.Name)
 	return nil
 }
 
-func GetClient(cid string) (*config.Client, error) {
-	client := &config.Client{}
+func GetClient(cid string) (*config.clientDefinition, error) {
+	client := &config.clientDefinition{}
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(clientsBucket))
 		v := b.Get([]byte(cid))
