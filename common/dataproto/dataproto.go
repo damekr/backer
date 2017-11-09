@@ -11,6 +11,8 @@ import (
 	"encoding/hex"
 	md5 "crypto/md5"
 	"errors"
+	"unsafe"
+
 )
 
 const (
@@ -134,7 +136,6 @@ func (t *Transfer) SendFile(fileLocation string) error {
 	if err != nil {
 		log.Error("Could not send file header, error: ", err.Error())
 	}
-
 	fileBuffer := make([]byte, BUFFERSIZE)
 	file, err := openFile(fileLocation)
 	if err != nil {
@@ -146,7 +147,6 @@ func (t *Transfer) SendFile(fileLocation string) error {
 		_, err := file.Read(fileBuffer)
 		if err == io.EOF {
 			log.Debug("Sending delimiter after file send")
-			err = sendDelimiter(t.Connection)
 			if err != nil {
 				log.Error("Error when sending delimiter after file transfer")
 			}
@@ -154,6 +154,7 @@ func (t *Transfer) SendFile(fileLocation string) error {
 		}
 		t.Connection.Write(fileBuffer)
 	}
+	err = sendDelimiter(t.Connection)
 	log.Debugf("File: %s has been sent", path.Base(fileLocation))
 	return nil
 }
@@ -166,7 +167,6 @@ func (t *Transfer) ReceiveFile(saveFullDirectory string) error {
 	if err != nil {
 		log.Error("Error while reading file header, error: ", err.Error())
 	}
-
 	receivingFile, err := os.Create(path.Join(saveFullDirectory, fileInfo.Name))
 	if err != nil {
 		log.Error("Cannot create file to writing in: ", saveFullDirectory)
@@ -176,7 +176,7 @@ func (t *Transfer) ReceiveFile(saveFullDirectory string) error {
 	var receivedBytes int64
 	for {
 		if (fileInfo.Size - receivedBytes) < BUFFERSIZE {
-			log.Debug("Copying rest of file, bytes: ", fileInfo.Size - receivedBytes)
+			log.Println("Copying rest of file, bytes: ", fileInfo.Size - receivedBytes)
 			if fileInfo.Size == 0 {
 				break
 			}
@@ -248,6 +248,7 @@ func receiveFileInfoHeader(conn net.Conn) (backup.FileTransferInfo, error) {
 	var fileInfo backup.FileTransferInfo
 	dec := createDecoder(conn)
 	err := dec.Decode(&fileInfo)
+	log.Println("LEN RECV: ", unsafe.Sizeof(fileInfo))
 	if err != nil {
 		log.Error("Could not decode file info header")
 		return fileInfo, err
@@ -266,6 +267,7 @@ func createDecoder(conn net.Conn) *gob.Decoder {
 }
 func sendFileInfoHeader(fileInfo *backup.FileTransferInfo, conn net.Conn) error {
 	log.Debugf("Sending file header:  %#v", fileInfo)
+	log.Println("LEN SEND: ", unsafe.Sizeof(*fileInfo))
 	enc := createEncoder(conn)
 	err := enc.Encode(fileInfo)
 	if err != nil {
@@ -299,7 +301,7 @@ func checkFileChecksum(fileLocation, checksum string) error {
 	hashInBytes := hash.Sum(nil)[:16]
 	returnMD5String := hex.EncodeToString(hashInBytes)
 	if returnMD5String != checksum {
-		log.Errorf("Calculation of checksum failed - was: %s is: %s", checksum, returnMD5String)
+		log.Errorf("Calculation of checksum of file: %s failed - was: %s is: %s",fileLocation, checksum, returnMD5String)
 	} else {
 		log.Debugf("Calculation of checksum of file: %s passsed", file.Name())
 	}

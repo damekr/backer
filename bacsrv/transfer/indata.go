@@ -11,7 +11,7 @@ import (
 	"encoding/hex"
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
-	"github.com/damekr/backer/bacsrv/repository"
+	"github.com/damekr/backer/bacsrv/storage"
 	"github.com/damekr/backer/common/dataproto"
 	"path"
 	"strings"
@@ -50,7 +50,7 @@ func dataTransferHandler(conn net.Conn) {
 	case "fullbackup":
 		log.Info("Starting full backup data transfer")
 		log.Info("Creating new client bucket for data")
-		savesetFullPath, err := repository.CreateClientSaveset(header.From)
+		savesetFullPath, err := storage.CreateClientSaveset(header.From)
 		if err != nil {
 			log.Error("Failed during creation client saveset")
 			conn.Close()
@@ -97,7 +97,7 @@ func receiveFile(fileSize int64, savesetFullPath, fileName, fileFullLocation, ch
 	log.Debug("File under saveset: ", fileUnderSavesetPath)
 	newFile, err := os.Create(fileUnderSavesetPath)
 	if err != nil {
-		log.Errorf("Cannot create file: %s in repository, error: %s", fileName, err.Error())
+		log.Errorf("Cannot create file: %s in storage, error: %s", fileName, err.Error())
 	}
 	defer newFile.Close()
 	var receivedBytes int64

@@ -137,7 +137,7 @@ func TriggerClientBackup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	clientName := vars["clientName"]
 	log.Debug("Received arguments: ", clientName)
-	var backupConfigMassage config.BackupConfig
+	var backupConfigMassage config.Backup
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		log.Error("Cannot read body of Trigger message backup")

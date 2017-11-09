@@ -1,9 +1,9 @@
 [foo]
 IP = "127.0.0.1"
-BackupID = 1
+BackupsIDs = ["1", "3"]
+SchedulesIDS = ["1", "3"]
 
 [boo]
 IP = "10.0.0.2"
-BackupID = 2
-
-
+BackupsIDs = ["2", "4"]
+SchedulesIDs = ["2", "4"]

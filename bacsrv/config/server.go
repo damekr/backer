@@ -1,15 +1,15 @@
 package config
 
 import (
-	"fmt"
 	"github.com/spf13/viper"
+	"github.com/pkg/errors"
 )
-
-const configName = "bacsrv"
 
 var (
-	server *ServerConfig
+	EmptyMainConfig = errors.New("MainConfig: Configuration file is empty")
+	MainConfig      = ServerConfig{}
 )
+
 
 type ServerConfig struct {
 	MgmtPort              string
@@ -18,15 +18,25 @@ type ServerConfig struct {
 	LogOutput             string // STDOUT, FILE, SYSLOG
 	Debug                 bool
 	RepositoryConfig      string
-	ClientsConfig         string
-	BackupsConfig         string
+	ClientsConfigFilePath string
+	BackupsConfigFilePath string
+	SchedulesConfigFilePath string
 	ExternalName          string
 	DataTransferInterface string
 	DBLocation            string
 }
 
-func fillMainConfigStruct() *ServerConfig {
-	return &ServerConfig{
+
+func ReadInServerConfig(path string) error {
+	viper.SetConfigFile(path)
+	err := viper.ReadInConfig()
+	if err != nil {
+		return err
+	}
+	if len(viper.AllKeys()) == 0 {
+		return EmptyMainConfig
+	}
+	MainConfig = ServerConfig{
 		MgmtPort:              viper.GetString("server.MgmtPort"),
 		DataPort:              viper.GetString("server.DataPort"),
 		RestAPIPort:           viper.GetString("server.RestApiPort"),
@@ -34,60 +44,12 @@ func fillMainConfigStruct() *ServerConfig {
 		DataTransferInterface: viper.GetString("server.DataTransferInterface"),
 		LogOutput:             viper.GetString("server.LogOutput"),
 		Debug:                 viper.GetBool("server.Debug"),
-		ClientsConfig:         viper.GetString("clients.ConfigFile"),
-		BackupsConfig:         viper.GetString("backups.ConfigFile"),
+		ClientsConfigFilePath: viper.GetString("clients.ConfigFile"),
+		BackupsConfigFilePath: viper.GetString("backups.ConfigFile"),
+		SchedulesConfigFilePath: viper.GetString("schedules.ConfigFile"),
 		DBLocation:            viper.GetString("server.DBLocation"),
 	}
+	return nil
 }
 
-func (c *ServerConfig) ShowConfig() {
-	fmt.Printf("Config Struct: %#v\n", c)
-}
 
-func SetConfigPath(path string) {
-	// Viper can cooperate with Cobra arg parser consider reading config file path from
-	viper.SetConfigFile(path)
-	//viper.SetConfigName(configName)
-	//viper.AddConfigPath(path)
-}
-
-func GetServerConfig() *ServerConfig {
-	if server != nil {
-		return server
-	}
-	ReadConfigFile()
-	server = fillMainConfigStruct()
-	return server
-}
-
-func ReadConfigFile() {
-	viper.ReadInConfig()
-}
-
-func GetClientconfigPath() string {
-	return GetServerConfig().ClientsConfig
-}
-
-func GetBackupsConfigPath() string {
-	return GetServerConfig().BackupsConfig
-}
-
-func GetMgmtPort() string {
-	return GetServerConfig().MgmtPort
-}
-
-func GetTransferPort() string {
-	return GetServerConfig().DataPort
-}
-
-func GetExternalName() string {
-	return GetServerConfig().ExternalName
-}
-
-func GetDataTransferInterface() string {
-	return GetServerConfig().DataTransferInterface
-}
-
-func GetDBLocation() string {
-	return server.DBLocation
-}
