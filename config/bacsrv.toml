@@ -12,10 +12,10 @@ DBLocation = "/home/dixi/db"
 Localization = "/home/dixi/repository"
 
 [clients]
-ConfigFile = "/home/dixi/win-dev/go/src/github.com/damekr/backer/config/clients"
+ConfigFile = "/mnt/c/dev/go/src/github.com/damekr/backer/config/clients/clients.toml"
 
 [backups]
-ConfigFile = "/mnt/c/Users/Damian Rajca/dev/go/src/github.com/damekr/backer/config/clients"
+ConfigFile = "/mnt/c/dev/go/src/github.com/damekr/backer/config/clients/backups.toml"
 
 [schedules]
-ConfigFile = "/home/dixi/win-dev/go/src/github.com/damekr/backer/config/clients"
+ConfigFile = "/mnt/c/dev/go/src/github.com/damekr/backer/config/clients/schedules.toml"

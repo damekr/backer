@@ -1,15 +1,15 @@
 [hourly]
 ID = 1
 Description = "Example hourly schedule"
-Hour = 07:00:00
+Hour = "07:00 AM"
 
 [daily]
 ID = 2
 Description = "Example daily schedule"
-Hour = 07:32:00
+Hour = "07:32 AM"
 
 [weakly]
 ID = 3
 Description  = "Example weakly schedule"
-Hour = 07:32:00
+Hour = "07:32 PM"
 Day = "monday"

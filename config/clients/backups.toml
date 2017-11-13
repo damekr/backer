@@ -2,7 +2,7 @@
 ID = 1
 Description = "asd"
 Paths = ["/tmp"]
-Excluded = [""]
+Excluded = ["asd"]
 Retention = 10
 
 [etc]

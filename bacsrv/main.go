@@ -4,7 +4,7 @@ import (
 	"flag"
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
-	"github.com/damekr/backer/bacsrv/test"
+	//"github.com/damekr/backer/bacsrv/test"
 	"os"
 )
 
@@ -141,8 +141,8 @@ func main() {
 	if err != nil {
 		log.Panicln("Cannot init bacsrv configurations")
 	}
-	config.ReadInClientsConfig("C:/dev/go/src/github.com/damekr/backer/config/clients/clients.toml", "C:/dev/go/src/github.com/damekr/backer/config/clients/backups.toml", "C:/dev/go/src/github.com/damekr/backer/config/clients/schedules.toml")
-	test.ShowClientsConfig()
+	config.ReadInClientsConfig(config.MainConfig.ClientsConfigFilePath, config.MainConfig.BackupsConfigFilePath, config.MainConfig.SchedulesConfigFilePath)
+	//test.ShowClientsConfig()
 	//config.InitClientsConfig(srvConfig)
 	//config.InitBackupConfig(srvConfig)
 	//initRepository()
