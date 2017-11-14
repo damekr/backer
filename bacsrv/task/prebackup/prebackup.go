@@ -1,32 +1,32 @@
-package backup
+package prebackup
 
 import (
 	"fmt"
 	"github.com/damekr/backer/bacsrv/config"
 )
 
-type Backup struct {
+type PreBackup struct {
 	Client   config.ClientDefinition
 	Progress int
 }
 
 // TODO - maybe make tasks like: backupDefinition, BackupTask, PreBackupTask, PostBackupTask
 
-func CreateBackup(client config.ClientDefinition) *Backup {
-	return &Backup{
+func CreatePreBackup(client config.ClientDefinition) *PreBackup {
+	return &PreBackup{
 		Client: client,
 	}
 }
 
-func (b *Backup) Run() {
-	fmt.Println("Starting backup of client: ", b.Client)
+func (b *PreBackup) Run() {
+	fmt.Println("Starting prebackup of client: ", b.Client)
 
 }
 
-func (b *Backup) Stop() {
+func (b *PreBackup) Stop() {
 	fmt.Println("Stopping")
 }
 
-func (b *Backup) Setup(path string) {
+func (b *PreBackup) Setup(path string) {
 	fmt.Println("Setup: ", path)
 }

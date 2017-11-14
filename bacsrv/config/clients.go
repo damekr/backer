@@ -4,28 +4,27 @@ import (
 	"errors"
 	logger "github.com/Sirupsen/logrus"
 	"github.com/spf13/viper"
-	"time"
 )
 
 var (
 	EmptyClientsConfig = errors.New("ClientsConfigFilePath: Empty clients config file")
-	AllClients         = []clientDefinition{}
-	log                = logger.New().WithFields(logger.Fields{"MODULE": "CLIENTS-CONFIG"})
+	AllClients         = []ClientDefinition{}
+	log                = logger.New()
 )
 
-type clientDefinition struct {
+type ClientDefinition struct {
 	Name                 string   `json:"clientName"`
 	IPAddress            string   `json:"clientAddress"`
 	BackupsIDs           []string `json:"backupsIDs"`
-	BackupDefinitions    []backupDefinition
+	BackupDefinitions    []BackupDefinition
 	SchedulesIDs         []string `json:"schedulesIds"`
-	SchedulesDefinitions []scheduleDefinition
+	SchedulesDefinitions []ScheduleDefinition
 	Platform             string `json:"platform"`
 	CID                  string `json:"cid"`
 }
 
-// backupDefinition specifies a backup
-type backupDefinition struct {
+// BackupDefinition specifies a backup
+type BackupDefinition struct {
 	ID          string   `json:"id"`
 	Description string   `json:"description"`
 	Name        string   `json:"name"`
@@ -34,18 +33,20 @@ type backupDefinition struct {
 	Retention   string   `json:"retentionTime"`
 }
 
-type scheduleDefinition struct {
+type ScheduleDefinition struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Hour        string `json:"startHour"`
 	Day         string `json:"startDay"`
+	Month       string `json:"startMonth"`
+	Frequency   string `json:"frequency"`
 }
 
 // TODO Must be places in communication protocol
 type BackupTriggerMessage struct {
 	ClientName   string `json:"clientName"`
-	BackupConfig backupDefinition
+	BackupConfig BackupDefinition
 }
 
 func ReadInClientsConfig(clientsConfigPath, backupsConfigPath, scheduleConfigPath string) error {
@@ -81,7 +82,7 @@ func ReadInClientsConfig(clientsConfigPath, backupsConfigPath, scheduleConfigPat
 	return nil
 }
 
-func matchClientDefinition(clntDefinition clientDefinition, backupsDefinitions []backupDefinition, schedulesDefinitions []scheduleDefinition) clientDefinition {
+func matchClientDefinition(clntDefinition ClientDefinition, backupsDefinitions []BackupDefinition, schedulesDefinitions []ScheduleDefinition) ClientDefinition {
 	for bk, bv := range backupsDefinitions {
 		for _, bid := range clntDefinition.BackupsIDs {
 			if bid == bv.ID {
@@ -156,29 +157,16 @@ func checkValidConfigKeySlice(keyMap map[string][]string, key, ctx string) ([]st
 	}
 }
 
-func parseHour(hour string) {
-	// TODO Must be clarified to const format of time
-	form := "2006-Jan-02 07:04 PM"
-	dateNow := time.Now().Format("2006-Jan-02")
-	log.Println("DATE: ", dateNow)
-
-	log.Println(time.Parse(form, dateNow+" "+hour))
-}
-
-func parseDayHour(day, hour string) {
-
-}
-
-func setBackupsDefinitions(backupsViper *viper.Viper) []backupDefinition {
+func setBackupsDefinitions(backupsViper *viper.Viper) []BackupDefinition {
 	if len(backupsViper.AllKeys()) == 0 {
 		log.Error("Backup config does not contain any backup definitions")
-		return []backupDefinition{}
+		return []BackupDefinition{}
 	}
-	var backupsDefinitions []backupDefinition
+	var backupsDefinitions []BackupDefinition
 	backupCtx := "backup"
 	for k, v := range backupsViper.AllSettings() {
 		log.Debugf("Key: %s, value: %s", k, v)
-		var bDefinition backupDefinition
+		var bDefinition BackupDefinition
 		validDefinition := true
 		backupPropertySlices := backupsViper.GetStringMapStringSlice(k)
 		backup := backupsViper.GetStringMapString(k)
@@ -199,44 +187,16 @@ func setBackupsDefinitions(backupsViper *viper.Viper) []backupDefinition {
 	return backupsDefinitions
 }
 
-func setSchedulesDefinitions(schedulesViper *viper.Viper) []scheduleDefinition {
-	if len(schedulesViper.AllKeys()) == 0 {
-		log.Error("Schedule config does not contain any valid schedule definitions")
-		return []scheduleDefinition{}
-	}
-	var scheduleDefinitions []scheduleDefinition
-	scheduleCtx := "schedule"
-	parseHour("07:00pm")
-	for k, v := range schedulesViper.AllSettings() {
-		log.Debugf("Key: %s, value: %s", k, v)
-		var sDefinition scheduleDefinition
-		validDefinition := true
-		schedule := schedulesViper.GetStringMapString(k)
-		sDefinition.Name = k
-		sDefinition.ID, validDefinition = checkValidConfigKey(schedule, "id", scheduleCtx)
-		sDefinition.Day, validDefinition = checkValidConfigKey(schedule, "day", scheduleCtx)
-		sDefinition.Description, validDefinition = checkValidConfigKey(schedule, "description", scheduleCtx)
-		sDefinition.Hour, validDefinition = checkValidConfigKey(schedule, "hour", scheduleCtx)
-
-		if validDefinition {
-			scheduleDefinitions = append(scheduleDefinitions, sDefinition)
-		} else {
-			log.Error("Found invalid schedule definition")
-		}
-	}
-	return scheduleDefinitions
-}
-
-func setClientsDefinitions(clientsViper *viper.Viper) []clientDefinition {
+func setClientsDefinitions(clientsViper *viper.Viper) []ClientDefinition {
 	if len(clientsViper.AllKeys()) == 0 {
 		log.Error("Client config does not contain any valid client definitions")
-		return []clientDefinition{}
+		return []ClientDefinition{}
 	}
-	var clientsDefinitions []clientDefinition
+	var clientsDefinitions []ClientDefinition
 	clientCtx := "client"
 	for k, v := range clientsViper.AllSettings() {
 		log.Debugf("Key: %s, value: %s", k, v)
-		var cDefinition clientDefinition
+		var cDefinition ClientDefinition
 		validDefinition := true
 		clientDef := clientsViper.GetStringMapString(k)
 		clientsPropertySlices := clientsViper.GetStringMapStringSlice(k)
@@ -252,4 +212,33 @@ func setClientsDefinitions(clientsViper *viper.Viper) []clientDefinition {
 		}
 	}
 	return clientsDefinitions
+}
+
+func setSchedulesDefinitions(schedulesViper *viper.Viper) []ScheduleDefinition {
+	if len(schedulesViper.AllKeys()) == 0 {
+		log.Error("Schedule config does not contain any valid schedule definitions")
+		return []ScheduleDefinition{}
+	}
+	var scheduleDefinitions []ScheduleDefinition
+	scheduleCtx := "schedule"
+	for k, v := range schedulesViper.AllSettings() {
+		log.Debugf("Key: %s, value: %s", k, v)
+		var sDefinition ScheduleDefinition
+		validDefinition := true
+		schedule := schedulesViper.GetStringMapString(k)
+		sDefinition.Name = k
+		sDefinition.ID, validDefinition = checkValidConfigKey(schedule, "id", scheduleCtx)
+		sDefinition.Frequency, validDefinition = checkValidConfigKey(schedule, "frequency", scheduleCtx)
+		sDefinition.Description, validDefinition = checkValidConfigKey(schedule, "description", scheduleCtx)
+		sDefinition.Hour = schedule["hour"]
+		sDefinition.Day = schedule["day"]
+		sDefinition.Month = schedule["month"]
+
+		if validDefinition {
+			scheduleDefinitions = append(scheduleDefinitions, sDefinition)
+		} else {
+			log.Error("Found invalid schedule definition")
+		}
+	}
+	return scheduleDefinitions
 }

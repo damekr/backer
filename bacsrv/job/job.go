@@ -5,32 +5,41 @@ import (
 )
 
 type Job struct {
-	Task []task.Task
-	ID   int
+	Tasks []task.Task
+	ID    int
+	Name  string
 }
 
 var Jobs []*Job
+var id = 0
 
 // TODO Now can be many jobs, but must be possible to define many tasks for one particular job
 var jobs2 map[*Job][]*task.Task
 
-//
-//
-//func New(task task.Task) *Job{
-//	switch task {
-//	case task.(*backup.Backup):
-//		job := &Job{
-//			ID:    1,
-//		}
-//		Jobs = append(Jobs, job)
-//		return job
-//	}
-//	return nil
-//}
+func New(name string) *Job {
+	id++
+	return &Job{
+		ID:   id,
+		Name: name,
+	}
+}
 
 func (j *Job) AddTask(task task.Task) error {
-	j.Task = append(j.Task, task)
+	j.Tasks = append(j.Tasks, task)
+	//switch task {
+	//case task.(*backup.Backup):
+	//	j.Tasks = append(j.Tasks, task)
+	//
+	//}
 	return nil
+}
+
+func (j *Job) Start() error {
+	for _, t := range j.Tasks {
+		t.Run()
+	}
+	return nil
+
 }
 
 func GetAllTasks() []*Job {
@@ -42,7 +51,7 @@ func GetAllTasks() []*Job {
 //	ClientConfig	*config.Client
 //}
 
-//func (b *BackupJob) Start() error{
+//func (b *BackupJob) Run() error{
 //	log.Info("Starting backup job of client: ", b.ClientConfig.Address)
 //	validatedPaths, err := preBackupChecks(b.BackupConfig.Paths, b.ClientConfig.Address)
 //	if err != nil {

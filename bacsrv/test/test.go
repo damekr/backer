@@ -3,6 +3,9 @@ package test
 import (
 	"fmt"
 	"github.com/damekr/backer/bacsrv/config"
+	"github.com/damekr/backer/bacsrv/job"
+	"github.com/damekr/backer/bacsrv/task/backup"
+	"github.com/damekr/backer/bacsrv/task/prebackup"
 )
 
 //func ShowConfig() {
@@ -15,44 +18,25 @@ func ShowClientsConfig() {
 	fmt.Println("TEST CLIENTS: ", config.AllClients)
 }
 
-//
-//func StartBackup(){
-//	client := config.clientDefinition{
-//		Name: "SAS",
-//	}
-//	//client2 := config.clientDefinition{
-//	//	Name: "221431",
-//	//}
-//	prog1 := make(chan int)
-//
-//	backup1 := backup.CreateBackup(client)
-//	backup1.SetupBackup("asda")
-//	job1 := job.New(backup1)
-//	job1.AddTask(backup1)
-//
-//
-//	//prog2 := make(chan int)
-//	//
-//	//
-//	//go work.Start(prog1)
-//	//
-//	//
-//	//work2 := job.Create("backup", client2, 12)
-//	//backupJob2 := work2.(*job.backupDefinition)
-//	//backupJob2.SetupBackup("asdsad")
-//	//
-//	//go work2.Start(prog2)
-//	//
-//	for {
-//		select {
-//		case pr1 := <-prog1:
-//			fmt.Println("Prog1: ", pr1)
-//		default:
-//			fmt.Println("Default")
-//		}
-//		time.Sleep(time.Millisecond * 500)
-//	}
-//
-//
-//
-//}
+func StartBackup() {
+	client := config.ClientDefinition{
+		Name: "SAS",
+	}
+	//client2 := config.clientDefinition{
+	//	Name: "221431",
+	//}
+	preb := prebackup.CreatePreBackup(client)
+	backup1 := backup.CreateBackup(client)
+	backup1.Setup("asda")
+	job1 := job.New("backup")
+	job1.AddTask(preb)
+	job1.AddTask(backup1)
+	job1.Start()
+
+	//work2 := job.Create("backup", client2, 12)
+	//backupJob2 := work2.(*job.backupDefinition)
+	//backupJob2.Setup("asdsad")
+	//
+	//go work2.Start(prog2)
+
+}

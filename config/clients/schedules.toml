@@ -1,15 +1,26 @@
-[hourly]
+[test1_hourly]
 ID = 1
 Description = "Example hourly schedule"
-Hour = "07:00 AM"
+Frequency = "hourly"
+Hour = "07:00:00"
 
-[daily]
+[test2_daily]
 ID = 2
 Description = "Example daily schedule"
-Hour = "07:32 AM"
+Frequency = "daily"
+Hour = "07:32:00"
 
-[weakly]
+[test3_weekly]
 ID = 3
-Description  = "Example weakly schedule"
-Hour = "07:32 PM"
-Day = "monday"
+Description  = "Example weekly schedule"
+Frequency = "weekly"
+Hour = "07:32:02"
+Day = "Monday"
+
+[test4_monthly]
+ID = 4
+Description  = "Example monthly schedule"
+Frequency = "monthly"
+Hour = "07:32:02"
+Day = "Monday"
+Month = "January"
