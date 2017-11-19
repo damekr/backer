@@ -8,10 +8,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	// "github.com/damekr/backer/baclnt/backup"
+	"github.com/damekr/backer/baclnt/api"
 	"github.com/damekr/backer/baclnt/config"
-	"github.com/damekr/backer/baclnt/integration"
-	// "github.com/damekr/backer/baclnt/dispatcher"
-	"github.com/damekr/backer/baclnt/inprotoapi"
 )
 
 var configFlag = flag.String("config", "", "Configuration file")
@@ -23,14 +21,14 @@ func init() {
 
 func setLogger() {
 	log.SetFormatter(&log.TextFormatter{})
-	switch config.ClntConfig.LogOutput {
+	switch config.MainConfig.LogOutput {
 
 	case "STDOUT":
 		log.SetOutput(os.Stdout)
 	case "SYSLOG":
 		//TODO
 	}
-	if config.ClntConfig.Debug {
+	if config.MainConfig.Debug {
 		log.SetLevel(log.DebugLevel)
 	}
 }
@@ -54,7 +52,7 @@ func mainLoop() (string, error) {
 }
 
 func startProtoAPI() {
-	go inprotoapi.ServeServer()
+	go api.Start()
 }
 
 func checkConfigFile(configPath string) error {
@@ -82,25 +80,19 @@ func setFlags() {
 
 }
 
-func testFunc(loc string) {
-	log.Println(integration.GetClientInfo())
-}
-
 func main() {
 	setFlags()
 	log.Debugf("COMMIT: %s", commit)
-	config.ReadInConfigFile(*configFlag)
+	config.ReadInConfig(*configFlag)
 	setLogger()
-	config.ClntConfig.ShowConfig()
-	log.Print(config.GetServerConfig())
+	config.MainConfig.ShowConfig()
+	config.MainConfig.ShowConfig()
 	log.Info("Starting baclnt application...")
-	testFunc("")
 	srv, err := mainLoop()
 	if err != nil {
 		log.Error("Cannot start client application, error: ", err.Error())
 		os.Exit(1)
 	}
 	log.Info(srv)
-
 
 }

@@ -19,6 +19,7 @@ type ServerConfig struct {
 	MgmtPort              string
 	DataPort              string
 	RestAPIPort           string
+	ClntMgmtPort          string
 	LogOutput             string // STDOUT, FILE, SYSLOG
 	Debug                 bool
 	Storage               Storage
@@ -44,6 +45,7 @@ func ReadInServerConfig(path string) error {
 		MgmtPort:              viper.GetString("server.MgmtPort"),
 		DataPort:              viper.GetString("server.DataPort"),
 		RestAPIPort:           viper.GetString("server.RestApiPort"),
+		ClntMgmtPort:          viper.GetString("server.ClntMgmtPort"),
 		ExternalName:          viper.GetString("server.ExternalName"),
 		DataTransferInterface: viper.GetString("server.DataTransferInterface"),
 		LogOutput:             viper.GetString("server.LogOutput"),

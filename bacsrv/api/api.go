@@ -3,14 +3,12 @@ package api
 import (
 	"context"
 	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/bacsrv/config"
-	//pb "github.com/damekr/backer/common/protoclnt"
 	"github.com/damekr/backer/bacsrv/job"
+	"github.com/damekr/backer/bacsrv/network"
 	"github.com/damekr/backer/bacsrv/task/ping"
 	"github.com/damekr/backer/common/protosrv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"net"
 )
 
 type server struct{}
@@ -33,6 +31,7 @@ func pingClient(clientIP string) (string, error) {
 	pingTask := ping.CreatePing(clientIP)
 	pingJob := job.New("ping")
 	pingJob.AddTask(pingTask)
+	pingJob.AddTask(pingTask)
 	pingJob.Start()
 
 	return pingTask.Message, nil
@@ -40,14 +39,12 @@ func pingClient(clientIP string) (string, error) {
 
 // Start method starts a grpc server on specific port
 func Start() error {
-	lis, err := net.Listen("tcp", ":"+config.MainConfig.MgmtPort)
-	log.Info("Starting bacsrv protoapi on addr: ", lis.Addr())
+	list, err := network.StartTCPMgmtServer()
 	if err != nil {
-		log.Errorf("Failed to listen: %v", err)
-		return err
+		log.Errorln("Cannot start Mgmt server, err: ", err)
 	}
 	s := grpc.NewServer()
 	protosrv.RegisterBacsrvServer(s, &server{})
-	s.Serve(lis)
+	s.Serve(list)
 	return nil
 }

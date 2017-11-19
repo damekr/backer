@@ -7,6 +7,7 @@ package protosrv;
 service Bacsrv {
 
   rpc Ping (PingRequest) returns (PingResponse) {}
+  rpc Backup (BackupRequest) returns (BackupResponse) {}
 
 }
 
@@ -16,6 +17,15 @@ message PingRequest {
 
 message PingResponse {
   string message = 1;
+}
+
+
+message BackupRequest {
+  repeated string paths = 1;
+}
+
+message BackupResponse {
+  repeated string validpaths = 1;
 }
 
 
