@@ -2,14 +2,6 @@
 
 package storage
 
-import (
-	"errors"
-	log "github.com/Sirupsen/logrus"
-	"os"
-	"path/filepath"
-	"syscall"
-)
-
 const bucketsLocation string = "/data/"
 
 type DiskStatus struct {

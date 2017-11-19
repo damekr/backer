@@ -19,19 +19,12 @@ func ShowClientsConfig() {
 }
 
 func StartBackup() {
-	client := config.ClientDefinition{
-		Name: "SAS",
-	}
-	//client2 := config.clientDefinition{
-	//	Name: "221431",
-	//}
-	preb := prebackup.CreatePreBackup(client)
-	backup1 := backup.CreateBackup(client)
-	backup1.Setup("asda")
-	job1 := job.New("backup")
-	job1.AddTask(preb)
-	job1.AddTask(backup1)
-	job1.Start()
+
+	//backup1.Setup("asda")
+	//job1 := job.New("backup")
+	//job1.AddTask(preb)
+	//job1.AddTask(backup1)
+	//job1.Start()
 
 	//work2 := job.Create("backup", client2, 12)
 	//backupJob2 := work2.(*job.backupDefinition)

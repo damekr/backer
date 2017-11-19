@@ -5,8 +5,11 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
 	//"github.com/damekr/backer/bacsrv/test"
-	"github.com/damekr/backer/bacsrv/test"
+	"github.com/damekr/backer/bacsrv/api"
+	"github.com/damekr/backer/bacsrv/storage"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 var commit string
@@ -32,27 +35,27 @@ func init() {
 //	}
 //}
 //
-//func mainLoop(srvConfig *config.ServerConfig) (string, error) {
-//	log.Debug("Entering into main loop...")
-//	interrupt := make(chan os.Signal, 1)
-//	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
-//	startDataServer(srvConfig)
-//	startProtoApi(srvConfig)
-//	// startRestApi(srvConfig)
-//	serverTest()
-//	for {
-//		select {
-//		case killSignal := <-interrupt:
-//			log.Info("Got signal: ", killSignal)
-//			log.Info("Stopping application, exiting...")
-//			if killSignal == os.Interrupt {
-//				return "Application was interrupted by system signal", nil
-//			}
-//			return "Application was killed", nil
-//		}
-//
-//	}
-//}
+func mainLoop() (string, error) {
+	log.Debug("Entering into main loop...")
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
+	//startDataServer(srvConfig)
+	startProtoApi()
+	// startRestApi(srvConfig)
+	for {
+		select {
+		case killSignal := <-interrupt:
+			log.Info("Got signal: ", killSignal)
+			log.Info("Stopping application, exiting...")
+			if killSignal == os.Interrupt {
+				return "Application was interrupted by system signal", nil
+			}
+			return "Application was killed", nil
+		}
+
+	}
+}
+
 //
 //func startRestApi(srvConfig *config.ServerConfig) {
 //	// Starting a new goroutine
@@ -61,10 +64,11 @@ func init() {
 //	go restapi.StartServerRestAPI(srvConfig)
 //}
 //
-//func startProtoApi(srvConfig *config.ServerConfig) {
-//	// Starting a new goroutine
-//	go inprotoapi.ServeServer(srvConfig)
-//}
+func startProtoApi() {
+	// Starting a new goroutine
+	go api.Start()
+}
+
 //
 //func startDataServer(srvConfig *config.ServerConfig) {
 //	// It should have channel communication to close connection after stopping
@@ -98,26 +102,14 @@ func setFlags() {
 
 }
 
-//
-//func initRepository() {
-//	err := storage.InitRepository()
-//	if err != nil {
-//		log.Panic("Cannot create storage")
-//		os.Exit(1)
-//	}
-//}
+func initStorage(storageType string) {
+	err := storage.Create(storageType)
+	if err != nil {
+		log.Panic("Cannot create storage")
+		os.Exit(1)
+	}
 
-//func initClientsBuckets() {
-//	err := storage.InitClientsBuckets()
-//	if err != nil {
-//		log.Panic("Cannot initialize clients buckets")
-//		os.Exit(2)
-//	}
-//}
-//
-//func serverTest() {
-//
-//}
+}
 
 func initConfigs(mainConfigPath string) error {
 	err := config.ReadInServerConfig(mainConfigPath)
@@ -125,14 +117,14 @@ func initConfigs(mainConfigPath string) error {
 		log.Println("Please setup configuration file")
 		return err
 	}
-	log.Println("Clients config file path: ", config.MainConfig.ClientsConfigFilePath)
-	err = config.ReadInClientsConfig(config.MainConfig.ClientsConfigFilePath, config.MainConfig.BackupsConfigFilePath,
-		config.MainConfig.SchedulesConfigFilePath)
-	if err != nil {
-		log.Println("Could not read clients config, error: ", err)
-		return err
-	}
 	return nil
+}
+
+func test() {
+	bucket := storage.DefaultStorage.CreateBucket("TESTCLIENT_BUCKET")
+	log.Println("BucketLocation: ", bucket.Location)
+	saveset := bucket.CreateSaveset()
+	log.Println("SavesetLocation: ", saveset.Location)
 }
 
 func main() {
@@ -142,14 +134,14 @@ func main() {
 	if err != nil {
 		log.Panicln("Cannot init bacsrv configurations")
 	}
-	config.ReadInClientsConfig(config.MainConfig.ClientsConfigFilePath, config.MainConfig.BackupsConfigFilePath, config.MainConfig.SchedulesConfigFilePath)
-	test.StartBackup()
+	initStorage(config.MainConfig.Storage.Type)
+	//test()
 	//config.InitClientsConfig(srvConfig)
 	//config.InitBackupConfig(srvConfig)
 	//initRepository()
 	//initClientsBuckets()
 	//serverTest()
-	//mainLoop(srvConfig)
+	mainLoop()
 
 	//fmt.Println("REPO", repo.Location)
 	//fmt.Printf("Storage status: %#v\n", repo.GetCapacityStatus())

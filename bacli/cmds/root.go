@@ -44,10 +44,9 @@ func Execute() {
 
 // AddCommands adds child commands to the root command.
 func AddCommands() {
-	RootCmd.AddCommand(versionCmd)
+	//RootCmd.AddCommand(versionCmd)
 	RootCmd.AddCommand(pingCmd)
-	RootCmd.AddCommand(listCmd)
-	RootCmd.AddCommand(runCmd)
+	//RootCmd.AddCommand(runCmd)
 }
 
 func init() {

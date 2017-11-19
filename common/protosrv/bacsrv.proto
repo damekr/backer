@@ -6,32 +6,16 @@ package protosrv;
 
 service Bacsrv {
 
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
-  rpc ListClients (HelloRequest) returns (ClientsList) {}
-  rpc RunBackup (Client) returns (Status) {}
+  rpc Ping (PingRequest) returns (PingResponse) {}
+
+}
+
+message PingRequest {
+  string ip = 1;
+}
+
+message PingResponse {
+  string message = 1;
 }
 
 
-// The request message contains a hostname of requester
-message HelloRequest {
-  string name = 1;
-}
-
-// The response for hello contains a hostname of replayer
-message HelloReply {
-  string name = 1;
-}
-
-
-message ClientsList {
-  repeated string clients = 1;
-}
-
-message Client {
-  string name = 1;
-  string cname = 2;
-}
-
-message Status {
-  bool backup = 1;
-}

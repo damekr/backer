@@ -2,24 +2,25 @@ package backup
 
 import (
 	"fmt"
-	"github.com/damekr/backer/bacsrv/config"
 )
 
 type Backup struct {
-	Client   config.ClientDefinition
+	ClientIP string
+	Paths    []string
 	Progress int
 }
 
 // TODO - maybe make tasks like: backupDefinition, BackupTask, PreBackupTask, PostBackupTask
 
-func CreateBackup(client config.ClientDefinition) *Backup {
+func CreateBackup(clientIP string, paths []string) *Backup {
 	return &Backup{
-		Client: client,
+		ClientIP: clientIP,
+		Paths:    paths,
 	}
 }
 
 func (b *Backup) Run() {
-	fmt.Println("Starting backup of client: ", b.Client)
+	fmt.Println("Starting backup of client: ", b.ClientIP)
 
 }
 

@@ -21,7 +21,7 @@ func (s *server) SayHello(ctx context.Context, in *protosrv.HelloRequest) (*prot
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
 	// go job.SendHelloMessageToClient(in.Name)
-	return &protosrv.HelloReply{Name: config.GetExternalName()}, nil
+	return &protosrv.HelloReply{Name: config.MainConfig.ExternalName}, nil
 }
 
 func (s *server) ListClients(ctx context.Context, in *protosrv.HelloRequest) (*protosrv.ClientsList, error) {

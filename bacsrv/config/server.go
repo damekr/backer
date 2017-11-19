@@ -10,23 +10,21 @@ var (
 	MainConfig      = ServerConfig{}
 )
 
-type ServerConfig struct {
-	MgmtPort                string
-	DataPort                string
-	RestAPIPort             string
-	LogOutput               string // STDOUT, FILE, SYSLOG
-	Debug                   bool
-	RepositoryConfig        string
-	ClientsConfigFilePath   string
-	BackupsConfigFilePath   string
-	SchedulesConfigFilePath string
-	ExternalName            string
-	DataTransferInterface   string
-	DBLocation              string
+type Storage struct {
+	Type     string
+	Location string
 }
 
-type RepositoryConfig struct {
-	Localization string
+type ServerConfig struct {
+	MgmtPort              string
+	DataPort              string
+	RestAPIPort           string
+	LogOutput             string // STDOUT, FILE, SYSLOG
+	Debug                 bool
+	Storage               Storage
+	ExternalName          string
+	DataTransferInterface string
+	DBLocation            string
 }
 
 func ReadInServerConfig(path string) error {
@@ -38,6 +36,10 @@ func ReadInServerConfig(path string) error {
 	if len(viper.AllKeys()) == 0 {
 		return EmptyMainConfig
 	}
+	storage := Storage{
+		Type:     viper.GetString("storage.type"),
+		Location: viper.GetString("storage.location"),
+	}
 	MainConfig = ServerConfig{
 		MgmtPort:              viper.GetString("server.MgmtPort"),
 		DataPort:              viper.GetString("server.DataPort"),
@@ -46,10 +48,9 @@ func ReadInServerConfig(path string) error {
 		DataTransferInterface: viper.GetString("server.DataTransferInterface"),
 		LogOutput:             viper.GetString("server.LogOutput"),
 		Debug:                 viper.GetBool("server.Debug"),
-		ClientsConfigFilePath:   viper.GetString("clients.ConfigFile"),
-		BackupsConfigFilePath:   viper.GetString("backups.ConfigFile"),
-		SchedulesConfigFilePath: viper.GetString("schedules.ConfigFile"),
-		DBLocation:              viper.GetString("server.DBLocation"),
+		Storage:               storage,
+
+		DBLocation: viper.GetString("server.DBLocation"),
 	}
 	return nil
 }

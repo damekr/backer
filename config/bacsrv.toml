@@ -8,14 +8,6 @@ ExternalName = "127.0.0.1" # External name of server, can be hosts/ip/DNS
 DataTransferInterface = "127.0.0.1" # IP addres on which data server will listen
 DBLocation = "/home/dixi/db"
 
-[repository]
-Localization = "/home/dixi/repository"
-
-[clients]
-ConfigFile = "/mnt/c/dev/go/src/github.com/damekr/backer/config/clients/clients.toml"
-
-[backups]
-ConfigFile = "/mnt/c/dev/go/src/github.com/damekr/backer/config/clients/backups.toml"
-
-[schedules]
-ConfigFile = "/mnt/c/dev/go/src/github.com/damekr/backer/config/clients/schedules.toml"
+[storage]
+Type = "local"
+Location = "/home/dixi/repository"
