@@ -10,6 +10,10 @@ It is generated from these files:
 It has these top-level messages:
 	PingRequest
 	PingResponse
+	BackupRequest
+	BackupResponse
+	BaclntBackupResponse
+	BacsrvBackupResponse
 */
 package protosrv
 
@@ -65,9 +69,93 @@ func (m *PingResponse) GetMessage() string {
 	return ""
 }
 
+type BackupRequest struct {
+	Ip    string   `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
+	Paths []string `protobuf:"bytes,2,rep,name=paths" json:"paths,omitempty"`
+}
+
+func (m *BackupRequest) Reset()                    { *m = BackupRequest{} }
+func (m *BackupRequest) String() string            { return proto.CompactTextString(m) }
+func (*BackupRequest) ProtoMessage()               {}
+func (*BackupRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *BackupRequest) GetIp() string {
+	if m != nil {
+		return m.Ip
+	}
+	return ""
+}
+
+func (m *BackupRequest) GetPaths() []string {
+	if m != nil {
+		return m.Paths
+	}
+	return nil
+}
+
+type BackupResponse struct {
+	BacsrvBackupResponse *BacsrvBackupResponse `protobuf:"bytes,1,opt,name=bacsrvBackupResponse" json:"bacsrvBackupResponse,omitempty"`
+	BaclntBackupResponse *BaclntBackupResponse `protobuf:"bytes,2,opt,name=baclntBackupResponse" json:"baclntBackupResponse,omitempty"`
+}
+
+func (m *BackupResponse) Reset()                    { *m = BackupResponse{} }
+func (m *BackupResponse) String() string            { return proto.CompactTextString(m) }
+func (*BackupResponse) ProtoMessage()               {}
+func (*BackupResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *BackupResponse) GetBacsrvBackupResponse() *BacsrvBackupResponse {
+	if m != nil {
+		return m.BacsrvBackupResponse
+	}
+	return nil
+}
+
+func (m *BackupResponse) GetBaclntBackupResponse() *BaclntBackupResponse {
+	if m != nil {
+		return m.BaclntBackupResponse
+	}
+	return nil
+}
+
+type BaclntBackupResponse struct {
+	Validpaths []string `protobuf:"bytes,1,rep,name=validpaths" json:"validpaths,omitempty"`
+}
+
+func (m *BaclntBackupResponse) Reset()                    { *m = BaclntBackupResponse{} }
+func (m *BaclntBackupResponse) String() string            { return proto.CompactTextString(m) }
+func (*BaclntBackupResponse) ProtoMessage()               {}
+func (*BaclntBackupResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *BaclntBackupResponse) GetValidpaths() []string {
+	if m != nil {
+		return m.Validpaths
+	}
+	return nil
+}
+
+type BacsrvBackupResponse struct {
+	Backupstatus bool `protobuf:"varint,1,opt,name=backupstatus" json:"backupstatus,omitempty"`
+}
+
+func (m *BacsrvBackupResponse) Reset()                    { *m = BacsrvBackupResponse{} }
+func (m *BacsrvBackupResponse) String() string            { return proto.CompactTextString(m) }
+func (*BacsrvBackupResponse) ProtoMessage()               {}
+func (*BacsrvBackupResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+func (m *BacsrvBackupResponse) GetBackupstatus() bool {
+	if m != nil {
+		return m.Backupstatus
+	}
+	return false
+}
+
 func init() {
 	proto.RegisterType((*PingRequest)(nil), "protosrv.PingRequest")
 	proto.RegisterType((*PingResponse)(nil), "protosrv.PingResponse")
+	proto.RegisterType((*BackupRequest)(nil), "protosrv.BackupRequest")
+	proto.RegisterType((*BackupResponse)(nil), "protosrv.BackupResponse")
+	proto.RegisterType((*BaclntBackupResponse)(nil), "protosrv.BaclntBackupResponse")
+	proto.RegisterType((*BacsrvBackupResponse)(nil), "protosrv.BacsrvBackupResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -82,6 +170,7 @@ const _ = grpc.SupportPackageIsVersion4
 
 type BacsrvClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
+	Backup(ctx context.Context, in *BackupRequest, opts ...grpc.CallOption) (*BackupResponse, error)
 }
 
 type bacsrvClient struct {
@@ -101,10 +190,20 @@ func (c *bacsrvClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.C
 	return out, nil
 }
 
+func (c *bacsrvClient) Backup(ctx context.Context, in *BackupRequest, opts ...grpc.CallOption) (*BackupResponse, error) {
+	out := new(BackupResponse)
+	err := grpc.Invoke(ctx, "/protosrv.Bacsrv/Backup", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Bacsrv service
 
 type BacsrvServer interface {
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
+	Backup(context.Context, *BackupRequest) (*BackupResponse, error)
 }
 
 func RegisterBacsrvServer(s *grpc.Server, srv BacsrvServer) {
@@ -129,6 +228,24 @@ func _Bacsrv_Ping_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Bacsrv_Backup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BackupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BacsrvServer).Backup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protosrv.Bacsrv/Backup",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BacsrvServer).Backup(ctx, req.(*BackupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Bacsrv_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "protosrv.Bacsrv",
 	HandlerType: (*BacsrvServer)(nil),
@@ -136,6 +253,10 @@ var _Bacsrv_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Ping",
 			Handler:    _Bacsrv_Ping_Handler,
+		},
+		{
+			MethodName: "Backup",
+			Handler:    _Bacsrv_Backup_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -145,14 +266,23 @@ var _Bacsrv_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("protosrv/bacsrv.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 140 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2d, 0x28, 0xca, 0x2f,
-	0xc9, 0x2f, 0x2e, 0x2a, 0xd3, 0x4f, 0x4a, 0x4c, 0x2e, 0x2e, 0x2a, 0xd3, 0x03, 0xf3, 0x85, 0x38,
-	0x60, 0xc2, 0x4a, 0xb2, 0x5c, 0xdc, 0x01, 0x99, 0x79, 0xe9, 0x41, 0xa9, 0x85, 0xa5, 0xa9, 0xc5,
-	0x25, 0x42, 0x7c, 0x5c, 0x4c, 0x99, 0x05, 0x12, 0x8c, 0x0a, 0x8c, 0x1a, 0x9c, 0x41, 0x4c, 0x99,
-	0x05, 0x4a, 0x1a, 0x5c, 0x3c, 0x10, 0xe9, 0xe2, 0x82, 0xfc, 0xbc, 0xe2, 0x54, 0x21, 0x09, 0x2e,
-	0xf6, 0xdc, 0xd4, 0xe2, 0xe2, 0xc4, 0xf4, 0x54, 0xa8, 0x22, 0x18, 0xd7, 0xc8, 0x91, 0x8b, 0xcd,
-	0x09, 0x6c, 0x85, 0x90, 0x39, 0x17, 0x0b, 0x48, 0x8f, 0x90, 0xa8, 0x1e, 0xcc, 0x16, 0x3d, 0x24,
-	0x2b, 0xa4, 0xc4, 0xd0, 0x85, 0x21, 0x46, 0x2b, 0x31, 0x24, 0xb1, 0x81, 0x25, 0x8c, 0x01, 0x01,
-	0x00, 0x00, 0xff, 0xff, 0xa7, 0x19, 0xc7, 0x5f, 0xb5, 0x00, 0x00, 0x00,
+	// 276 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x51, 0x41, 0x4e, 0xc3, 0x30,
+	0x10, 0x24, 0x01, 0x4a, 0xbb, 0x2d, 0x3d, 0xac, 0x52, 0x88, 0x2a, 0x51, 0x55, 0x3e, 0xe5, 0x14,
+	0xa4, 0x22, 0x40, 0x42, 0xe2, 0xd2, 0x17, 0x20, 0xff, 0xc0, 0x29, 0x56, 0x89, 0x5a, 0x12, 0x93,
+	0x75, 0x72, 0xe6, 0x59, 0x3c, 0x0f, 0x61, 0xc7, 0x6a, 0xd3, 0x98, 0xe3, 0xce, 0xce, 0xcc, 0xce,
+	0x68, 0x61, 0xa6, 0xaa, 0x52, 0x97, 0x54, 0x35, 0xf7, 0x99, 0xd8, 0x50, 0xd5, 0xa4, 0x66, 0xc6,
+	0xa1, 0x83, 0xd9, 0x1d, 0x8c, 0xdf, 0xf2, 0x62, 0xcb, 0xe5, 0x57, 0x2d, 0x49, 0xe3, 0x14, 0xc2,
+	0x5c, 0xc5, 0xc1, 0x32, 0x48, 0x46, 0x3c, 0xcc, 0x15, 0x4b, 0x60, 0x62, 0xd7, 0xa4, 0xca, 0x82,
+	0x24, 0xc6, 0x70, 0xf5, 0x29, 0x89, 0xc4, 0x56, 0xb6, 0x24, 0x37, 0xb2, 0x47, 0xb8, 0x5e, 0x8b,
+	0xcd, 0xae, 0x56, 0xff, 0x58, 0x61, 0x04, 0x97, 0x4a, 0xe8, 0x0f, 0x8a, 0xc3, 0xe5, 0x79, 0x32,
+	0xe2, 0x76, 0x60, 0x3f, 0x01, 0x4c, 0x9d, 0xae, 0xbd, 0xc1, 0x21, 0xb2, 0x61, 0xbb, 0xb8, 0xb1,
+	0x1a, 0xaf, 0x16, 0xa9, 0xcb, 0x9e, 0xae, 0x3d, 0x2c, 0xee, 0xd5, 0xb6, 0x9e, 0xfb, 0x42, 0x9f,
+	0x78, 0x86, 0x1e, 0xcf, 0x1e, 0x8b, 0x7b, 0xb5, 0xec, 0x09, 0x22, 0x1f, 0x1b, 0x17, 0x00, 0x8d,
+	0xd8, 0xe7, 0xef, 0xb6, 0x6d, 0x60, 0xda, 0x1e, 0x21, 0xec, 0xc5, 0xe8, 0xfa, 0x19, 0x19, 0x4c,
+	0x32, 0x83, 0x90, 0x16, 0xba, 0x26, 0xd3, 0x77, 0xc8, 0x3b, 0xd8, 0xea, 0x3b, 0x80, 0x81, 0x15,
+	0xe3, 0x33, 0x5c, 0xfc, 0xbd, 0x06, 0x67, 0x87, 0xf0, 0x47, 0x9f, 0x9c, 0xdf, 0x9c, 0xc2, 0x6d,
+	0xea, 0x33, 0x7c, 0x35, 0x16, 0xbb, 0x5a, 0xe1, 0x6d, 0xa7, 0xf7, 0xe1, 0x77, 0xf3, 0xb8, 0xbf,
+	0x70, 0xf2, 0x6c, 0x60, 0x56, 0x0f, 0xbf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x75, 0xdd, 0xbd, 0x00,
+	0x5b, 0x02, 0x00, 0x00,
 }

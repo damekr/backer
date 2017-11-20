@@ -32,16 +32,15 @@ func (p *Ping) Run() {
 	if err != nil {
 		log.Warningf("Could not get client name: %v", err)
 	}
-	log.Debugf("Received client message: %s", r.Message)
-	p.Message = r.Message
+	if r.Message != "" {
+		log.Debugf("Received client message: %s", r.Message)
+		p.Message = r.Message
+	} else {
+		p.Message = ""
+	}
 
 }
 
 func (p *Ping) Stop() {
 	log.Println("Stopping")
 }
-
-const (
-	clntMgmtPort = "9090"
-	//timestampFormat = time.StampNano
-)

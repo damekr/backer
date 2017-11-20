@@ -46,7 +46,7 @@ func Execute() {
 func AddCommands() {
 	//RootCmd.AddCommand(versionCmd)
 	RootCmd.AddCommand(pingCmd)
-	//RootCmd.AddCommand(runCmd)
+	RootCmd.AddCommand(runCmd)
 }
 
 func init() {

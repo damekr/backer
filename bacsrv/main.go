@@ -20,21 +20,20 @@ func init() {
 	flag.StringVar(configFlag, "c", "", "Configuration file")
 }
 
-//
-//func setLogger(srvConfig *config.ServerConfig) {
-//	log.SetFormatter(&log.TextFormatter{})
-//	switch srvConfig.LogOutput {
-//
-//	case "STDOUT":
-//		log.SetOutput(os.Stdout)
-//	case "SYSLOG":
-//		//TODO
-//	}
-//	if srvConfig.Debug {
-//		log.SetLevel(log.DebugLevel)
-//	}
-//}
-//
+func setLogger() {
+	log.SetFormatter(&log.TextFormatter{})
+	switch config.MainConfig.LogOutput {
+
+	case "STDOUT":
+		log.SetOutput(os.Stdout)
+	case "SYSLOG":
+		//TODO
+	}
+	if config.MainConfig.Debug {
+		log.SetLevel(log.DebugLevel)
+	}
+}
+
 func mainLoop() (string, error) {
 	log.Debug("Entering into main loop...")
 	interrupt := make(chan os.Signal, 1)
@@ -140,7 +139,8 @@ func main() {
 	//config.InitBackupConfig(srvConfig)
 	//initRepository()
 	//initClientsBuckets()
-	//serverTest()
+	//serverTest
+	setLogger()
 	mainLoop()
 
 	//fmt.Println("REPO", repo.Location)

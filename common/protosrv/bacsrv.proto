@@ -21,11 +21,23 @@ message PingResponse {
 
 
 message BackupRequest {
-  repeated string paths = 1;
+  string ip = 1;
+  repeated string paths = 2;
 }
+
+
 
 message BackupResponse {
-  repeated string validpaths = 1;
+    BacsrvBackupResponse bacsrvBackupResponse = 1;
+    BaclntBackupResponse baclntBackupResponse = 2;
 }
 
+message BaclntBackupResponse {
+    repeated string validpaths = 1;
 
+}
+
+message BacsrvBackupResponse {
+    bool backupstatus = 1;
+
+}
