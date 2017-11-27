@@ -1,22 +1,23 @@
 package network
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/bacsrv/config"
-	"google.golang.org/grpc"
 	"net"
+
+	"github.com/damekr/backer/bacsrv/config"
+	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
+
+var log = logrus.WithFields(logrus.Fields{"prefix": "network"})
 
 // EstablishGRPCConnection initiate grpc connection
 func EstablishGRPCConnection(clientIP string) (*grpc.ClientConn, error) {
-	log.Debug("Establishing grpc connection with: ", clientIP)
+	log.Debugf("Establishing grpc connection with: %s and port: %s ", clientIP, config.MainConfig.ClntMgmtPort)
 	conn, err := grpc.Dial(net.JoinHostPort(clientIP, config.MainConfig.ClntMgmtPort), grpc.WithInsecure())
 	if err != nil {
 		log.Error("Cannot establish connection with client: ", clientIP)
 		return nil, err
 	}
-	log.Debug("Successfully established grpc connection with client: ", clientIP)
-
 	return conn, nil
 }
 

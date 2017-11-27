@@ -1,10 +1,10 @@
 package cmds
 
 import (
-	log "github.com/Sirupsen/logrus"
+	"os"
+
 	"github.com/damekr/backer/bacli/client"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var pingCmd = &cobra.Command{

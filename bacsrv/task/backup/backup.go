@@ -1,42 +1,65 @@
 package backup
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/d8x/bftp"
+	"github.com/damekr/backer/bacsrv/network"
+	"github.com/damekr/backer/common/proto"
+	"github.com/sirupsen/logrus"
 )
+
+var log = logrus.WithFields(logrus.Fields{"prefix": "task:backup"})
 
 type Backup struct {
 	ClientIP       string
-	Paths          []string
+	RequestedPaths []string
 	Progress       int
-	ValidatedPaths []string
+	ValidPaths     []string
+	Status         bool
 }
 
 // TODO - maybe make tasks like: backupDefinition, BackupTask, PreBackupTask, PostBackupTask
 
 func CreateBackup(clientIP string, paths []string) *Backup {
 	return &Backup{
-		ClientIP: clientIP,
-		Paths:    paths,
+		ClientIP:       clientIP,
+		RequestedPaths: paths,
 	}
 }
 
 func (b *Backup) Run() {
-	//fmt.Println("Starting backup of client: ", b.ClientIP)
-	//log.Println("Pinging client: ", b.ClientIP)
-	//conn, err := network.EstablishGRPCConnection(b.ClientIP)
-	//if err != nil {
-	//	log.Warningf("Cannot connect to address %s", b.ClientIP)
-	//
-	//}
-	//defer conn.Close()
-	//c := protosrv.NewBacsrvClient(conn)
-	//r, err := c.Backup(context.Background(), &protosrv.BackupRequest{Paths: b.Paths})
-	//if err != nil {
-	//	log.Warningf("Could not get client name: %v", err)
-	//}
-	//log.Debugf("Received client validated paths: %s", r.Validpaths)
-	b.ValidatedPaths = []string{"/etc", "/var"}
+	log.Println("Running fs of client client: ", b.ClientIP)
+	conn, err := network.EstablishGRPCConnection(b.ClientIP)
+	if err != nil {
+		log.Errorf("Cannot connect to address %s", b.ClientIP)
+		return
+	}
+	defer conn.Close()
+	c := proto.NewBacsrvClient(conn)
+	r, err := c.Backup(context.Background(), &proto.BackupRequest{Paths: b.RequestedPaths})
+	if err != nil {
+		log.Warningf("Could not get paths of client: %v", err)
+		b.ValidPaths = []string{}
+		b.Status = false
+		return
+	}
+	b.Status = true
+	log.Println("Response: ", r)
+	b.ValidPaths = r.BaclntBackupResponse.Validpaths
+	b.StartBackup()
 
+}
+
+func (b *Backup) StartBackup() error {
+	bftpClient := bftp.CreateBFTPClient()
+	session, err := bftpClient.Connect("127.0.0.1", 8000)
+	if err != nil {
+		log.Errorln("Cannot connect to client: ", b.ClientIP)
+	}
+	log.Println("Session ID: ", session.Id)
+	return nil
 }
 
 func (b *Backup) Stop() {
@@ -44,5 +67,5 @@ func (b *Backup) Stop() {
 }
 
 func (b *Backup) Setup(paths []string) {
-	fmt.Println("Setup: ", paths)
+	b.RequestedPaths = paths
 }

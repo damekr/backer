@@ -2,10 +2,8 @@ package test
 
 import (
 	"fmt"
+
 	"github.com/damekr/backer/bacsrv/config"
-	"github.com/damekr/backer/bacsrv/job"
-	"github.com/damekr/backer/bacsrv/task/backup"
-	"github.com/damekr/backer/bacsrv/task/prebackup"
 )
 
 //func ShowConfig() {
@@ -21,12 +19,12 @@ func ShowClientsConfig() {
 func StartBackup() {
 
 	//backup1.Setup("asda")
-	//job1 := job.New("backup")
+	//job1 := job.New("fs")
 	//job1.AddTask(preb)
 	//job1.AddTask(backup1)
 	//job1.Start()
 
-	//work2 := job.Create("backup", client2, 12)
+	//work2 := job.Create("fs", client2, 12)
 	//backupJob2 := work2.(*job.backupDefinition)
 	//backupJob2.Setup("asdsad")
 	//

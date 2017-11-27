@@ -2,14 +2,16 @@ package config
 
 import (
 	"errors"
-	logger "github.com/Sirupsen/logrus"
+
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
+
+var log = logrus.WithFields(logrus.Fields{"prefix": "config:clients"})
 
 var (
 	EmptyClientsConfig = errors.New("ClientsConfigFilePath: Empty clients config file")
 	AllClients         = []ClientDefinition{}
-	log                = logger.New()
 )
 
 type ClientDefinition struct {
@@ -23,7 +25,7 @@ type ClientDefinition struct {
 	CID                  string `json:"cid"`
 }
 
-// BackupDefinition specifies a backup
+// BackupDefinition specifies a fs
 type BackupDefinition struct {
 	ID          string   `json:"id"`
 	Description string   `json:"description"`
@@ -86,7 +88,7 @@ func matchClientDefinition(clntDefinition ClientDefinition, backupsDefinitions [
 	for bk, bv := range backupsDefinitions {
 		for _, bid := range clntDefinition.BackupsIDs {
 			if bid == bv.ID {
-				log.Debug("Found matched backup ID: ", bid)
+				log.Debug("Found matched fs ID: ", bid)
 				clntDefinition.BackupDefinitions = append(clntDefinition.BackupDefinitions, backupsDefinitions[bk])
 			}
 		}
@@ -159,11 +161,11 @@ func checkValidConfigKeySlice(keyMap map[string][]string, key, ctx string) ([]st
 
 func setBackupsDefinitions(backupsViper *viper.Viper) []BackupDefinition {
 	if len(backupsViper.AllKeys()) == 0 {
-		log.Error("Backup config does not contain any backup definitions")
+		log.Error("Backup config does not contain any fs definitions")
 		return []BackupDefinition{}
 	}
 	var backupsDefinitions []BackupDefinition
-	backupCtx := "backup"
+	backupCtx := "fs"
 	for k, v := range backupsViper.AllSettings() {
 		log.Debugf("Key: %s, value: %s", k, v)
 		var bDefinition BackupDefinition
@@ -181,7 +183,7 @@ func setBackupsDefinitions(backupsViper *viper.Viper) []BackupDefinition {
 		if validDefinition {
 			backupsDefinitions = append(backupsDefinitions, bDefinition)
 		} else {
-			log.Warning("Found invalid backup definition")
+			log.Warning("Found invalid fs definition")
 		}
 	}
 	return backupsDefinitions

@@ -1,19 +1,18 @@
 package client
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/common/protosrv"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"net"
 	"os"
 	"time"
+
+	"github.com/damekr/backer/common/proto"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
-func init() {
-	log.Debug("Initializing bacli client")
-}
+var log = logrus.WithFields(logrus.Fields{"prefix": "client"})
 
 type Client interface {
 	ListAllInSecure() ([]string, error)
@@ -47,14 +46,14 @@ func (c ClientGRPC) PingInSecure() (string, error) {
 		return "", err
 	}
 	defer conn.Close()
-	cn := protosrv.NewBacsrvClient(conn)
+	cn := proto.NewBacsrvClient(conn)
 	//Contact the server and print out its response.
 	hostname, err := os.Hostname()
 	if err != nil {
 		log.Error("Cannot get hostname setting default")
 		hostname = "client"
 	}
-	r, err := cn.Ping(ctx, &protosrv.PingRequest{Ip: hostname})
+	r, err := cn.Ping(ctx, &proto.PingRequest{Ip: hostname})
 	if err != nil {
 		log.Warningf("Could not get client name: %v", err)
 		return "", err
@@ -80,7 +79,7 @@ func (c ClientREST) PingInSecure() (string, error) {
 //	}
 //	defer conn.Close()
 //
-//	cn := protosrv.NewBacsrvClient(conn)
+//	cn := proto.NewBacsrvClient(conn)
 //	//Contact the server and print out its response.
 //	hostname, err := os.Hostname()
 //	if err != nil {
@@ -88,7 +87,7 @@ func (c ClientREST) PingInSecure() (string, error) {
 //		hostname = "client"
 //	}
 //
-//	r, err := cn.ListClients(ctx, &protosrv.HelloRequest{Name: hostname})
+//	r, err := cn.ListClients(ctx, &proto.HelloRequest{Name: hostname})
 //	if err != nil {
 //		log.Warningf("Could not get client name: %v", err)
 //		return nil, err
@@ -104,7 +103,7 @@ func (c ClientREST) PingInSecure() (string, error) {
 //}
 //
 func (c ClientGRPC) RunBackupInSecure(paths []string) error {
-	log.Infof("Using GRPC protocol to run backup")
+	log.Infof("Using GRPC protocol to run fs")
 	conn, err := c.ConnectInSecure(c.Server, c.Port)
 	if err != nil {
 		log.Warningf("Cannot connect to address %s", c.Server)
@@ -115,27 +114,27 @@ func (c ClientGRPC) RunBackupInSecure(paths []string) error {
 	md := metadata.Pairs("timestamp", time.Now().Format(time.StampNano))
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
-	cn := protosrv.NewBacsrvClient(conn)
+	cn := proto.NewBacsrvClient(conn)
 	//Contact the server and print out its response.
 	hostname, err := os.Hostname()
 	if err != nil {
 		log.Error("Cannot get hostname setting default")
 		hostname = "client"
 	}
-	r, err := cn.Backup(ctx, &protosrv.BackupRequest{
+	r, err := cn.Backup(ctx, &proto.BackupRequest{
 		Ip:    hostname,
 		Paths: paths,
 	})
 	if err != nil {
-		log.Warningf("Could not get client name: %v", err)
+		log.Warningf("Could not send client name: %v", err)
 	}
-	log.Debug("Received status of backup: ", r.BacsrvBackupResponse.Backupstatus)
+	log.Debug("Received status of fs: ", r.BacsrvBackupResponse.Backupstatus)
 
 	return nil
 }
 
 //func (c ClientREST) RunBackupInSecure([]string, error) error {
-//	log.Info("Running backup of clients rest....")
+//	log.Info("Running fs of clients rest....")
 //	return nil
 //}
 

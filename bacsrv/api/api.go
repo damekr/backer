@@ -2,20 +2,23 @@ package api
 
 import (
 	"context"
-	log "github.com/Sirupsen/logrus"
+
 	"github.com/damekr/backer/bacsrv/job"
 	"github.com/damekr/backer/bacsrv/network"
 	"github.com/damekr/backer/bacsrv/task/backup"
 	"github.com/damekr/backer/bacsrv/task/ping"
-	"github.com/damekr/backer/common/protosrv"
+	"github.com/damekr/backer/common/proto"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
 type server struct{}
 
+var log = logrus.WithFields(logrus.Fields{"prefix": "api"})
+
 // Ping returns hostname of client
-func (s *server) Ping(ctx context.Context, in *protosrv.PingRequest) (*protosrv.PingResponse, error) {
+func (s *server) Ping(ctx context.Context, in *proto.PingRequest) (*proto.PingResponse, error) {
 	log.Printf("Got request to ping client: %s", in.Ip)
 	md, ok := metadata.FromIncomingContext(ctx)
 	log.Print("OK: ", ok)
@@ -24,23 +27,7 @@ func (s *server) Ping(ctx context.Context, in *protosrv.PingRequest) (*protosrv.
 	if err != nil {
 		log.Errorln("Cannot ping client, err: ", err)
 	}
-	return &protosrv.PingResponse{Message: clientMessage}, nil
-}
-
-func (s *server) Backup(ctx context.Context, backupRequest *protosrv.BackupRequest) (*protosrv.BackupResponse, error) {
-	log.Printf("Got reqest to backup client: %s", backupRequest.Ip)
-	md, ok := metadata.FromIncomingContext(ctx)
-	log.Print("OK: ", ok)
-	log.Print("METADATA: ", md)
-	validatedPaths, err := backupClient(backupRequest.Ip, backupRequest.Paths)
-	if err != nil {
-		log.Errorln("Cannot backup client, err: ", err)
-	}
-	log.Printf("Validated paths from client: ", validatedPaths)
-	bacsrvBackupResponse := &protosrv.BacsrvBackupResponse{
-		Backupstatus: true,
-	}
-	return &protosrv.BackupResponse{BacsrvBackupResponse: bacsrvBackupResponse}, nil
+	return &proto.PingResponse{Message: clientMessage}, nil
 }
 
 func pingClient(clientIP string) (string, error) {
@@ -53,15 +40,32 @@ func pingClient(clientIP string) (string, error) {
 	return pingTask.Message, nil
 }
 
-func backupClient(clientIP string, paths []string) ([]string, error) {
-	log.Println("Creating backup job of: ", clientIP)
+func (s *server) Backup(ctx context.Context, backupRequest *proto.BackupRequest) (*proto.BackupResponse, error) {
+	log.Printf("Got request to fs client: %s", backupRequest.Ip)
+	md, ok := metadata.FromIncomingContext(ctx)
+	log.Print("OK: ", ok)
+	log.Print("METADATA: ", md)
+
+	status, err := backupClient(backupRequest.Ip, backupRequest.Paths)
+	if err != nil {
+		log.Errorln("Cannot fs client, err: ", err)
+	}
+
+	log.Printf("Got status: ", status)
+	bacsrvBackupResponse := &proto.BacsrvBackupResponse{
+		Backupstatus: status,
+	}
+	return &proto.BackupResponse{BacsrvBackupResponse: bacsrvBackupResponse}, nil
+}
+
+func backupClient(clientIP string, paths []string) (bool, error) {
+	log.Println("Creating fs job of: ", clientIP)
 	backupTask := backup.CreateBackup(clientIP, paths)
-	backupJob := job.New("backup")
+	backupJob := job.New("fs")
 	backupTask.Setup(paths)
 	backupJob.AddTask(backupTask)
 	backupJob.Start()
-
-	return backupTask.Paths, nil
+	return backupTask.Status, nil
 }
 
 // Start method starts a grpc server on specific port
@@ -71,7 +75,7 @@ func Start() error {
 		log.Errorln("Cannot start Mgmt server, err: ", err)
 	}
 	s := grpc.NewServer()
-	protosrv.RegisterBacsrvServer(s, &server{})
+	proto.RegisterBacsrvServer(s, &server{})
 	s.Serve(list)
 	return nil
 }

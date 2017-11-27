@@ -3,7 +3,7 @@ package outprotoapi
 //import (
 //	log "github.com/Sirupsen/logrus"
 //	"github.com/damekr/backer/baclnt/config"
-//	"github.com/damekr/backer/common/protosrv"
+//	"github.com/damekr/backer/common/proto"
 //	"golang.org/x/net/context"
 //	"google.golang.org/grpc"
 //	"google.golang.org/grpc/metadata"
@@ -28,9 +28,9 @@ package outprotoapi
 //		return "", err
 //	}
 //	defer conn.Close()
-//	c := protosrv.NewBacsrvClient(conn)
+//	c := proto.NewBacsrvClient(conn)
 //	//Contact the server and print out its response.
-//	r, err := c.SayHello(ctx, &protosrv.HelloRequest{Name: config.ClntConfig.ExternalName})
+//	r, err := c.SayHello(ctx, &proto.HelloRequest{Name: config.ClntConfig.ExternalName})
 //	if err != nil {
 //		log.Warningf("Could not get client name: %v", err)
 //		return "", err

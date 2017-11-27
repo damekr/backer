@@ -1,10 +1,9 @@
 package storage
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/storage/local"
-
+	"github.com/sirupsen/logrus"
 )
 
 /*
@@ -18,6 +17,8 @@ REPOSITORY SCHEMA (TEMPORARY)
 /locks
 
 */
+
+var log = logrus.WithFields(logrus.Fields{"prefix": "storage"})
 
 var DefaultStorage Backend
 

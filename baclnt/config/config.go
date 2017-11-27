@@ -1,12 +1,13 @@
 package config
 
 import (
-	log "github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
 var (
 	MainConfig = ClientConfig{}
+	log        = logrus.WithFields(logrus.Fields{"prefix": "config"})
 )
 
 // ClientConfig specify client main configuration

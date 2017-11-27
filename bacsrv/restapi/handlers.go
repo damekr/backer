@@ -140,10 +140,10 @@ func TriggerClientBackup(w http.ResponseWriter, r *http.Request) {
 	var backupConfigMassage config.backupDefinition
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
-		log.Error("Cannot read body of Trigger message backup")
+		log.Error("Cannot read body of Trigger message fs")
 	}
 	if err := r.Body.Close(); err != nil {
-		log.Errorf("Unexpected end of body in backup trigger request")
+		log.Errorf("Unexpected end of body in fs trigger request")
 	}
 	if err := json.Unmarshal(body, &backupConfigMassage); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -156,8 +156,8 @@ func TriggerClientBackup(w http.ResponseWriter, r *http.Request) {
 		ClientName:   clientName,
 		BackupConfig: backupConfigMassage,
 	}
-	log.Printf("Received backup message: %#v", backupConfigMassage)
-	log.Printf("Full backup message %#v", clientBackupMessage)
+	log.Printf("Received fs message: %#v", backupConfigMassage)
+	log.Printf("Full fs message %#v", clientBackupMessage)
 	// manager.SendBackupTriggerMessage(clientBackupMessage)
 	fmt.Fprint(w, "OK")
 }

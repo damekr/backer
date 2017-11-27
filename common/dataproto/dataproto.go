@@ -1,22 +1,21 @@
 package dataproto
 
 import (
+	md5 "crypto/md5"
 	"encoding/gob"
-	log "github.com/Sirupsen/logrus"
+	"encoding/hex"
+	"errors"
 	"io"
 	net "net"
 	"os"
-	"github.com/damekr/backer/baclnt/backup"
 	"path"
-	"encoding/hex"
-	md5 "crypto/md5"
-	"errors"
 	"unsafe"
 
+	log "github.com/Sirupsen/logrus"
 )
 
 const (
-	DELIMITER = "\r\n"
+	DELIMITER  = "\r\n"
 	BUFFERSIZE = 1024
 )
 
@@ -24,27 +23,22 @@ func init() {
 	log.Debug("Initializing transfer protocol")
 }
 
-
 type Transfer struct {
-	From	string
+	From       string
 	Connection net.Conn
 }
 
-
-
 type ReturnMessage struct {
-	Status bool
-	Message	string
+	Status  bool
+	Message string
 }
-
 
 func New(from string, conn net.Conn) *Transfer {
 	return &Transfer{
-		From:         from,
-		Connection: 		conn,
+		From:       from,
+		Connection: conn,
 	}
 }
-
 
 func sendDataTypeHeader(transferType string, conn net.Conn) error {
 	log.Debug("Marshaling data for header transfer")
@@ -68,7 +62,6 @@ func receiveDataTypeHeader(conn net.Conn) (string, error) {
 	}
 	return transferType, nil
 }
-
 
 func sendDelimiter(conn net.Conn) error {
 	log.Debug("Sending delimiter")
@@ -99,7 +92,6 @@ func receiveDelimiter(conn net.Conn) error {
 	return nil
 }
 
-
 func (t *Transfer) SendTypeHeader(transferType string) error {
 	log.Debugf("Sending transfer type: %s to server", transferType)
 	err := sendDataTypeHeader(transferType, t.Connection)
@@ -114,7 +106,7 @@ func (t *Transfer) SendTypeHeader(transferType string) error {
 	return nil
 }
 
-func (t *Transfer) ReceiveTypeHeader() (string, error){
+func (t *Transfer) ReceiveTypeHeader() (string, error) {
 	log.Debug("Receiving transfer type header")
 	transferType, err := receiveDataTypeHeader(t.Connection)
 	if err != nil {
@@ -124,7 +116,7 @@ func (t *Transfer) ReceiveTypeHeader() (string, error){
 	}
 	log.Debug("Received transfer type: ", transferType)
 	err = receiveDelimiter(t.Connection)
-	if err != nil{
+	if err != nil {
 		return "", err
 	}
 	return transferType, nil
@@ -159,8 +151,6 @@ func (t *Transfer) SendFile(fileLocation string) error {
 	return nil
 }
 
-
-
 func (t *Transfer) ReceiveFile(saveFullDirectory string) error {
 	log.Debug("Starting receiving file, writing it to directory: ", saveFullDirectory)
 	fileInfo, err := t.receiveFileHeader()
@@ -176,11 +166,11 @@ func (t *Transfer) ReceiveFile(saveFullDirectory string) error {
 	var receivedBytes int64
 	for {
 		if (fileInfo.Size - receivedBytes) < BUFFERSIZE {
-			log.Println("Copying rest of file, bytes: ", fileInfo.Size - receivedBytes)
+			log.Println("Copying rest of file, bytes: ", fileInfo.Size-receivedBytes)
 			if fileInfo.Size == 0 {
 				break
 			}
-			io.CopyN(receivingFile, t.Connection, fileInfo.Size - receivedBytes)
+			io.CopyN(receivingFile, t.Connection, fileInfo.Size-receivedBytes)
 			break
 		}
 		io.CopyN(receivingFile, t.Connection, BUFFERSIZE)
@@ -199,10 +189,9 @@ func (t *Transfer) ReceiveFile(saveFullDirectory string) error {
 	return nil
 }
 
-
 func (t *Transfer) sendFileHeader(fileLocation string) error {
 	log.Debug("Reading file info header")
-	fileHeader, err := backup.ReadFileHeader(fileLocation)
+	fileHeader, err := fs.ReadFileHeader(fileLocation)
 	if err != nil {
 		log.Error("File does not exist")
 		return err
@@ -222,7 +211,7 @@ func (t *Transfer) sendFileHeader(fileLocation string) error {
 	return nil
 }
 
-func (t *Transfer) receiveFileHeader() (backup.FileTransferInfo, error) {
+func (t *Transfer) receiveFileHeader() (fs.FileTransferInfo, error) {
 	log.Debug("Receiving file info header")
 	fileInfo, err := receiveFileInfoHeader(t.Connection)
 	if err == io.EOF {
@@ -242,10 +231,9 @@ func (t *Transfer) receiveFileHeader() (backup.FileTransferInfo, error) {
 	return fileInfo, nil
 }
 
-
-func receiveFileInfoHeader(conn net.Conn) (backup.FileTransferInfo, error) {
+func receiveFileInfoHeader(conn net.Conn) (fs.FileTransferInfo, error) {
 	log.Debug("Reading file header")
-	var fileInfo backup.FileTransferInfo
+	var fileInfo fs.FileTransferInfo
 	dec := createDecoder(conn)
 	err := dec.Decode(&fileInfo)
 	log.Println("LEN RECV: ", unsafe.Sizeof(fileInfo))
@@ -265,7 +253,7 @@ func createDecoder(conn net.Conn) *gob.Decoder {
 	log.Debug("Creating decoder")
 	return gob.NewDecoder(conn)
 }
-func sendFileInfoHeader(fileInfo *backup.FileTransferInfo, conn net.Conn) error {
+func sendFileInfoHeader(fileInfo *fs.FileTransferInfo, conn net.Conn) error {
 	log.Debugf("Sending file header:  %#v", fileInfo)
 	log.Println("LEN SEND: ", unsafe.Sizeof(*fileInfo))
 	enc := createEncoder(conn)
@@ -301,7 +289,7 @@ func checkFileChecksum(fileLocation, checksum string) error {
 	hashInBytes := hash.Sum(nil)[:16]
 	returnMD5String := hex.EncodeToString(hashInBytes)
 	if returnMD5String != checksum {
-		log.Errorf("Calculation of checksum of file: %s failed - was: %s is: %s",fileLocation, checksum, returnMD5String)
+		log.Errorf("Calculation of checksum of file: %s failed - was: %s is: %s", fileLocation, checksum, returnMD5String)
 	} else {
 		log.Debugf("Calculation of checksum of file: %s passsed", file.Name())
 	}

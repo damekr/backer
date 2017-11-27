@@ -1,23 +1,25 @@
 package main
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/bacli/cmds"
 	"os"
 	"runtime"
+
+	"github.com/damekr/backer/bacli/cmds"
+	"github.com/sirupsen/logrus"
+	"github.com/x-cray/logrus-prefixed-formatter"
 )
 
 var commit string
+var log = logrus.WithFields(logrus.Fields{"prefix": "main"})
 
 func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
+	logrus.SetFormatter(&prefixed.TextFormatter{})
+	logrus.SetLevel(logrus.DebugLevel)
+
 	cmds.Execute()
 }
 
 func main() {
-
 	log.Debugf("main %#v", os.Args)
 	log.Debugf("bacli, compiled with %v on %v/%v", runtime.Version(), runtime.GOOS, runtime.GOARCH)
 

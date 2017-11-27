@@ -60,9 +60,9 @@ const (
 //	return availableFiles.Path, nil
 //}
 //
-//// SendBackupRequest creates connection to client with specified address and trigger a backup
+//// SendBackupRequest creates connection to client with specified address and trigger a fs
 //func SendBackupRequest(paths []string, clntAddress string) error {
-//	log.Debug("Starting backup on client: ", clntAddress)
+//	log.Debug("Starting fs on client: ", clntAddress)
 //	md := metadata.Pairs("ServerExternalName", config.GetExternalName())
 //	ctx := metadata.NewContext(context.Background(), md)
 //	conn, err := establishConnection(clntAddress)
@@ -77,7 +77,7 @@ const (
 //		Path: paths,
 //	})
 //	if err != nil {
-//		log.Error("Couldn't send trigger backup message")
+//		log.Error("Couldn't send trigger fs message")
 //		return err
 //	}
 //	log.Debugf("Got status message: %#v from client: %s", status, clntAddress)

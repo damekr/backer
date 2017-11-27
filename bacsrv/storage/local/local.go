@@ -1,15 +1,27 @@
 package local
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"github.com/damekr/backer/bacsrv/config"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/damekr/backer/bacsrv/config"
+	"github.com/sirupsen/logrus"
+	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
+
+var logger = logrus.New()
+var log = &logrus.Entry{}
+
+func init() {
+	logger.Formatter = new(prefixed.TextFormatter)
+	logger.Level = logrus.DebugLevel
+	log = logger.WithFields(logrus.Fields{"prefix": "storage:local"})
+
+}
 
 type Local struct {
 	Location string

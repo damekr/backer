@@ -1,14 +1,14 @@
 package dataproto
 
-
 import (
-	"net"
-	"fmt"
-	"testing"
-	"io/ioutil"
 	"crypto/rand"
+	"fmt"
+	"io/ioutil"
+	"net"
 	"os"
 	"path"
+	"testing"
+
 	"github.com/Sirupsen/logrus"
 )
 
@@ -19,7 +19,7 @@ type tempFile struct {
 	Size int
 }
 
-func newTempFile(name string, size int) tempFile{
+func newTempFile(name string, size int) tempFile {
 	return tempFile{
 		Name: name,
 		Size: size,
@@ -39,7 +39,7 @@ func generateRandomBytes(n int) ([]byte, error) {
 
 func (t *tempFile) create() (string, error) {
 	tmpFile, err := ioutil.TempFile("", t.Name)
-	if err != nil{
+	if err != nil {
 		fmt.Errorf("Cannot create temp file")
 		return "", err
 	}
@@ -63,7 +63,7 @@ func (t *tempFile) cleanup(fullpath string) error {
 	return err
 }
 
-func startServer() net.Listener{
+func startServer() net.Listener {
 	ln, err := net.Listen("tcp", PORT)
 	if err != nil {
 		fmt.Print("Cannot listen, error: ", err.Error())
@@ -71,7 +71,7 @@ func startServer() net.Listener{
 	return ln
 }
 
-func sendTransferHeader(transferType string){
+func sendTransferHeader(transferType string) {
 	conn, err := net.Dial("tcp", PORT)
 	if err != nil {
 		fmt.Print("Error while connecting")
@@ -108,7 +108,7 @@ func prepareSendFile() (string, error) {
 
 func TestTransfer_SendTypeHeader(t *testing.T) {
 	ln := startServer()
-	transferType := "backup"
+	transferType := "fs"
 	go func() {
 		sendTransferHeader(transferType)
 	}()
@@ -123,7 +123,7 @@ func TestTransfer_SendTypeHeader(t *testing.T) {
 		fmt.Println("Handling connection")
 		transfer2 := New("client", conn)
 		transferType, err := transfer2.ReceiveTypeHeader()
-		if transferType != transferType{
+		if transferType != transferType {
 			t.Fail()
 		}
 		if err != nil {

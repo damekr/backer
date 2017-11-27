@@ -2,35 +2,41 @@ package main
 
 import (
 	"flag"
-	log "github.com/Sirupsen/logrus"
+	"fmt"
+
 	"github.com/damekr/backer/bacsrv/config"
-	//"github.com/damekr/backer/bacsrv/test"
-	"github.com/damekr/backer/bacsrv/api"
-	"github.com/damekr/backer/bacsrv/storage"
+	"github.com/sirupsen/logrus"
+	"github.com/x-cray/logrus-prefixed-formatter"
+
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/damekr/backer/bacsrv/api"
+	"github.com/damekr/backer/bacsrv/storage"
 )
 
 var commit string
+var log = logrus.WithFields(logrus.Fields{"prefix": "main"})
 
 var configFlag = flag.String("config", "", "Configuration file")
 
 func init() {
 	flag.StringVar(configFlag, "c", "", "Configuration file")
+
 }
 
 func setLogger() {
-	log.SetFormatter(&log.TextFormatter{})
+	logrus.SetFormatter(&prefixed.TextFormatter{})
 	switch config.MainConfig.LogOutput {
 
 	case "STDOUT":
-		log.SetOutput(os.Stdout)
+		logrus.SetOutput(os.Stdout)
 	case "SYSLOG":
 		//TODO
 	}
 	if config.MainConfig.Debug {
-		log.SetLevel(log.DebugLevel)
+		logrus.SetLevel(logrus.DebugLevel)
 	}
 }
 
@@ -127,12 +133,13 @@ func test() {
 }
 
 func main() {
-	log.Printf("COMMIT: %s", commit)
+	fmt.Println("COMMIT: ", commit)
 	setFlags()
 	err := initConfigs(*configFlag)
 	if err != nil {
 		log.Panicln("Cannot init bacsrv configurations")
 	}
+	setLogger()
 	initStorage(config.MainConfig.Storage.Type)
 	//test()
 	//config.InitClientsConfig(srvConfig)
@@ -140,9 +147,7 @@ func main() {
 	//initRepository()
 	//initClientsBuckets()
 	//serverTest
-	setLogger()
 	mainLoop()
-
 	//fmt.Println("REPO", repo.Location)
 	//fmt.Printf("Storage status: %#v\n", repo.GetCapacityStatus())
 	//clientBucket := storage.CreateClient("minitx")

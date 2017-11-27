@@ -1,18 +1,17 @@
 // +build linux darwin
 
-package backup
+package fs
 
 import (
 	"crypto/md5"
 	"encoding/hex"
-	log "github.com/Sirupsen/logrus"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
-)
 
-var AbsoluteFilesPaths []string
+	log "github.com/sirupsen/logrus"
+)
 
 type FileInfo struct {
 	Path   string
@@ -30,67 +29,66 @@ type FileTransferInfo struct {
 	Checksum string
 }
 
-func checkPathForRegularFile(path string, f os.FileInfo, err error) error {
-	if f.Mode().IsRegular() {
+type FS struct {
+	AbsoluteFilesPaths []string
+}
+
+func (f *FS) checkPathForRegularFile(path string, file os.FileInfo, err error) error {
+	if file.Mode().IsRegular() {
 		log.Debugf("Adding file %s to list", path)
-		AbsoluteFilesPaths = append(AbsoluteFilesPaths, path)
+		f.AbsoluteFilesPaths = append(f.AbsoluteFilesPaths, path)
 	} else {
 		log.Debug("Found not regular file: ", path)
 	}
 	return nil
 }
 
-// TODO: GENERAL: Proper handling files privilages.
-
-// GetAbsolutePaths makes actually two things resolve files in given paths and checks if exist.
-// TODO Refactor me :)
-func GetAbsolutePaths(paths []string) []string {
+func (f *FS) GetAbsolutePaths(paths []string) []string {
 	log.Debug("Checking absolutive paths for: ", paths)
-	validatedPaths := ValidatePaths(paths)
+	validatedPaths := f.ValidatePaths(paths)
 	for i := range validatedPaths {
-		err := filepath.Walk(validatedPaths[i], checkPathForRegularFile)
+		err := filepath.Walk(validatedPaths[i], f.checkPathForRegularFile)
 		if err != nil {
 			log.Error(err)
 		}
 	}
-	return AbsoluteFilesPaths
+	return f.AbsoluteFilesPaths
 }
 
-func ValidatePaths(paths []string) []string {
-	validatedPaths := []string{}
-	for _, path := range paths {
-		log.Printf("Checking path %s", path)
-		_, err := os.Stat(path)
+func (f *FS) ValidatePaths(paths []string) []string {
+	var validatedPaths []string
+	for _, vPath := range paths {
+		log.Printf("Checking vPath %s", vPath)
+		_, err := os.Stat(vPath)
 		if err != nil {
-			log.Printf("Path %s does not exist\n", path)
+			log.Printf("Path %s does not exist\n", vPath)
 		} else {
-			validatedPaths = append(validatedPaths, path)
+			validatedPaths = append(validatedPaths, vPath)
 		}
 	}
 	return validatedPaths
 }
 
-func GetFilesInformations(paths []string) []FileInfo {
-	log.Debug("Getting files informations")
-	filesInfo := []FileInfo{}
-	absFilePaths := GetAbsolutePaths(paths)
-	for _, f := range absFilePaths {
-		fileInfo := new(FileInfo)
-		info, err := os.Stat(f)
-		if err != nil {
-			log.Error("Cannot open file: %s", f)
-		}
-		fileInfo.Exists = true
-		log.Debug("Adding path ", f)
-		fileInfo.Path = f
-		log.Debug("File size: ", info.Size())
-		fileInfo.Size = info.Size()
-		filesInfo = append(filesInfo, *fileInfo)
-	}
-	log.Debug("Size of list, ", len(filesInfo))
-	return filesInfo
-}
-
+//func GetFilesInformations(paths []string) []FileInfo {
+//	log.Debug("Getting files informations")
+//	filesInfo := []FileInfo{}
+//	absFilePaths := GetAbsolutePaths(paths)
+//	for _, f := range absFilePaths {
+//		fileInfo := new(FileInfo)
+//		info, err := os.Stat(f)
+//		if err != nil {
+//			log.Error("Cannot open file: %s", f)
+//		}
+//		fileInfo.Exists = true
+//		log.Debug("Adding path ", f)
+//		fileInfo.Path = f
+//		log.Debug("File size: ", info.Size())
+//		fileInfo.Size = info.Size()
+//		filesInfo = append(filesInfo, *fileInfo)
+//	}
+//	log.Debug("Size of list, ", len(filesInfo))
+//	return filesInfo
+//}
 
 func calculateMD5Sum(fileLocation string) (string, error) {
 	log.Debugf("Calculating file %s md5 checksum", fileLocation)

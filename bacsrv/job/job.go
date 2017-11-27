@@ -27,7 +27,7 @@ func New(name string) *Job {
 func (j *Job) AddTask(task task.Task) error {
 	j.Tasks = append(j.Tasks, task)
 	//switch task {
-	//case task.(*backup.Backup):
+	//case task.(*fs.Backup):
 	//	j.Tasks = append(j.Tasks, task)
 	//
 	//}
@@ -52,17 +52,17 @@ func GetAllTasks() []*Job {
 //}
 
 //func (b *BackupJob) Run() error{
-//	log.Info("Starting backup job of client: ", b.ClientConfig.Address)
+//	log.Info("Starting fs job of client: ", b.ClientConfig.Address)
 //	validatedPaths, err := preBackupChecks(b.BackupConfig.Paths, b.ClientConfig.Address)
 //	if err != nil {
 //		log.Error("Cannot validate paths on client side")
 //		return err
 //	}
 //	// TODO Here paths can be removed bases on excluded
-//	log.Debugf("Got validated paths from client: %s starting backup...", validatedPaths)
+//	log.Debugf("Got validated paths from client: %s starting fs...", validatedPaths)
 //	err = outprotoapi.SendBackupRequest(validatedPaths, b.ClientConfig.Address)
 //	if err != nil {
-//		log.Error("Triggering backup failed!")
+//		log.Error("Triggering fs failed!")
 //		return err
 //	}
 //	log.Info("Backup has been triggered properly!")
@@ -115,20 +115,20 @@ func GetAllTasks() []*Job {
 //	return nil
 //}
 //
-////// StartBackup start backup on client with given configuration
+////// StartBackup start fs on client with given configuration
 ////// This function should require only BackupJob Struct
 ////func StartBackup(backupConfig *config.Backup, clntAddr string) error {
-////	log.Info("Starting backup of client: ", clntAddr)
+////	log.Info("Starting fs of client: ", clntAddr)
 ////	validatedPaths, err := preBackupChecks(backupConfig.Paths, clntAddr)
 ////	if err != nil {
 ////		log.Error("Cannot validate paths on client side")
 ////		return err
 ////	}
 ////	// TODO Here paths can be removed bases on excluded
-////	log.Debugf("Got validated paths from client: %s starting backup...", validatedPaths)
+////	log.Debugf("Got validated paths from client: %s starting fs...", validatedPaths)
 ////	err = outprotoapi.SendBackupRequest(validatedPaths, clntAddr)
 ////	if err != nil {
-////		log.Error("Triggering backup failed!")
+////		log.Error("Triggering fs failed!")
 ////		return err
 ////	}
 ////	log.Info("Backup has been triggered properly!")

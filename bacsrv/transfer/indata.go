@@ -7,14 +7,13 @@ import (
 	// "strconv"
 	"errors"
 
-	"crypto/md5"
-	"encoding/hex"
+	"path"
+	"strings"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/storage"
 	"github.com/damekr/backer/common/dataproto"
-	"path"
-	"strings"
 )
 
 // BUFFERSIZE determines how big is piece of data that will be send in one frame
@@ -48,7 +47,7 @@ func dataTransferHandler(conn net.Conn) {
 	log.Debug("Transfer type: ", transferType)
 	switch transferType {
 	case "fullbackup":
-		log.Info("Starting full backup data transfer")
+		log.Info("Starting full fs data transfer")
 		log.Info("Creating new client bucket for data")
 		savesetFullPath, err := storage.CreateClientSaveset(header.From)
 		if err != nil {
@@ -81,8 +80,6 @@ func receiveFiles(conn net.Conn, savesetFullPath string) {
 
 	}
 }
-
-
 
 func receiveFile(fileSize int64, savesetFullPath, fileName, fileFullLocation, checksum string, connection net.Conn) error {
 	log.Debugf("Creating file: %s in saveset: %s", fileName, savesetFullPath)

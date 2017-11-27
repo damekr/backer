@@ -1,30 +1,31 @@
 package inprotoapi
 
 import (
+	"net"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/job"
-	"github.com/damekr/backer/common/protosrv"
+	"github.com/damekr/backer/common/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"net"
 	// "os"
 )
 
 type server struct{}
 
 // SayHello returns hostname of client
-func (s *server) SayHello(ctx context.Context, in *protosrv.HelloRequest) (*protosrv.HelloReply, error) {
+func (s *server) SayHello(ctx context.Context, in *proto.HelloRequest) (*proto.HelloReply, error) {
 	log.Printf("Got request from client: %s", in.Name)
 	md, ok := metadata.FromContext(ctx)
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
 	// go job.SendHelloMessageToClient(in.Name)
-	return &protosrv.HelloReply{Name: config.MainConfig.ExternalName}, nil
+	return &proto.HelloReply{Name: config.MainConfig.ExternalName}, nil
 }
 
-func (s *server) ListClients(ctx context.Context, in *protosrv.HelloRequest) (*protosrv.ClientsList, error) {
+func (s *server) ListClients(ctx context.Context, in *proto.HelloRequest) (*proto.ClientsList, error) {
 	log.Debug("Received a request to check paths")
 	client := in.Name
 	log.Debug("Got request from: ", client)
@@ -34,32 +35,32 @@ func (s *server) ListClients(ctx context.Context, in *protosrv.HelloRequest) (*p
 	for _, v := range clientsL {
 		clients = append(clients, v.Name)
 	}
-	return &protosrv.ClientsList{
+	return &proto.ClientsList{
 		Clients: clients,
 	}, nil
 }
 
-func (s *server) RunBackup(ctx context.Context, in *protosrv.Client) (*protosrv.Status, error) {
-	log.Debug("Received a request to run backup of client: ", in.Cname)
+func (s *server) RunBackup(ctx context.Context, in *proto.Client) (*proto.Status, error) {
+	log.Debug("Received a request to run fs of client: ", in.Cname)
 	client := in.Name
 	log.Debug("Got request from: ", client)
-	log.Info("Starting backup of: ", in.Cname)
+	log.Info("Starting fs of: ", in.Cname)
 	clientConfig := config.GetClientInformation(in.Cname)
 
-	// Getting client backup config
-	log.Info("Getting backup attached to the client")
+	// Getting client fs config
+	log.Info("Getting fs attached to the client")
 	backupConfig, err := config.GetBackupConfigByID(clientConfig.BackupID)
 	if err != nil {
-		log.Error("There is no attached backup config to this client")
-		return &protosrv.Status{
+		log.Error("There is no attached fs config to this client")
+		return &proto.Status{
 			Backup: false,
 		}, err
 	}
 
 	log.Debug("Backup attached to client: ", backupConfig)
-	log.Info("Found all client metadata, executing backup...")
+	log.Info("Found all client metadata, executing fs...")
 
-	// Creating job for backup
+	// Creating job for fs
 	backupJob := job.BackupJob{
 		BackupConfig: backupConfig,
 		ClientConfig: clientConfig,
@@ -67,11 +68,11 @@ func (s *server) RunBackup(ctx context.Context, in *protosrv.Client) (*protosrv.
 	err = backupJob.Start()
 	if err != nil {
 		log.Error("Backup has not finished successfully, error: ", err)
-		return &protosrv.Status{
+		return &proto.Status{
 			Backup: false,
 		}, err
 	}
-	return &protosrv.Status{
+	return &proto.Status{
 		Backup: true,
 	}, nil
 }
@@ -84,6 +85,6 @@ func ServeServer(config *config.ServerConfig) {
 		log.Errorf("Failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	protosrv.RegisterBacsrvServer(s, &server{})
+	proto.RegisterBacsrvServer(s, &server{})
 	s.Serve(lis)
 }

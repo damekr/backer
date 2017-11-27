@@ -2,7 +2,7 @@
 syntax = "proto3";
 
 
-package protosrv;
+package proto;
 
 service Bacsrv {
 

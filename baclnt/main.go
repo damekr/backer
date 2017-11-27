@@ -6,30 +6,35 @@ import (
 	"os/signal"
 	"syscall"
 
-	log "github.com/Sirupsen/logrus"
-	// "github.com/damekr/backer/baclnt/backup"
+	"github.com/damekr/backer/baclnt/transfer"
+	"github.com/sirupsen/logrus"
+	"github.com/x-cray/logrus-prefixed-formatter"
+
+	// "github.com/damekr/backer/baclnt/fs"
 	"github.com/damekr/backer/baclnt/api"
 	"github.com/damekr/backer/baclnt/config"
 )
 
 var configFlag = flag.String("config", "", "Configuration file")
 var commit string
+var log = logrus.WithFields(logrus.Fields{"prefix": "main"})
 
 func init() {
 	flag.StringVar(configFlag, "c", "", "Configuration file")
+
 }
 
 func setLogger() {
-	log.SetFormatter(&log.TextFormatter{})
+	logrus.SetFormatter(&prefixed.TextFormatter{})
 	switch config.MainConfig.LogOutput {
 
 	case "STDOUT":
-		log.SetOutput(os.Stdout)
+		logrus.SetOutput(os.Stdout)
 	case "SYSLOG":
 		//TODO
 	}
 	if config.MainConfig.Debug {
-		log.SetLevel(log.DebugLevel)
+		logrus.SetLevel(logrus.DebugLevel)
 	}
 }
 
@@ -38,6 +43,7 @@ func mainLoop() (string, error) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 	startProtoAPI()
+	startTransferServer()
 	for {
 		select {
 		case killSignal := <-interrupt:
@@ -53,6 +59,10 @@ func mainLoop() (string, error) {
 
 func startProtoAPI() {
 	go api.Start()
+}
+
+func startTransferServer() {
+	go transfer.StartBFTPServer()
 }
 
 func checkConfigFile(configPath string) error {

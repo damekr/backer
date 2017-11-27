@@ -47,7 +47,7 @@ var routes = Routes{
 	Route{
 		"ClientDefinition Backup Trigger",
 		"POST",
-		"/client/{clientName}/backup",
+		"/client/{clientName}/fs",
 		TriggerClientBackup,
 	},
 }
