@@ -1,9 +1,7 @@
 package local
 
 import (
-	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -24,15 +22,6 @@ func init() {
 }
 
 type Local struct {
-	Location string
-}
-
-type ClientBucket struct {
-	Location string
-}
-
-type ClientSaveset struct {
-	Bucket   ClientBucket
 	Location string
 }
 
@@ -64,46 +53,21 @@ func Create(location string) (*Local, error) {
 	return local, nil
 }
 
-func (l Local) CreateBucket(clientName string) *ClientBucket {
+func (l Local) CreateBucket(clientName string) (string, error) {
 	log.Debugln("Creating client bucket: ", clientName)
+	//TODO If bucket exist, just return it. Should be handled already by MkdirAll
 	bucketLocation := filepath.Join(config.MainConfig.Storage.Location, "data", clientName)
 	err := os.MkdirAll(bucketLocation, 0700)
 	if err != nil {
 		log.Errorln("Could not create client bucket")
-		return nil
+		return "", err
 	}
-	return &ClientBucket{
-		Location: bucketLocation,
-	}
-	return nil
+	return bucketLocation, nil
 }
 
-func (l Local) RemoveBucket(clientName string) {
-
-}
-
-func (b *ClientBucket) CreateSaveset() *ClientSaveset {
-	savesetName := "fullbackup" + "_" + strconv.Itoa(time.Now().Nanosecond())
-	log.Debug("Creating saveset: ", savesetName)
-	savesetLocation := filepath.Join(b.Location, savesetName)
-	err := os.MkdirAll(savesetLocation, 0700)
-	if err != nil {
-		log.Error("Error occured during creation saveset, error: ", err.Error())
-	}
-	saveset := ClientSaveset{
-		Bucket:   *b,
-		Location: savesetLocation,
-	}
-	return &saveset
-}
-
-func (b *ClientBucket) RemoveSaveset() {
-
-}
-
-func (s *ClientSaveset) CreateFile(fileName string) (io.Writer, error) {
-	log.Infoln("Creating file: ", fileName)
-	file, err := os.Create(path.Join(s.Location, fileName))
+func (l Local) OpenFile(fileLocation string) (*os.File, error) {
+	log.Println("Opening file: ", fileLocation)
+	file, err := os.Open(fileLocation)
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +75,43 @@ func (s *ClientSaveset) CreateFile(fileName string) (io.Writer, error) {
 	return file, nil
 }
 
-func (s *ClientSaveset) RemoveFile(saveset *ClientSaveset) {
+func (l Local) RemoveBucket(clientName string) {
 
+}
+
+func (l Local) CreateSaveset(bucketLocation string) (string, error) {
+	savesetName := "fullbackup" + "_" + strconv.Itoa(time.Now().Nanosecond())
+	log.Debug("Creating saveset: ", savesetName)
+	savesetLocation := filepath.Join(bucketLocation, savesetName)
+	err := os.MkdirAll(savesetLocation, 0700)
+	if err != nil {
+		log.Error("Error occured during creation saveset, error: ", err.Error())
+		return "", err
+	}
+
+	return savesetLocation, nil
+}
+
+func createPath(path string) error {
+	log.Infoln("Creating path: ", path)
+	err := os.MkdirAll(path, 0700)
+	if err != nil {
+		log.Errorf("Cannot create path: ", path)
+		return err
+	}
+	return nil
+}
+
+func (l Local) CreateFile(savesetLocation, fileName string) (*os.File, error) {
+	log.Infof("Creating file: %s, under saveset: %s", fileName, savesetLocation)
+	err := createPath(savesetLocation)
+	if err != nil {
+		log.Errorln("Cannot create path for file backup")
+	}
+	file, err := os.Create(filepath.Join(savesetLocation, fileName))
+	if err != nil {
+		return nil, err
+	}
+
+	return file, nil
 }

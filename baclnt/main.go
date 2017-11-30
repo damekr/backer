@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/damekr/backer/baclnt/transfer"
 	"github.com/sirupsen/logrus"
 	"github.com/x-cray/logrus-prefixed-formatter"
 
@@ -43,7 +42,6 @@ func mainLoop() (string, error) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 	startProtoAPI()
-	startTransferServer()
 	for {
 		select {
 		case killSignal := <-interrupt:
@@ -59,10 +57,6 @@ func mainLoop() (string, error) {
 
 func startProtoAPI() {
 	go api.Start()
-}
-
-func startTransferServer() {
-	go transfer.StartBFTPServer()
 }
 
 func checkConfigFile(configPath string) error {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/damekr/backer/bacsrv/config"
+	"github.com/damekr/backer/bacsrv/network"
 	"github.com/sirupsen/logrus"
 	"github.com/x-cray/logrus-prefixed-formatter"
 
@@ -44,7 +45,7 @@ func mainLoop() (string, error) {
 	log.Debug("Entering into main loop...")
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
-	//startDataServer(srvConfig)
+	startDataServer()
 	startProtoApi()
 	// startRestApi(srvConfig)
 	for {
@@ -74,12 +75,11 @@ func startProtoApi() {
 	go api.Start()
 }
 
-//
-//func startDataServer(srvConfig *config.ServerConfig) {
-//	// It should have channel communication to close connection after stopping
-//	// Starging a new goroutine
-//	go transfer.StartTransferServer(srvConfig)
-//}
+func startDataServer() {
+	// It should have channel communication to close connection after stopping
+	// Starging a new goroutine
+	go network.StartTCPDataServer(storage.DefaultStorage)
+}
 
 func checkConfigFile(configPath string) error {
 	// It works for one file, as viper supports directory with given extensions,
@@ -125,12 +125,12 @@ func initConfigs(mainConfigPath string) error {
 	return nil
 }
 
-func test() {
-	bucket := storage.DefaultStorage.CreateBucket("TESTCLIENT_BUCKET")
-	log.Println("BucketLocation: ", bucket.Location)
-	saveset := bucket.CreateSaveset()
-	log.Println("SavesetLocation: ", saveset.Location)
-}
+//func test() {
+//	bucket := storage.DefaultStorage.CreateBucket("TESTCLIENT_BUCKET")
+//	log.Println("BucketLocation: ", bucket.Location)
+//	saveset := bucket.CreateSaveset()
+//	log.Println("SavesetLocation: ", saveset.Location)
+//}
 
 func main() {
 	fmt.Println("COMMIT: ", commit)

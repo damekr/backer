@@ -51,7 +51,7 @@ func (s *server) Backup(ctx context.Context, backupRequest *proto.BackupRequest)
 		log.Errorln("Cannot fs client, err: ", err)
 	}
 
-	log.Printf("Got status: ", status)
+	log.Println("Got status: ", status)
 	bacsrvBackupResponse := &proto.BacsrvBackupResponse{
 		Backupstatus: status,
 	}

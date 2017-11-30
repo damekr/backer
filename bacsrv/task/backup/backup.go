@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/d8x/bftp"
 	"github.com/damekr/backer/bacsrv/network"
+	"github.com/damekr/backer/bacsrv/storage"
 	"github.com/damekr/backer/common/proto"
 	"github.com/sirupsen/logrus"
 )
@@ -18,14 +18,20 @@ type Backup struct {
 	Progress       int
 	ValidPaths     []string
 	Status         bool
+	BucketLocation string
 }
 
 // TODO - maybe make tasks like: backupDefinition, BackupTask, PreBackupTask, PostBackupTask
 
 func CreateBackup(clientIP string, paths []string) *Backup {
+	bucketLocation, err := storage.DefaultStorage.CreateBucket(clientIP)
+	if err != nil {
+		log.Errorln("Cannot create bucket")
+	}
 	return &Backup{
 		ClientIP:       clientIP,
 		RequestedPaths: paths,
+		BucketLocation: bucketLocation,
 	}
 }
 
@@ -47,19 +53,6 @@ func (b *Backup) Run() {
 	}
 	b.Status = true
 	log.Println("Response: ", r)
-	b.ValidPaths = r.BaclntBackupResponse.Validpaths
-	b.StartBackup()
-
-}
-
-func (b *Backup) StartBackup() error {
-	bftpClient := bftp.CreateBFTPClient()
-	session, err := bftpClient.Connect("127.0.0.1", 8000)
-	if err != nil {
-		log.Errorln("Cannot connect to client: ", b.ClientIP)
-	}
-	log.Println("Session ID: ", session.Id)
-	return nil
 }
 
 func (b *Backup) Stop() {

@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"os"
+
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/storage/local"
 	"github.com/sirupsen/logrus"
@@ -20,19 +22,16 @@ REPOSITORY SCHEMA (TEMPORARY)
 
 var log = logrus.WithFields(logrus.Fields{"prefix": "storage"})
 
-var DefaultStorage Backend
+var DefaultStorage Storage
 
-type Backend interface {
-	CreateBucket(clientName string) *local.ClientBucket
-	RemoveBucket(clientName string)
+type Storage interface {
+	CreateBucket(clientName string) (string, error)
+	CreateSaveset(bucketLocation string) (string, error)
+	CreateFile(savesetLocation, fileName string) (*os.File, error)
+	OpenFile(fileLocation string) (*os.File, error)
 }
 
-type Storage struct {
-	Type Backend
-	// Size uint64
-}
-
-func setDefaultStorage(storage Backend) {
+func setDefaultStorage(storage Storage) {
 	DefaultStorage = storage
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 
+	"github.com/d8x/bftp"
 	"github.com/damekr/backer/baclnt/config"
 	"github.com/damekr/backer/baclnt/fs"
 	"github.com/damekr/backer/common/proto"
@@ -38,8 +39,27 @@ func (s *server) Backup(ctx context.Context, backupRequest *proto.BackupRequest)
 	baclntBackupResponse := &proto.BaclntBackupResponse{
 		Validpaths: validatedPaths,
 	}
-
+	//TODO backupRequest.IP is probably client ip, this message should contains server external ip
+	err := runBackup(validatedPaths, backupRequest.Ip)
+	if err != nil {
+		log.Errorf("Backup Failed, err: ", err.Error())
+	}
 	return &proto.BackupResponse{BaclntBackupResponse: baclntBackupResponse}, nil
+}
+
+func runBackup(paths []string, serverIp string) error {
+	client := bftp.CreateBFTPClient()
+	session, err := client.Connect(serverIp, 8000)
+	if err != nil {
+		log.Errorln("Cannot initialize connection")
+	}
+	log.Println("Session ID: ", session.Id)
+	for _, path := range paths {
+		if err := session.PutFile(path, path); err != nil {
+			log.Error("Cannot send file")
+		}
+	}
+	return nil
 }
 
 // Start method starts a grpc server on specific port

@@ -20,22 +20,22 @@ Run requires a subcommand`,
 }
 
 var runBackup = &cobra.Command{
-	Use:   "fs",
-	Short: "Run a fs job",
-	Long:  `Run fs job with specified client name`,
+	Use:   "backup",
+	Short: "Run a backup job",
+	Long:  `Run backup job with specified client name`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			log.Error("Client(s) name not specified, exiting...")
 			os.Exit(2)
 		}
-		log.Println("Running fs of paths: ", args)
+		log.Println("Running backup of paths: ", args)
 		clnt := client.ClientGRPC{
 			Server: server,
 			Port:   port,
 		}
 		err := clnt.RunBackupInSecure(args)
 		if err != nil {
-			log.Error("Could not run fs of client")
+			log.Error("Could not run backup of client")
 			os.Exit(1)
 		}
 		return nil
