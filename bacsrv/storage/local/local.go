@@ -8,7 +8,7 @@ import (
 
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/sirupsen/logrus"
-	prefixed "github.com/x-cray/logrus-prefixed-formatter"
+	"github.com/x-cray/logrus-prefixed-formatter"
 )
 
 var logger = logrus.New()
@@ -112,6 +112,5 @@ func (l Local) CreateFile(savesetLocation, fileName string) (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return file, nil
 }

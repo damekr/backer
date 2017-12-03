@@ -4,9 +4,9 @@ import (
 	"context"
 	"net"
 
-	"github.com/d8x/bftp"
 	"github.com/damekr/backer/baclnt/config"
 	"github.com/damekr/backer/baclnt/fs"
+	"github.com/damekr/backer/baclnt/network"
 	"github.com/damekr/backer/common/proto"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -48,16 +48,56 @@ func (s *server) Backup(ctx context.Context, backupRequest *proto.BackupRequest)
 }
 
 func runBackup(paths []string, serverIp string) error {
-	client := bftp.CreateBFTPClient()
-	session, err := client.Connect(serverIp, 8000)
+	client := network.CreateTransferClient()
+	session, err := client.Connect(serverIp, config.MainConfig.ServerDataPort)
 	if err != nil {
 		log.Errorln("Cannot initialize connection")
 	}
 	log.Println("Session ID: ", session.Id)
-	for _, path := range paths {
-		if err := session.PutFile(path, path); err != nil {
-			log.Error("Cannot send file")
-		}
+	err = session.StartBackup(paths)
+	if err != nil {
+		log.Error("Backup failed, err: ", err.Error())
+	}
+	//TODO defer?
+	log.Debug("Finished backup, closing session...")
+	err = session.CloseSession()
+	if err != nil {
+		log.Errorln("Could not close session, err: ", err.Error())
+	}
+	return nil
+}
+
+func (s *server) Restore(ctx context.Context, restoreRequest *proto.RestoreRequest) (*proto.RestoreResponse, error) {
+	log.Printf("Got request to fs client: %s", restoreRequest.Ip)
+	log.Println("Paths to be validated: ", restoreRequest.Paths)
+	md, ok := metadata.FromIncomingContext(ctx)
+	log.Print("OK: ", ok)
+	log.Print("METADATA: ", md)
+
+	err := runRestore(restoreRequest.Paths, restoreRequest.Ip)
+	if err != nil {
+		log.Errorf("Backup Failed, err: ", err.Error())
+	}
+	return &proto.RestoreResponse{Status: "OK"}, nil
+}
+
+func runRestore(paths []string, serverIp string) error {
+	client := network.CreateTransferClient()
+	session, err := client.Connect(serverIp, config.MainConfig.ServerDataPort)
+	if err != nil {
+		log.Errorln("Could not connect to server for restore, err: ", err.Error())
+		return err
+	}
+	log.Println("Session ID: ", session.Id)
+	err = session.StartRestore(paths)
+	if err != nil {
+		log.Errorln("Restore failed, err: ", err.Error())
+	}
+	//TODO defer?
+	err = session.CloseSession()
+	if err != nil {
+		log.Errorln("Could not close session, err: ", err.Error())
+		return err
 	}
 	return nil
 }

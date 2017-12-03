@@ -1,14 +1,14 @@
 package transfer
 
 import (
-	"github.com/d8x/bftp/common"
+	"io/ioutil"
+	"log"
 	"net"
+	"os"
 	"testing"
 
 	"github.com/d8x/bftp/server"
-	"io/ioutil"
-	"log"
-	"os"
+	"github.com/damekr/backer/common"
 )
 
 func TestSessionNegotiateMismatch(t *testing.T) {
@@ -16,13 +16,13 @@ func TestSessionNegotiateMismatch(t *testing.T) {
 
 	params := common.NewConnParameters()
 	sessionClnt := NewSession(1, params, clnt)
-	sessionSrv := server.NewSession(1, params, srv)
+	sessionSrv := NewSession(1, params, srv)
 	sessionSrv.Conn = srv
 	sessionClnt.Conn = clnt
 	go func() {
 		defer clnt.Close()
 		defer srv.Close()
-		err := sessionClnt.negotiate("0.2")
+		err := sessionClnt.Negotiate("0.2")
 		if err != nil {
 			t.Error(err)
 		}
@@ -45,7 +45,7 @@ func TestSessionNegotiateCorrect(t *testing.T) {
 	go func() {
 		defer clnt.Close()
 		defer srv.Close()
-		err := sessionClnt.negotiate("0.1")
+		err := sessionClnt.Negotiate("0.1")
 		if err != nil {
 			t.Error(err)
 		}
@@ -68,7 +68,7 @@ func TestSessionAuthenticateWrong(t *testing.T) {
 	go func() {
 		defer clnt.Close()
 		defer srv.Close()
-		err := sessionClnt.authenticate("WrongPassword")
+		err := sessionClnt.Authenticate("WrongPassword")
 		if err != common.AuthenticationFailed {
 			t.Error("Authentication should fail, error: ", err)
 		}
@@ -91,7 +91,7 @@ func TestSessionAuthenticateCorrect(t *testing.T) {
 	go func() {
 		defer clnt.Close()
 		defer srv.Close()
-		err := sessionClnt.authenticate("Correct")
+		err := sessionClnt.Authenticate("Correct")
 		if err != nil {
 			t.Error("Authentication should fail, error: ", err)
 		}

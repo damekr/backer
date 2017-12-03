@@ -2,6 +2,7 @@ package storage
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/storage/local"
@@ -48,4 +49,38 @@ func Create(storageType string) error {
 
 	}
 	return nil
+}
+
+func WriteBackupMetadata(data []byte) error {
+	dbLocation := filepath.Join(config.MainConfig.Storage.Location, "/.meta/db")
+	log.Debugln("Creating backup metadata file")
+	file, err := os.Create(filepath.Join(dbLocation, "backupMeta.json"))
+	defer file.Close()
+	if err != nil {
+		return err
+	}
+	wrote, err := file.Write(data)
+	log.Debugln("Wrote backup metadata: ", wrote)
+	return nil
+}
+
+func CheckIfFileExists(fullFilePath string) bool {
+	if _, err := os.Stat(fullFilePath); err != nil {
+		log.Print(err)
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func GetFileSize(fullPath string) int64 {
+	file, err := os.Open(fullPath)
+	defer file.Close()
+	fstat, err := file.Stat()
+	if err != nil {
+		log.Println("Cannot do stat on file, returning 0")
+		return 0
+	}
+	return fstat.Size()
 }

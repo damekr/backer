@@ -10,27 +10,23 @@ type Job struct {
 	Name  string
 }
 
-var Jobs []*Job
 var id = 0
 
 // TODO Now can be many jobs, but must be possible to define many tasks for one particular job
-var jobs2 map[*Job][]*task.Task
+var Jobs []*Job
 
-func New(name string) *Job {
+func Create(name string) *Job {
 	id++
-	return &Job{
+	newJob := &Job{
 		ID:   id,
 		Name: name,
 	}
+	Jobs = append(Jobs, newJob)
+	return newJob
 }
 
 func (j *Job) AddTask(task task.Task) error {
 	j.Tasks = append(j.Tasks, task)
-	//switch task {
-	//case task.(*fs.Backup):
-	//	j.Tasks = append(j.Tasks, task)
-	//
-	//}
 	return nil
 }
 
@@ -40,10 +36,6 @@ func (j *Job) Start() error {
 	}
 	return nil
 
-}
-
-func GetAllTasks() []*Job {
-	return Jobs
 }
 
 //type BackupJob struct {

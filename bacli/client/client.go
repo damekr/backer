@@ -103,7 +103,7 @@ func (c ClientREST) PingInSecure() (string, error) {
 //}
 //
 func (c ClientGRPC) RunBackupInSecure(paths []string) error {
-	log.Infof("Using GRPC protocol to run fs")
+	log.Infof("Using GRPC protocol to run backup")
 	conn, err := c.ConnectInSecure(c.Server, c.Port)
 	if err != nil {
 		log.Warningf("Cannot connect to address %s", c.Server)
@@ -128,7 +128,37 @@ func (c ClientGRPC) RunBackupInSecure(paths []string) error {
 	if err != nil {
 		log.Warningf("Could not send client name: %v", err)
 	}
-	log.Debug("Received status of fs: ", r.BacsrvBackupResponse.Backupstatus)
+	log.Debug("Received status of backup: ", r.BacsrvBackupResponse.Backupstatus)
+
+	return nil
+}
+
+func (c ClientGRPC) RunRestoreInSecure(paths []string) error {
+	log.Infof("Using GRPC protocol to run restore")
+	conn, err := c.ConnectInSecure(c.Server, c.Port)
+	if err != nil {
+		log.Warningf("Cannot connect to address %s", c.Server)
+		return err
+	}
+	defer conn.Close()
+	md := metadata.Pairs("timestamp", time.Now().Format(time.StampNano))
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
+	cn := proto.NewBacsrvClient(conn)
+	//Contact the server and print out its response.
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Error("Cannot get hostname setting default")
+		hostname = "client"
+	}
+	r, err := cn.Restore(ctx, &proto.RestoreRequest{
+		Ip:    hostname,
+		Paths: paths,
+	})
+	if err != nil {
+		log.Warningf("Could not send client name: %v", err)
+	}
+	log.Debug("Received status of restore: ", r.Status)
 
 	return nil
 }

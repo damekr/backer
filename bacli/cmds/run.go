@@ -9,6 +9,7 @@ import (
 
 func init() {
 	runCmd.AddCommand(runBackup)
+	runCmd.AddCommand(runRestore)
 }
 
 var runCmd = &cobra.Command{
@@ -34,6 +35,29 @@ var runBackup = &cobra.Command{
 			Port:   port,
 		}
 		err := clnt.RunBackupInSecure(args)
+		if err != nil {
+			log.Error("Could not run backup of client")
+			os.Exit(1)
+		}
+		return nil
+
+	},
+}
+
+var runRestore = &cobra.Command{
+	Use:   "restore",
+	Short: "Run restore job",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			log.Error("Client(s) name not specified, exiting...")
+			os.Exit(2)
+		}
+		log.Println("Running backup of paths: ", args)
+		clnt := client.ClientGRPC{
+			Server: server,
+			Port:   port,
+		}
+		err := clnt.RunRestoreInSecure(args)
 		if err != nil {
 			log.Error("Could not run backup of client")
 			os.Exit(1)

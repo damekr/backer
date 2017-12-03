@@ -5,6 +5,7 @@ package fs
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -124,4 +125,51 @@ func ReadFileHeader(fileLocation string) (*FileTransferInfo, error) {
 	fileHeader.Size = info.Size()
 	fileHeader.Name = path.Base(fileLocation)
 	return &fileHeader, nil
+}
+
+type FileSystem struct {
+	Path string
+}
+
+func NewFS(path string) *FileSystem {
+	return &FileSystem{
+		Path: path,
+	}
+}
+
+func (f *FileSystem) CreateFile(name string) (*os.File, error) {
+	file, err := os.Create(path.Join(f.Path, name))
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
+}
+
+func (f *FileSystem) OpenFile(name string) (*os.File, error) {
+	file, err := os.Open(path.Join(f.Path, name))
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
+}
+
+func CheckIfFileExists(fullFilePath string) bool {
+	if _, err := os.Stat(fullFilePath); err != nil {
+		fmt.Print(err)
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func GetFileSize(fullPath string) int64 {
+	file, err := os.Open(fullPath)
+	defer file.Close()
+	fstat, err := file.Stat()
+	if err != nil {
+		log.Println("Cannot do stat on file, returning 0")
+		return 0
+	}
+	return fstat.Size()
 }

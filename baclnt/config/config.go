@@ -20,6 +20,7 @@ type ClientConfig struct {
 	Debug                 bool
 	TempDir               string // Path to store temporary data
 	CID                   string
+	ServerDataPort        string
 }
 
 func ReadInConfig(path string) error {
@@ -39,6 +40,7 @@ func ReadInConfig(path string) error {
 		TempDir:               viper.GetString("main.TempDir"),
 		ExternalName:          viper.GetString("main.ExternalName"),
 		DataTransferInterface: viper.GetString("main.DataTransferInterface"),
+		ServerDataPort:        viper.GetString("server.DataPort"),
 	}
 	return nil
 }

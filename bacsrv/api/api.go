@@ -33,7 +33,7 @@ func (s *server) Ping(ctx context.Context, in *proto.PingRequest) (*proto.PingRe
 func pingClient(clientIP string) (string, error) {
 	log.Println("PINGING CLIENT: ", clientIP)
 	pingTask := ping.CreatePing(clientIP)
-	pingJob := job.New("ping")
+	pingJob := job.Create("ping")
 	pingJob.AddTask(pingTask)
 	pingJob.Start()
 
@@ -41,14 +41,15 @@ func pingClient(clientIP string) (string, error) {
 }
 
 func (s *server) Backup(ctx context.Context, backupRequest *proto.BackupRequest) (*proto.BackupResponse, error) {
-	log.Printf("Got request to fs client: %s", backupRequest.Ip)
+	log.Printf("Got request to backup client: %s", backupRequest.Ip)
 	md, ok := metadata.FromIncomingContext(ctx)
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
 
+	//Sending gRPC request to start backup (client initialize)
 	status, err := backupClient(backupRequest.Ip, backupRequest.Paths)
 	if err != nil {
-		log.Errorln("Cannot fs client, err: ", err)
+		log.Errorln("Cannot backup client, err: ", err)
 	}
 
 	log.Println("Got status: ", status)
@@ -59,13 +60,32 @@ func (s *server) Backup(ctx context.Context, backupRequest *proto.BackupRequest)
 }
 
 func backupClient(clientIP string, paths []string) (bool, error) {
-	log.Println("Creating fs job of: ", clientIP)
+	log.Println("Creating backup job of: ", clientIP)
 	backupTask := backup.CreateBackup(clientIP, paths)
-	backupJob := job.New("fs")
+	backupJob := job.Create("fs")
 	backupTask.Setup(paths)
 	backupJob.AddTask(backupTask)
 	backupJob.Start()
 	return backupTask.Status, nil
+}
+
+func (s *server) Restore(ctx context.Context, restoreRequest *proto.RestoreRequest) (*proto.RestoreResponse, error) {
+	log.Printf("Got request to restore client: %s", restoreRequest.Ip)
+	md, ok := metadata.FromIncomingContext(ctx)
+	log.Print("OK: ", ok)
+	log.Print("METADATA: ", md)
+
+	//Sending gRPC request to start restore (client initialize)
+	err := restoreClient(restoreRequest.Ip, restoreRequest.Paths)
+	if err != nil {
+		log.Errorln("Cannot restore client, err: ", err)
+	}
+	return &proto.RestoreResponse{Status: "OK"}, nil
+}
+
+func restoreClient(clientIP string, paths []string) error {
+	log.Debugln("Got request to restore client paths: ", paths)
+	return nil
 }
 
 // Start method starts a grpc server on specific port

@@ -1,4 +1,4 @@
-package transfer
+package common
 
 import (
 	"crypto/aes"
@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	PORT         = 8090
+	PORT         = "8090"
 	SERVER       = "0.0.0.0"
 	PROTOVERSION = "0.1"
 	PASSWORD     = "john"
@@ -30,14 +30,13 @@ var (
 	ProtocolVersionMismatch           = errors.New("BFTP: Protocol version mismatch")
 )
 
-//
-
 type ConnParameters struct {
 	Server string
-	Port   int
+	Port   string
 }
 
 type Negotiate struct {
+	ClientName   string
 	ProtoVersion string
 }
 
@@ -46,15 +45,19 @@ type Authenticate struct {
 }
 
 type Transfer struct {
-	TransferType string
-	Buffer       int
+	TransferType  string
+	ObjectsNumber int
+	Buffer        int
 }
 
-type FileTransfer struct {
-	//TODO Name is not used anywhere yet and is not send
+type FileMetadata struct {
 	Name     string
 	FullPath string
 	FileSize int64
+}
+
+type FileAcknowledge struct {
+	Size int64
 }
 
 // NewConnParameters creates struct with parameters used for connection

@@ -77,8 +77,9 @@ func startProtoApi() {
 
 func startDataServer() {
 	// It should have channel communication to close connection after stopping
-	// Starging a new goroutine
-	go network.StartTCPDataServer(storage.DefaultStorage)
+	// Starting a new goroutine
+	go network.StartTCPDataServer(storage.DefaultStorage, true)
+
 }
 
 func checkConfigFile(configPath string) error {
