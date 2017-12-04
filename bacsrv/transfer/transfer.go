@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"io"
 	"net"
+	"time"
 
 	"github.com/damekr/backer/bacsrv/storage"
 	"github.com/damekr/backer/common"
@@ -19,12 +20,13 @@ type Session struct {
 	Transfer   *common.Transfer
 	Storage    storage.Storage
 	Metadata   SessionMetaData
-	ClientName string
 }
 
 type SessionMetaData struct {
-	Bucket        string `json:"bucketLocation"`
-	Saveset       string `json:"savesetLocation"`
+	ClientName    string `json:"clientName"`
+	BackupID      int    `json:"backupID"`
+	BucketPath    string `json:"bucketLocation"`
+	SavesetPath   string `json:"savesetLocation"`
 	FilesMetadata []FileMetaData
 }
 
@@ -63,7 +65,7 @@ func (s *Session) Negotiate(protoVersion string) error {
 		log.Println("Could not encode negotiation struct")
 		return err
 	}
-	s.ClientName = neg.ClientName
+	s.Metadata.ClientName = neg.ClientName
 	return nil
 }
 
@@ -129,17 +131,18 @@ func (s *Session) SessionDispatcher() error {
 		}
 		backupSession := CreateBackupSession(s)
 		log.Debugln("Handling backup session")
-		bucket, err := s.Storage.CreateBucket(s.ClientName)
+		bucket, err := s.Storage.CreateBucket(s.Metadata.ClientName)
 		if err != nil {
 			log.Errorln("Could not create bucket, err: ", err.Error())
 			return err
 		}
-		s.Metadata.Bucket = bucket
+		s.Metadata.BucketPath = bucket
 		saveset, err := s.Storage.CreateSaveset(bucket)
 		if err != nil {
 			log.Errorln("Could not create saveset, err: ", err.Error())
 		}
-		s.Metadata.Saveset = saveset
+		s.Metadata.SavesetPath = saveset
+		s.Metadata.BackupID = time.Now().Nanosecond()
 		return backupSession.HandleBackupSession(saveset, transfer.ObjectsNumber)
 
 	default:

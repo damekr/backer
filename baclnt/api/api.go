@@ -7,7 +7,7 @@ import (
 	"github.com/damekr/backer/baclnt/config"
 	"github.com/damekr/backer/baclnt/fs"
 	"github.com/damekr/backer/baclnt/network"
-	"github.com/damekr/backer/common/proto"
+	"github.com/damekr/backer/common/protoclnt"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -18,16 +18,16 @@ type server struct{}
 var log = logrus.WithFields(logrus.Fields{"prefix": "api"})
 
 // Ping returns hostname of client
-func (s *server) Ping(ctx context.Context, in *proto.PingRequest) (*proto.PingResponse, error) {
+func (s *server) Ping(ctx context.Context, in *protoclnt.PingRequest) (*protoclnt.PingResponse, error) {
 	log.Printf("Got request to ping client: %s", in.Ip)
 	md, ok := metadata.FromIncomingContext(ctx)
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
 
-	return &proto.PingResponse{Message: "FROM CLIENT"}, nil
+	return &protoclnt.PingResponse{Message: "FROM CLIENT"}, nil
 }
 
-func (s *server) Backup(ctx context.Context, backupRequest *proto.BackupRequest) (*proto.BackupResponse, error) {
+func (s *server) Backup(ctx context.Context, backupRequest *protoclnt.BackupRequest) (*protoclnt.BackupResponse, error) {
 	log.Printf("Got request to fs client: %s", backupRequest.Ip)
 	log.Println("Paths to be validated: ", backupRequest.Paths)
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -36,15 +36,13 @@ func (s *server) Backup(ctx context.Context, backupRequest *proto.BackupRequest)
 	fileSystem := fs.FS{}
 	validatedPaths := fileSystem.GetAbsolutePaths(backupRequest.Paths)
 	log.Printf("Validated paths: ", validatedPaths)
-	baclntBackupResponse := &proto.BaclntBackupResponse{
-		Validpaths: validatedPaths,
-	}
+
 	//TODO backupRequest.IP is probably client ip, this message should contains server external ip
 	err := runBackup(validatedPaths, backupRequest.Ip)
 	if err != nil {
 		log.Errorf("Backup Failed, err: ", err.Error())
 	}
-	return &proto.BackupResponse{BaclntBackupResponse: baclntBackupResponse}, nil
+	return &protoclnt.BackupResponse{Validpaths: validatedPaths}, nil
 }
 
 func runBackup(paths []string, serverIp string) error {
@@ -67,7 +65,7 @@ func runBackup(paths []string, serverIp string) error {
 	return nil
 }
 
-func (s *server) Restore(ctx context.Context, restoreRequest *proto.RestoreRequest) (*proto.RestoreResponse, error) {
+func (s *server) Restore(ctx context.Context, restoreRequest *protoclnt.RestoreRequest) (*protoclnt.RestoreResponse, error) {
 	log.Printf("Got request to fs client: %s", restoreRequest.Ip)
 	log.Println("Paths to be validated: ", restoreRequest.Paths)
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -78,7 +76,7 @@ func (s *server) Restore(ctx context.Context, restoreRequest *proto.RestoreReque
 	if err != nil {
 		log.Errorf("Backup Failed, err: ", err.Error())
 	}
-	return &proto.RestoreResponse{Status: "OK"}, nil
+	return &protoclnt.RestoreResponse{Status: "OK"}, nil
 }
 
 func runRestore(paths []string, serverIp string) error {
@@ -111,7 +109,7 @@ func Start() error {
 		return err
 	}
 	s := grpc.NewServer()
-	proto.RegisterBacsrvServer(s, &server{})
+	protoclnt.RegisterBaclntServer(s, &server{})
 	s.Serve(lis)
 	return nil
 }

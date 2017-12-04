@@ -1,46 +1,108 @@
-// +build ignore
-
 package db
 
 import (
-	"fmt"
-	log "github.com/Sirupsen/logrus"
-	"github.com/boltdb/bolt"
-	"github.com/damekr/backer/bacsrv/config"
+	"encoding/json"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-)
 
-const (
-	clientsBucket = "clients"
+	"github.com/damekr/backer/bacsrv/config"
+	"github.com/sirupsen/logrus"
 )
 
 var (
-	db *bolt.DB
+	log = logrus.WithFields(logrus.Fields{"prefix": "db"})
 )
 
-func createClientsBucket() error {
-	var err error
-	db.Update(func(tx *bolt.Tx) error {
-		_, err = tx.CreateBucketIfNotExists([]byte(clientsBucket))
-		if err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		return nil
-	})
+//TODO It is the same in transfer
+type BackupMetadata struct {
+	ClientName    string `json:"clientName"`
+	BackupID      int    `json:"backupID"`
+	BucketPath    string `json:"bucketLocation"`
+	SavesetPath   string `json:"savesetLocation"`
+	FilesMetadata []FileMetaData
+}
+
+type FileMetaData struct {
+	FileWithPath string `json:"fileWithPath"`
+	BackupTime   string `json:"backupTime"`
+}
+
+type DB struct {
+	Location   string
+	FileSchema BackupMetadata
+}
+
+func Get() DB {
+	return DB{
+		Location:   filepath.Join(config.MainConfig.Storage.Location, ".meta/db"),
+		FileSchema: BackupMetadata{},
+	}
+}
+
+func (d DB) createClientMetaCatalogue(clientName string) (string, error) {
+	dbLocation := filepath.Join(config.MainConfig.Storage.Location, "/.meta/db")
+	clientDbLocation := filepath.Join(dbLocation, clientName)
+	if err := os.MkdirAll(clientDbLocation, 0700); err != nil {
+		return "", err
+	}
+	return clientDbLocation, nil
+
+}
+
+func (d DB) WriteBackupMetadata(data []byte, fileName, clientName string) error {
+	clientDbLocation, err := d.createClientMetaCatalogue(clientName)
+	if err != nil {
+		log.Errorln("Cannot create client DB location, err: ", err.Error())
+		return err
+	}
+	log.Debugln("Creating backup metadata file")
+	file, err := os.Create(filepath.Join(clientDbLocation, fileName) + ".json")
+	defer file.Close()
+	if err != nil {
+		return err
+	}
+	wrote, err := file.Write(data)
+	log.Debugln("Wrote backup metadata: ", wrote)
 	return nil
 }
 
-func InitDB() {
-	var err error
-	db, err = bolt.Open(filepath.Join(config.GetDBLocation(), "server.db"), 0600, nil)
+func (d DB) GetClientsNames() []string {
+	var clientNames []string
+	files, err := ioutil.ReadDir(d.Location)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(4)
+		log.Errorln("Cannot read files from db")
 	}
-	err = createClientsBucket()
+	for _, v := range files {
+		if v.IsDir() {
+			clientNames = append(clientNames, v.Name())
+		}
+	}
+	return clientNames
+}
+
+func (d DB) GetClientAssets(clientName string) []BackupMetadata {
+	var clientAssets []BackupMetadata
+	files, err := ioutil.ReadDir(filepath.Join(d.Location, clientName))
 	if err != nil {
-		log.Fatal("Fatal error during creating clients bucket in DB")
-		os.Exit(5)
+		log.Warningln("Could not find any client assets")
 	}
+	for _, v := range files {
+		clientAssets = append(clientAssets, d.readAsset(filepath.Join(d.Location, clientName, v.Name())))
+	}
+	return clientAssets
+}
+
+func (d DB) readAsset(filePath string) BackupMetadata {
+	var asset BackupMetadata
+	raw, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		log.Error("Cannot read client asset, err: ", err.Error())
+		return asset
+	}
+	err = json.Unmarshal(raw, &asset)
+	if err != nil {
+		log.Error("Could not unmarshal json file, err: ", err.Error())
+	}
+	return asset
 }

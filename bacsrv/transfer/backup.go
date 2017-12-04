@@ -3,7 +3,6 @@ package transfer
 import (
 	"bufio"
 	"encoding/gob"
-	"path/filepath"
 	"time"
 
 	"github.com/damekr/backer/bacsrv/storage"
@@ -95,7 +94,7 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 
 func (b *BackupSession) downloadFile(name, localFilePath string, size int64, savesetLocation string) error {
 	log.Println("Starting downloading file to path: ", localFilePath)
-	file, err := b.MainSession.Storage.CreateFile(filepath.Join(savesetLocation, localFilePath), name)
+	file, err := b.MainSession.Storage.CreateFile(savesetLocation, localFilePath)
 	if err != nil {
 		log.Println("Cannot create localfile to write")
 		return err

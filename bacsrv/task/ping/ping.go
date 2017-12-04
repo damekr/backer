@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/damekr/backer/bacsrv/network"
-	"github.com/damekr/backer/common/proto"
+	"github.com/damekr/backer/common/protoclnt"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,8 +32,8 @@ func (p *Ping) Run() {
 
 	}
 	defer conn.Close()
-	c := proto.NewBacsrvClient(conn)
-	r, err := c.Ping(context.Background(), &proto.PingRequest{Ip: "Message from server"})
+	c := protoclnt.NewBaclntClient(conn)
+	r, err := c.Ping(context.Background(), &protoclnt.PingRequest{Ip: "Message from server"})
 	if err != nil {
 		log.Errorf("Could not connect to client err: %v", err)
 		p.Message = err.Error()

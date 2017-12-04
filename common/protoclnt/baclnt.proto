@@ -7,11 +7,14 @@ package protoclnt;
 service Baclnt {
 
   rpc Ping (PingRequest) returns (PingResponse) {}
+  rpc Backup (BackupRequest) returns (BackupResponse) {}
+  rpc Restore (RestoreRequest) returns (RestoreResponse) {}
 
 }
 
 message PingRequest {
-  string message = 1;
+  string ip = 1;
+  
 }
 
 message PingResponse {
@@ -19,8 +22,29 @@ message PingResponse {
 }
 
 
+//BACKUP
+
+//From server
+message BackupRequest {
+  string ip = 1;
+  repeated string paths = 2;
+}
 
 
-// Each message needs to have specific host name
-// TODO Change streams to "Repeated" messages - can send slices - https://github.com/grpc/grpc-go/pull/629/files
+//For server
+message BackupResponse {
+  repeated string validpaths = 1;
 
+}
+
+
+//RESTORE
+
+message RestoreRequest {
+  string ip = 1;
+  repeated string paths = 2;
+}
+
+message RestoreResponse {
+  string status = 1;
+}

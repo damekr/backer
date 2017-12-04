@@ -12,7 +12,6 @@ type Job struct {
 
 var id = 0
 
-// TODO Now can be many jobs, but must be possible to define many tasks for one particular job
 var Jobs []*Job
 
 func Create(name string) *Job {

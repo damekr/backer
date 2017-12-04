@@ -1,0 +1,56 @@
+
+syntax = "proto3";
+
+
+package protosrv;
+
+service Bacsrv {
+
+    rpc Ping (PingRequest) returns (PingResponse) {}
+    rpc Backup (BackupRequest) returns (BackupResponse) {}
+    rpc Restore (RestoreRequest) returns (RestoreResponse) {}
+    rpc ListBackups (ListBackupsRequest) returns (ListBackupsResponse) {}
+}
+
+message PingRequest {
+  string ip = 1;
+}
+
+message PingResponse {
+  string message = 1;
+}
+
+//BACKUP
+
+//From  server
+message BackupRequest {
+  string ip = 1;
+  repeated string paths = 2;
+}
+
+//For Cli
+message BackupResponse {
+    bool backupstatus = 1;
+}
+
+//RESTORE
+
+message RestoreRequest {
+    string ip = 1;
+    repeated string paths = 2;
+}
+
+message RestoreResponse {
+    string status = 1;
+}
+
+//LIST
+
+message ListBackupsRequest {
+    string clientName = 1;
+}
+
+message ListBackupsResponse {
+    string clientName = 1;
+    repeated int64 backupID = 2;
+}

@@ -92,23 +92,26 @@ func (l Local) CreateSaveset(bucketLocation string) (string, error) {
 	return savesetLocation, nil
 }
 
-func createPath(path string) error {
-	log.Infoln("Creating path: ", path)
-	err := os.MkdirAll(path, 0700)
+func createFileOriginalPath(savesetLocation, filePath string) (string, error) {
+	log.Infof("Creating path: %s under saveset: %s\n", filePath, savesetLocation)
+	fullFilePath := filepath.Join(savesetLocation, filePath)
+	err := os.MkdirAll(fullFilePath, 0700)
 	if err != nil {
-		log.Errorf("Cannot create path: ", path)
-		return err
+		log.Errorf("Cannot create path: %s under saveset: %s\n", filePath, savesetLocation)
+		return "", err
 	}
-	return nil
+	return fullFilePath, nil
 }
 
-func (l Local) CreateFile(savesetLocation, fileName string) (*os.File, error) {
-	log.Infof("Creating file: %s, under saveset: %s", fileName, savesetLocation)
-	err := createPath(savesetLocation)
+func (l Local) CreateFile(savesetLocation, fileOriginalPath string) (*os.File, error) {
+	filePath := filepath.Dir(fileOriginalPath)
+	fileName := filepath.Base(fileOriginalPath)
+	log.Infof("Creating file: %s, in saveset: %s", fileName, savesetLocation)
+	fullFilePath, err := createFileOriginalPath(savesetLocation, filePath)
 	if err != nil {
 		log.Errorln("Cannot create path for file backup")
 	}
-	file, err := os.Create(filepath.Join(savesetLocation, fileName))
+	file, err := os.Create(filepath.Join(fullFilePath, fileName))
 	if err != nil {
 		return nil, err
 	}

@@ -10,6 +10,10 @@ It is generated from these files:
 It has these top-level messages:
 	PingRequest
 	PingResponse
+	BackupRequest
+	BackupResponse
+	RestoreRequest
+	RestoreResponse
 */
 package protoclnt
 
@@ -34,7 +38,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type PingRequest struct {
-	Message string `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
+	Ip string `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
 }
 
 func (m *PingRequest) Reset()                    { *m = PingRequest{} }
@@ -42,9 +46,9 @@ func (m *PingRequest) String() string            { return proto.CompactTextStrin
 func (*PingRequest) ProtoMessage()               {}
 func (*PingRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
-func (m *PingRequest) GetMessage() string {
+func (m *PingRequest) GetIp() string {
 	if m != nil {
-		return m.Message
+		return m.Ip
 	}
 	return ""
 }
@@ -65,9 +69,95 @@ func (m *PingResponse) GetMessage() string {
 	return ""
 }
 
+// From server
+type BackupRequest struct {
+	Ip    string   `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
+	Paths []string `protobuf:"bytes,2,rep,name=paths" json:"paths,omitempty"`
+}
+
+func (m *BackupRequest) Reset()                    { *m = BackupRequest{} }
+func (m *BackupRequest) String() string            { return proto.CompactTextString(m) }
+func (*BackupRequest) ProtoMessage()               {}
+func (*BackupRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *BackupRequest) GetIp() string {
+	if m != nil {
+		return m.Ip
+	}
+	return ""
+}
+
+func (m *BackupRequest) GetPaths() []string {
+	if m != nil {
+		return m.Paths
+	}
+	return nil
+}
+
+// For server
+type BackupResponse struct {
+	Validpaths []string `protobuf:"bytes,1,rep,name=validpaths" json:"validpaths,omitempty"`
+}
+
+func (m *BackupResponse) Reset()                    { *m = BackupResponse{} }
+func (m *BackupResponse) String() string            { return proto.CompactTextString(m) }
+func (*BackupResponse) ProtoMessage()               {}
+func (*BackupResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *BackupResponse) GetValidpaths() []string {
+	if m != nil {
+		return m.Validpaths
+	}
+	return nil
+}
+
+type RestoreRequest struct {
+	Ip    string   `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
+	Paths []string `protobuf:"bytes,2,rep,name=paths" json:"paths,omitempty"`
+}
+
+func (m *RestoreRequest) Reset()                    { *m = RestoreRequest{} }
+func (m *RestoreRequest) String() string            { return proto.CompactTextString(m) }
+func (*RestoreRequest) ProtoMessage()               {}
+func (*RestoreRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *RestoreRequest) GetIp() string {
+	if m != nil {
+		return m.Ip
+	}
+	return ""
+}
+
+func (m *RestoreRequest) GetPaths() []string {
+	if m != nil {
+		return m.Paths
+	}
+	return nil
+}
+
+type RestoreResponse struct {
+	Status string `protobuf:"bytes,1,opt,name=status" json:"status,omitempty"`
+}
+
+func (m *RestoreResponse) Reset()                    { *m = RestoreResponse{} }
+func (m *RestoreResponse) String() string            { return proto.CompactTextString(m) }
+func (*RestoreResponse) ProtoMessage()               {}
+func (*RestoreResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+func (m *RestoreResponse) GetStatus() string {
+	if m != nil {
+		return m.Status
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*PingRequest)(nil), "protoclnt.PingRequest")
 	proto.RegisterType((*PingResponse)(nil), "protoclnt.PingResponse")
+	proto.RegisterType((*BackupRequest)(nil), "protoclnt.BackupRequest")
+	proto.RegisterType((*BackupResponse)(nil), "protoclnt.BackupResponse")
+	proto.RegisterType((*RestoreRequest)(nil), "protoclnt.RestoreRequest")
+	proto.RegisterType((*RestoreResponse)(nil), "protoclnt.RestoreResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -82,6 +172,8 @@ const _ = grpc.SupportPackageIsVersion4
 
 type BaclntClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
+	Backup(ctx context.Context, in *BackupRequest, opts ...grpc.CallOption) (*BackupResponse, error)
+	Restore(ctx context.Context, in *RestoreRequest, opts ...grpc.CallOption) (*RestoreResponse, error)
 }
 
 type baclntClient struct {
@@ -101,10 +193,30 @@ func (c *baclntClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.C
 	return out, nil
 }
 
+func (c *baclntClient) Backup(ctx context.Context, in *BackupRequest, opts ...grpc.CallOption) (*BackupResponse, error) {
+	out := new(BackupResponse)
+	err := grpc.Invoke(ctx, "/protoclnt.Baclnt/Backup", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *baclntClient) Restore(ctx context.Context, in *RestoreRequest, opts ...grpc.CallOption) (*RestoreResponse, error) {
+	out := new(RestoreResponse)
+	err := grpc.Invoke(ctx, "/protoclnt.Baclnt/Restore", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Baclnt service
 
 type BaclntServer interface {
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
+	Backup(context.Context, *BackupRequest) (*BackupResponse, error)
+	Restore(context.Context, *RestoreRequest) (*RestoreResponse, error)
 }
 
 func RegisterBaclntServer(s *grpc.Server, srv BaclntServer) {
@@ -129,6 +241,42 @@ func _Baclnt_Ping_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Baclnt_Backup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BackupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BaclntServer).Backup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protoclnt.Baclnt/Backup",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BaclntServer).Backup(ctx, req.(*BackupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Baclnt_Restore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RestoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BaclntServer).Restore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protoclnt.Baclnt/Restore",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BaclntServer).Restore(ctx, req.(*RestoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Baclnt_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "protoclnt.Baclnt",
 	HandlerType: (*BaclntServer)(nil),
@@ -136,6 +284,14 @@ var _Baclnt_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Ping",
 			Handler:    _Baclnt_Ping_Handler,
+		},
+		{
+			MethodName: "Backup",
+			Handler:    _Baclnt_Backup_Handler,
+		},
+		{
+			MethodName: "Restore",
+			Handler:    _Baclnt_Restore_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -145,14 +301,22 @@ var _Baclnt_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("protoclnt/baclnt.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 130 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2b, 0x28, 0xca, 0x2f,
-	0xc9, 0x4f, 0xce, 0xc9, 0x2b, 0xd1, 0x4f, 0x4a, 0x04, 0x51, 0x7a, 0x60, 0x01, 0x21, 0x4e, 0xb8,
-	0xb8, 0x92, 0x3a, 0x17, 0x77, 0x40, 0x66, 0x5e, 0x7a, 0x50, 0x6a, 0x61, 0x69, 0x6a, 0x71, 0x89,
-	0x90, 0x04, 0x17, 0x7b, 0x6e, 0x6a, 0x71, 0x71, 0x62, 0x7a, 0xaa, 0x04, 0xa3, 0x02, 0xa3, 0x06,
-	0x67, 0x10, 0x8c, 0xab, 0xa4, 0xc1, 0xc5, 0x03, 0x51, 0x58, 0x5c, 0x90, 0x9f, 0x57, 0x9c, 0x8a,
-	0x5b, 0xa5, 0x91, 0x33, 0x17, 0x9b, 0x13, 0xd8, 0x36, 0x21, 0x4b, 0x2e, 0x16, 0x90, 0x1e, 0x21,
-	0x31, 0x3d, 0xb8, 0x85, 0x7a, 0x48, 0xb6, 0x49, 0x89, 0x63, 0x88, 0x43, 0x0c, 0x57, 0x62, 0x48,
-	0x62, 0x03, 0xcb, 0x18, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0xa1, 0xd1, 0x36, 0x2f, 0xc3, 0x00,
+	// 258 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x50, 0xdd, 0x4a, 0x84, 0x40,
+	0x14, 0x4e, 0x2b, 0x17, 0xbf, 0xca, 0xe0, 0x10, 0x66, 0x42, 0xb1, 0xcc, 0x95, 0xdd, 0x58, 0x14,
+	0x05, 0x5d, 0x05, 0x3e, 0x41, 0xf8, 0x06, 0xb3, 0xdb, 0xb0, 0xc9, 0x6e, 0x3a, 0xed, 0x19, 0x7b,
+	0xc6, 0x1e, 0x2b, 0x76, 0x1c, 0xc5, 0xa5, 0xed, 0x62, 0xaf, 0xe4, 0x7c, 0xbf, 0xce, 0x87, 0x58,
+	0xaf, 0x1b, 0xd3, 0xcc, 0x57, 0xb5, 0xb9, 0x9b, 0xc9, 0xcd, 0x27, 0xb7, 0x00, 0x85, 0x03, 0x2e,
+	0xae, 0x71, 0xf2, 0x56, 0xd5, 0x8b, 0x52, 0x7d, 0xb5, 0x8a, 0x0d, 0x45, 0xf0, 0x2b, 0x9d, 0x78,
+	0x53, 0x2f, 0x0b, 0x4b, 0xbf, 0xd2, 0x22, 0xc3, 0x69, 0x47, 0xb3, 0x6e, 0x6a, 0x56, 0x94, 0x60,
+	0xf2, 0xa9, 0x98, 0xe5, 0x42, 0x39, 0x51, 0x7f, 0x8a, 0x27, 0x9c, 0x15, 0x72, 0xbe, 0x6c, 0xf5,
+	0x3f, 0x51, 0x74, 0x81, 0x63, 0x2d, 0xcd, 0x07, 0x27, 0xfe, 0xf4, 0x30, 0x0b, 0xcb, 0xee, 0x10,
+	0xf7, 0x88, 0x7a, 0x9b, 0xab, 0xb8, 0x01, 0xbe, 0xe5, 0xaa, 0x7a, 0xef, 0xc4, 0x9e, 0x15, 0x8f,
+	0x10, 0xf1, 0x8c, 0xa8, 0x54, 0x6c, 0x9a, 0xb5, 0xda, 0xaf, 0xe9, 0x16, 0xe7, 0x83, 0xcf, 0x55,
+	0xc5, 0x08, 0xd8, 0x48, 0xd3, 0xb2, 0x33, 0xbb, 0xeb, 0xe1, 0xc7, 0x43, 0x50, 0xd8, 0xc1, 0xe8,
+	0x05, 0x47, 0x9b, 0x01, 0x28, 0xce, 0x87, 0xcd, 0xf2, 0xd1, 0x60, 0xe9, 0xe5, 0x1f, 0xbc, 0xcb,
+	0x16, 0x07, 0xf4, 0x6a, 0x43, 0x96, 0xad, 0xa6, 0x64, 0x24, 0xda, 0x1a, 0x29, 0xbd, 0xda, 0xc1,
+	0x0c, 0x01, 0x05, 0x26, 0xee, 0x8f, 0x69, 0xac, 0xdb, 0x7e, 0x7d, 0x9a, 0xee, 0xa2, 0xfa, 0x8c,
+	0x59, 0x60, 0xc9, 0xc7, 0xdf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x87, 0x28, 0x20, 0x27, 0x0b, 0x02,
 	0x00, 0x00,
 }

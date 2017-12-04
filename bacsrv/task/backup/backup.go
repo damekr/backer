@@ -2,12 +2,10 @@ package backup
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/damekr/backer/bacsrv/network"
-	"github.com/damekr/backer/bacsrv/storage"
-	"github.com/damekr/backer/common/proto"
+	"github.com/damekr/backer/common/protoclnt"
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,18 +37,15 @@ func (b *Backup) Run() {
 		return
 	}
 	defer conn.Close()
-	c := proto.NewBacsrvClient(conn)
-	response, err := c.Backup(context.Background(), &proto.BackupRequest{Paths: b.RequestedPaths})
+	c := protoclnt.NewBaclntClient(conn)
+	response, err := c.Backup(context.Background(), &protoclnt.BackupRequest{Paths: b.RequestedPaths})
 	if err != nil {
 		log.Warningf("Could not get paths of client: %v", err)
 		b.Status = false
 		return
 	}
-	b.ValidPaths = response.BaclntBackupResponse.Validpaths
+	b.ValidPaths = response.Validpaths
 	b.Status = true
-	if err := b.createMetadata(); err != nil {
-		log.Errorln("Could not write metadata of backup, err: ", err.Error())
-	}
 	log.Println("Response: ", response)
 }
 
@@ -60,17 +55,4 @@ func (b *Backup) Stop() {
 
 func (b *Backup) Setup(paths []string) {
 	b.RequestedPaths = paths
-}
-
-func (b *Backup) createMetadata() error {
-	log.Infoln("Creating backup metadata...")
-	jsonData, err := json.Marshal(b)
-	if err != nil {
-		return err
-	}
-	err = storage.WriteBackupMetadata(jsonData)
-	if err != nil {
-		return err
-	}
-	return nil
 }

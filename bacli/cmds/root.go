@@ -50,6 +50,7 @@ func AddCommands() {
 	//RootCmd.AddCommand(versionCmd)
 	RootCmd.AddCommand(pingCmd)
 	RootCmd.AddCommand(runCmd)
+	RootCmd.AddCommand(listCmd)
 }
 
 func init() {

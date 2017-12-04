@@ -1,10 +1,11 @@
 # Make file to build protobuffer files
 
+all: baclnt bacsrv
+
 
 baclnt:
 	protoc --go_out=plugins=grpc:. protoclnt/baclnt.proto
 
-backer:
-	protoc --go_out=plugins=grpc:. proto/backer.proto
+bacsrv:
+	protoc --go_out=plugins=grpc:. protosrv/bacsrv.proto
 
-all: backer

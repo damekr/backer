@@ -2,7 +2,6 @@ package storage
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/storage/local"
@@ -28,7 +27,7 @@ var DefaultStorage Storage
 type Storage interface {
 	CreateBucket(clientName string) (string, error)
 	CreateSaveset(bucketLocation string) (string, error)
-	CreateFile(savesetLocation, fileName string) (*os.File, error)
+	CreateFile(savesetLocation, fileOriginalPath string) (*os.File, error)
 	OpenFile(fileLocation string) (*os.File, error)
 }
 
@@ -48,19 +47,6 @@ func Create(storageType string) error {
 		return nil
 
 	}
-	return nil
-}
-
-func WriteBackupMetadata(data []byte) error {
-	dbLocation := filepath.Join(config.MainConfig.Storage.Location, "/.meta/db")
-	log.Debugln("Creating backup metadata file")
-	file, err := os.Create(filepath.Join(dbLocation, "backupMeta.json"))
-	defer file.Close()
-	if err != nil {
-		return err
-	}
-	wrote, err := file.Write(data)
-	log.Debugln("Wrote backup metadata: ", wrote)
 	return nil
 }
 

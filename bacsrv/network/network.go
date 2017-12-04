@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"os"
 	"path/filepath"
 
 	"github.com/damekr/backer/bacsrv/config"
+	"github.com/damekr/backer/bacsrv/db"
 	"github.com/damekr/backer/bacsrv/storage"
 	"github.com/damekr/backer/bacsrv/transfer"
 	"github.com/damekr/backer/common"
@@ -44,6 +44,7 @@ type DataNetwork struct {
 	Sessions       map[uint64]*transfer.Session
 	Storage        storage.Storage
 	CreateMetadata bool
+	Database       db.DB
 }
 
 func StartTCPDataServer(storage storage.Storage, writeSessionMetadata bool) {
@@ -53,6 +54,7 @@ func StartTCPDataServer(storage storage.Storage, writeSessionMetadata bool) {
 		Sessions:       make(map[uint64]*transfer.Session),
 		Storage:        storage,
 		CreateMetadata: writeSessionMetadata,
+		Database:       db.Get(),
 	}
 	dataNetwork.SetIP(config.MainConfig.DataTransferInterface)
 	dataNetwork.SetPort(config.MainConfig.DataPort)
@@ -104,28 +106,17 @@ func (d DataNetwork) connectionHandler(conn *net.TCPConn) {
 		}
 	}
 	if d.CreateMetadata {
-		if err := d.createMetadata(session.Metadata); err != nil {
-			log.Println("Could not create metadata, err: ", err.Error())
+		jsonData, err := json.Marshal(session.Metadata)
+		if err != nil {
+			log.Errorln("Could not marshal json with metadata")
+		} else {
+			if err := d.Database.WriteBackupMetadata(jsonData, filepath.Base(session.Metadata.SavesetPath), session.Metadata.ClientName); err != nil {
+				log.Println("Could not create metadata, err: ", err.Error())
+			}
 		}
+
 	}
 	delete(d.Sessions, sessionID)
-}
-
-func (d DataNetwork) createMetadata(metadata transfer.SessionMetaData) error {
-	log.Println("Creating metadata")
-	jsonData, err := json.Marshal(metadata)
-	if err != nil {
-		return err
-	}
-	file, err := os.Create(filepath.Join(metadata.Saveset, filepath.Base(metadata.Saveset+".json")))
-	if err != nil {
-		return err
-	}
-	_, err = file.Write(jsonData)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (d DataNetwork) SetPort(port string) {
