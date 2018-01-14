@@ -26,15 +26,19 @@ var runBackup = &cobra.Command{
 	Long:  `Run backup job with specified client name`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
-			log.Error("Client(s) name not specified, exiting...")
+			log.Error("Client name not specified, exiting...")
 			os.Exit(2)
 		}
-		log.Println("Running backup of paths: ", args)
+		clientBackupIp := args[0]
+		log.Debugln("Starting backup of client: ", clientBackupIp)
+		paths := args[1:]
+		log.Println("Running backup of paths: ", paths)
 		clnt := client.ClientGRPC{
 			Server: server,
 			Port:   port,
 		}
-		err := clnt.RunBackupInSecure(args)
+
+		err := clnt.RunBackupInSecure(clientBackupIp, paths)
 		if err != nil {
 			log.Error("Could not run backup of client")
 			os.Exit(1)

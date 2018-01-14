@@ -23,7 +23,7 @@ func CreateTransferClient() Client {
 	}
 }
 
-func (c Client) Connect(serverIP string, serverPort string) (*transfer.Session, error) {
+func (c Client) Connect(serverIP string, serverPort string) (*transfer.MainSession, error) {
 	c.Params.Server = serverIP
 	c.Params.Port = serverPort
 	conn, err := connectToHost(serverIP, serverPort)

@@ -103,11 +103,11 @@ func runRestore(paths []string, serverIp string) error {
 // Start method starts a grpc server on specific port
 func Start() error {
 	lis, err := net.Listen("tcp", ":"+config.MainConfig.MgmtPort)
-	log.Info("Starting bacsrv protoapi on addr: ", lis.Addr())
 	if err != nil {
 		log.Errorf("Failed to listen: %v", err)
 		return err
 	}
+	log.Info("Starting bacsrv protoapi on addr: ", lis.Addr())
 	s := grpc.NewServer()
 	protoclnt.RegisterBaclntServer(s, &server{})
 	s.Serve(lis)

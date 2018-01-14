@@ -10,10 +10,10 @@ import (
 )
 
 type BackupSession struct {
-	MainSession *Session
+	MainSession *MainSession
 }
 
-func CreateBackupSession(mainSession *Session) *BackupSession {
+func CreateBackupSession(mainSession *MainSession) *BackupSession {
 	return &BackupSession{
 		MainSession: mainSession,
 	}
@@ -25,7 +25,7 @@ func (b *BackupSession) receiveFileMetadata() (*common.FileMetadata, error) {
 	fileTDec := gob.NewDecoder(b.MainSession.Conn)
 	err := fileTDec.Decode(&fileMetadata)
 	if err != nil {
-		log.Print("Coult not decode FileMetadata struct, error: ", err)
+		log.Print("Could not decode FileMetadata struct, error: ", err)
 		fileTEnc := gob.NewEncoder(b.MainSession.Conn)
 		if err := fileTEnc.Encode(&fileTEmpty); err != nil {
 			log.Println("Could not encode empty FileMetadata struct")
@@ -35,7 +35,7 @@ func (b *BackupSession) receiveFileMetadata() (*common.FileMetadata, error) {
 	return fileMetadata, nil
 }
 
-func (b *BackupSession) sendFileMetaData(metadata *common.FileMetadata) error {
+func (b *BackupSession) sendFileMetaDataAcknowledge(metadata *common.FileMetadata) error {
 	fileAEnc := gob.NewEncoder(b.MainSession.Conn)
 	if err := fileAEnc.Encode(&metadata); err != nil {
 		log.Println("Could not send acknowledge")
@@ -66,7 +66,7 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 
 		// Sending acknowledge
 		// TODO Make checks like: disk space
-		err = b.sendFileMetaData(fileMetadata)
+		err = b.sendFileMetaDataAcknowledge(fileMetadata)
 		if err != nil {
 			log.Errorln("Could not send file metadata as an acknowledge")
 		}

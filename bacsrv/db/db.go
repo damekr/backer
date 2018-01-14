@@ -14,7 +14,6 @@ var (
 	log = logrus.WithFields(logrus.Fields{"prefix": "db"})
 )
 
-//TODO It is the same in transfer
 type BackupMetadata struct {
 	ClientName    string `json:"clientName"`
 	BackupID      int    `json:"backupID"`
@@ -51,13 +50,13 @@ func (d DB) createClientMetaCatalogue(clientName string) (string, error) {
 }
 
 func (d DB) WriteBackupMetadata(data []byte, fileName, clientName string) error {
-	clientDbLocation, err := d.createClientMetaCatalogue(clientName)
+	clientMetadataDbLocation, err := d.createClientMetaCatalogue(clientName)
 	if err != nil {
 		log.Errorln("Cannot create client DB location, err: ", err.Error())
 		return err
 	}
 	log.Debugln("Creating backup metadata file")
-	file, err := os.Create(filepath.Join(clientDbLocation, fileName) + ".json")
+	file, err := os.Create(filepath.Join(clientMetadataDbLocation, fileName) + ".json")
 	defer file.Close()
 	if err != nil {
 		return err
@@ -81,7 +80,7 @@ func (d DB) GetClientsNames() []string {
 	return clientNames
 }
 
-func (d DB) GetClientAssets(clientName string) []BackupMetadata {
+func (d DB) GetClientBackupsMetadata(clientName string) []BackupMetadata {
 	var clientAssets []BackupMetadata
 	files, err := ioutil.ReadDir(filepath.Join(d.Location, clientName))
 	if err != nil {

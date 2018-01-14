@@ -27,9 +27,9 @@ var (
 	port     string
 )
 var RootCmd = &cobra.Command{
-	Use:   "bacmgr",
+	Use:   "bacli",
 	Short: "Backer Server CLI Tool",
-	Long:  `A tool dedicated to manage Backer Server`,
+	Long:  `The tool is dedicated to manage Backer Server`,
 }
 
 // Execute adds all child commands to the root command HugoCmd and sets flags appropriately.

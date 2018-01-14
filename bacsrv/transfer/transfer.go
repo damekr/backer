@@ -13,7 +13,7 @@ import (
 
 var log = logrus.WithFields(logrus.Fields{"prefix": "transfer"})
 
-type Session struct {
+type MainSession struct {
 	ConnParams *common.ConnParameters
 	Conn       net.Conn
 	Id         uint64
@@ -35,8 +35,8 @@ type FileMetaData struct {
 	BackupTime   string `json:"backupTime"`
 }
 
-func NewSession(id uint64, params *common.ConnParameters, conn net.Conn, storage storage.Storage) *Session {
-	return &Session{
+func NewSession(id uint64, params *common.ConnParameters, conn net.Conn, storage storage.Storage) *MainSession {
+	return &MainSession{
 		Id:         id,
 		ConnParams: params,
 		Conn:       conn,
@@ -44,13 +44,13 @@ func NewSession(id uint64, params *common.ConnParameters, conn net.Conn, storage
 	}
 }
 
-func (s *Session) Negotiate(protoVersion string) error {
+func (s *MainSession) Negotiate(protoVersion string) error {
 	log.Println("Starting negotiate with client")
 	neg := new(common.Negotiate)
 	dec := gob.NewDecoder(s.Conn)
 	err := dec.Decode(&neg)
 	if err != nil {
-		log.Println("Could not decode negotatiation struct")
+		log.Println("Could not decode negotiation struct")
 		return err
 	}
 	log.Println("Got protocol revision: ", neg.ProtoVersion)
@@ -69,7 +69,7 @@ func (s *Session) Negotiate(protoVersion string) error {
 	return nil
 }
 
-func (s *Session) Authenticate(password string) error {
+func (s *MainSession) Authenticate(password string) error {
 	log.Println("Starting authentication")
 	auth := new(common.Authenticate)
 	dec := gob.NewDecoder(s.Conn)
@@ -81,20 +81,20 @@ func (s *Session) Authenticate(password string) error {
 	authRespond := new(common.Authenticate)
 	receivedPass, err := common.Decrypt(auth.CiperText, []byte(common.KEY))
 	if password != string(receivedPass) {
-		log.Println("SRV: Authentication failed")
-		authRespond.CiperText = []byte("failed")
+		log.Println("Authentication failed")
+		authRespond.CiperText = []byte(common.AuthenticationFailed)
 		dec := gob.NewEncoder(s.Conn)
 		err = dec.Encode(&authRespond)
-		return common.AuthenticationFailed
+		return common.AuthenticationFailedError
 	}
-	authRespond.CiperText = []byte("passed")
+	authRespond.CiperText = []byte(common.AuthenticationPassed)
 	decRespond := gob.NewEncoder(s.Conn)
 	err = decRespond.Encode(&authRespond)
-	log.Println("SRV: Authentication passed!")
+	log.Println("Authentication passed!")
 	return nil
 }
 
-func (s *Session) SessionDispatcher() error {
+func (s *MainSession) SessionDispatcher() error {
 	//Receiving type of session (TPUT, TGET)
 
 	log.Println("Dispatching incoming connection")

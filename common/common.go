@@ -8,6 +8,11 @@ import (
 	"io"
 )
 
+const (
+	AuthenticationPassed = "passed"
+	AuthenticationFailed = "failed"
+)
+
 var (
 	PORT         = "8090"
 	SERVER       = "0.0.0.0"
@@ -24,7 +29,7 @@ var (
 
 // Global Errors
 var (
-	AuthenticationFailed              = errors.New("BFTP: Authentication failed")
+	AuthenticationFailedError         = errors.New("BFTP: Authentication failed")
 	FileDoesNotExist                  = errors.New("BFTP: File does not exist")
 	ServerDoesNotSupportSuchOperation = errors.New("BFTP: Server does not support such operation")
 	ProtocolVersionMismatch           = errors.New("BFTP: Protocol version mismatch")
@@ -58,6 +63,10 @@ type FileMetadata struct {
 
 type FileAcknowledge struct {
 	Size int64
+}
+
+type BFTPAcknowledgeMessage struct {
+	Status bool
 }
 
 // NewConnParameters creates struct with parameters used for connection

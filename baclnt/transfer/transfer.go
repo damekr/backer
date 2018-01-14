@@ -13,7 +13,7 @@ import (
 
 var log = logrus.WithFields(logrus.Fields{"prefix": "transfer"})
 
-type Session struct {
+type MainSession struct {
 	ConnParams *common.ConnParameters
 	Conn       net.Conn
 	Id         uint64
@@ -21,19 +21,19 @@ type Session struct {
 	Storage    *fs.FileSystem
 }
 
-func NewSession(id uint64, params *common.ConnParameters, conn net.Conn) *Session {
-	return &Session{
+func NewSession(id uint64, params *common.ConnParameters, conn net.Conn) *MainSession {
+	return &MainSession{
 		Id:         id,
 		ConnParams: params,
 		Conn:       conn,
 	}
 }
 
-func (s *Session) CloseSession() error {
+func (s *MainSession) CloseSession() error {
 	return s.Conn.Close()
 }
 
-func (s *Session) Negotiate(protoVersion string) error {
+func (s *MainSession) Negotiate(protoVersion string) error {
 	log.Print("Starting Negotiate with server")
 	neg := new(common.Negotiate)
 	neg.ProtoVersion = protoVersion
@@ -60,7 +60,7 @@ func (s *Session) Negotiate(protoVersion string) error {
 	return nil
 }
 
-func (s *Session) Authenticate(password string) error {
+func (s *MainSession) Authenticate(password string) error {
 	log.Print("Starting authentication")
 	auth := new(common.Authenticate)
 	cipherText, err := common.Encrypt([]byte(password), []byte(common.KEY))
@@ -78,19 +78,20 @@ func (s *Session) Authenticate(password string) error {
 	authRespond := new(common.Authenticate)
 	decRespond := gob.NewDecoder(s.Conn)
 	err = decRespond.Decode(&authRespond)
-	if string(authRespond.CiperText) != "passed" {
-		log.Println("CLNT: Authentication failed!")
-		return common.AuthenticationFailed
+	if string(authRespond.CiperText) != common.AuthenticationPassed {
+		log.Println("Authentication failed!")
+		return common.AuthenticationFailedError
 	}
-	log.Println("CLNT: Authentication passed!")
+	log.Println("Authentication passed!")
 	return nil
 }
 
-func (s *Session) StartBackup(filesPaths []string) error {
+func (s *MainSession) StartBackup(filesPaths []string) error {
 	backupTransfer := common.Transfer{
 		TransferType:  common.TPUT,
 		ObjectsNumber: len(filesPaths),
 	}
+	//Sending transfer type
 	log.Println("Opening transfer with server, type: ", backupTransfer.TransferType)
 	tr := gob.NewEncoder(s.Conn)
 	err := tr.Encode(&backupTransfer)
@@ -98,6 +99,7 @@ func (s *Session) StartBackup(filesPaths []string) error {
 		log.Println("Could not encode transfer struct, error: ", err)
 		return err
 	}
+	//Acknowledge
 	log.Println("Waiting for response...")
 	tranType := new(common.Transfer)
 	trInc := gob.NewDecoder(s.Conn)
@@ -122,7 +124,7 @@ func (s *Session) StartBackup(filesPaths []string) error {
 	return nil
 }
 
-func (s *Session) StartRestore(filesPaths []string) error {
+func (s *MainSession) StartRestore(filesPaths []string) error {
 	restoreTransfer := common.Transfer{
 		TransferType: common.TGET,
 	}

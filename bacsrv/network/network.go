@@ -41,7 +41,7 @@ func StartTCPMgmtServer() (net.Listener, error) {
 
 type DataNetwork struct {
 	Params         *common.ConnParameters
-	Sessions       map[uint64]*transfer.Session
+	Sessions       map[uint64]*transfer.MainSession
 	Storage        storage.Storage
 	CreateMetadata bool
 	Database       db.DB
@@ -51,7 +51,7 @@ func StartTCPDataServer(storage storage.Storage, writeSessionMetadata bool) {
 	params := common.NewConnParameters()
 	dataNetwork := DataNetwork{
 		Params:         params,
-		Sessions:       make(map[uint64]*transfer.Session),
+		Sessions:       make(map[uint64]*transfer.MainSession),
 		Storage:        storage,
 		CreateMetadata: writeSessionMetadata,
 		Database:       db.Get(),

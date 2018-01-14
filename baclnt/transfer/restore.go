@@ -11,10 +11,10 @@ import (
 )
 
 type RestoreSession struct {
-	MainSession *Session
+	MainSession *MainSession
 }
 
-func CreateRestoreSession(mainSession *Session) *RestoreSession {
+func CreateRestoreSession(mainSession *MainSession) *RestoreSession {
 	return &RestoreSession{
 		MainSession: mainSession,
 	}

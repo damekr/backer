@@ -25,7 +25,7 @@ func (l *ListBackups) Run() {
 	log.Println("Getting backups")
 	var backupIds []int64
 	database := db.Get()
-	clientAssets := database.GetClientAssets(l.ClientName)
+	clientAssets := database.GetClientBackupsMetadata(l.ClientName)
 	for _, v := range clientAssets {
 		backupIds = append(backupIds, int64(v.BackupID))
 	}

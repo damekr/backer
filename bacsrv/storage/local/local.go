@@ -48,7 +48,7 @@ func Create(location string) (*Local, error) {
 		log.Error("Cannot create dbs directory inside storage")
 		return nil, errdb
 	}
-	log.Infof("Storage %s has been created successfully", location)
+	log.Infof("Storage %s has been created successfully or already exists", location)
 	local := &Local{Location: location}
 	return local, nil
 }

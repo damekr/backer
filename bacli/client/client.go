@@ -18,7 +18,7 @@ var log = logrus.WithFields(logrus.Fields{"prefix": "client"})
 type Client interface {
 	ListAllInSecure() ([]string, error)
 	PingInSecure() (string, error)
-	RunBackup([]string) error
+	RunBackup(string, []string) error
 	// ConnectSecure(server string, port string, user string, password string) (*grpc.ClientConn, error)
 	// ConnectInSecure(server string, port string) (*grpc.ClientConn, error) //TODO It must handle also RESTApi requests
 }
@@ -103,7 +103,7 @@ func (c ClientREST) PingInSecure() (string, error) {
 //	return nil, nil
 //}
 //
-func (c ClientGRPC) RunBackupInSecure(paths []string) error {
+func (c ClientGRPC) RunBackupInSecure(backupClientIP string, paths []string) error {
 	log.Infof("Using GRPC protocol to run backup")
 	conn, err := c.ConnectInSecure(c.Server, c.Port)
 	if err != nil {
@@ -117,13 +117,8 @@ func (c ClientGRPC) RunBackupInSecure(paths []string) error {
 	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
 	cn := protosrv.NewBacsrvClient(conn)
 	//Contact the server and print out its response.
-	hostname, err := os.Hostname()
-	if err != nil {
-		log.Error("Cannot get hostname setting default")
-		hostname = "client"
-	}
 	r, err := cn.Backup(ctx, &protosrv.BackupRequest{
-		Ip:    hostname,
+		Ip:    backupClientIP,
 		Paths: paths,
 	})
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"github.com/damekr/backer/bacsrv/task/backup"
 	"github.com/damekr/backer/bacsrv/task/listbackups"
 	"github.com/damekr/backer/bacsrv/task/ping"
+	"github.com/damekr/backer/bacsrv/task/restore"
 	"github.com/damekr/backer/common/protosrv"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -58,7 +59,8 @@ func (s *server) Backup(ctx context.Context, backupRequest *protosrv.BackupReque
 func backupClient(clientIP string, paths []string) (bool, error) {
 	log.Println("Creating backup job of: ", clientIP)
 	backupTask := backup.CreateBackup(clientIP, paths)
-	backupJob := job.Create("fs")
+	backupJob := job.Create("backup")
+	//TODO: Setup here is not needed - task creating handles it
 	backupTask.Setup(paths)
 	backupJob.AddTask(backupTask)
 	backupJob.Start()
@@ -80,7 +82,11 @@ func (s *server) Restore(ctx context.Context, restoreRequest *protosrv.RestoreRe
 }
 
 func restoreClient(clientIP string, paths []string) error {
-	log.Debugln("Got request to restore client paths: ", paths)
+	log.Debugln("Creating restore job of client: ", clientIP)
+	restoreTask := restore.Create(clientIP, paths)
+	restoreJob := job.Create("restore")
+	restoreJob.AddTask(restoreTask)
+	restoreJob.Start()
 	return nil
 }
 
