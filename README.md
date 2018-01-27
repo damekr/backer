@@ -12,19 +12,18 @@ ____          _____ _  ________ _____
 
 Current approach assumes existing application Server <--> Client with RPC connection to make possible management
 connection between these daemons and data communications through sockets.
-Server is able to invoke operation on client side using RPC. An operations can be triggered from server and client side. Either client or server have two listners - data and management and can "talk" each other.
+Server is able to invoke operation on client side using gRPC. An operations can be triggered from server and client side. Either client or server have two listeners - data and management and can "talk" each other.
 
 Main points for the first release:
 
-- Client server authentication
-- Client integration
-- Backup specific paths from client
-- Restore data to given client
+- Client server basic authentication
+- Basic encryption for the bftp protocol
+- Backup specific paths from a client
+- Restore data to a given client
 - List available backups from client side
 
-The points described above are ganeral. More information can be find in documentation under specific part called release note. 
-
-
+The points described above are ganeral. More information can be find in the documentation under specific part called release note.
+ 
 
 ### TODO List
 
@@ -35,4 +34,7 @@ The points described above are ganeral. More information can be find in document
 - [x] BACSRV: Demonize server (It is not needed because of systemd)
 - [x] BACSRV: Read config file from parameter
 - [x] README: Add simple architecture picture in ASCI
-- [] BACSRV: Prepare specification -- ongoing
+- [x] Make backup working!
+- [x] BACLI: List backups
+- [x] BACLI: Trigger backup
+- [-] Make restore working!
