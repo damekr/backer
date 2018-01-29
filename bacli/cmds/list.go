@@ -28,7 +28,12 @@ var listBackup = &cobra.Command{
 			Server: server,
 			Port:   port,
 		}
-		err := clnt.ListBackupsInSecure(args[0])
+		clientName := ""
+		if len(args) > 0 {
+			// Just one first client name
+			clientName = args[0]
+		}
+		err := clnt.ListBackupsInSecure(clientName)
 		if err != nil {
 			log.Error("Could not list clients")
 			os.Exit(1)

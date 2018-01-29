@@ -12,18 +12,23 @@ var pingCmd = &cobra.Command{
 	Short: "ping server if is available",
 	Long:  "This command sends just ping to server to check if server respond",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		sendServerPing()
+		sendServerPing(args)
 		return nil
 	},
 }
 
-func sendServerPing() {
+func sendServerPing(args []string) {
 	log.Info("Sending ping to server: ", server)
 	clnt := client.ClientGRPC{
 		Server: server,
 		Port:   port,
 	}
-	response, err := clnt.PingInSecure()
+	clientIP := ""
+	if len(args) > 0 {
+		clientIP = args[0]
+	}
+
+	response, err := clnt.PingInSecure(clientIP)
 	if err != nil {
 		log.Error("Could not ping server: ", server)
 		os.Exit(1)

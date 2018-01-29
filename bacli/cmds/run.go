@@ -56,12 +56,15 @@ var runRestore = &cobra.Command{
 			log.Error("Client(s) name not specified, exiting...")
 			os.Exit(2)
 		}
-		log.Println("Running backup of paths: ", args)
+		clientRestoreIP := args[0]
+		log.Debugln("Running restore of client: ", clientRestoreIP)
+		paths := args[1:]
+		log.Println("Running restore of paths: ", paths)
 		clnt := client.ClientGRPC{
 			Server: server,
 			Port:   port,
 		}
-		err := clnt.RunRestoreInSecure(args)
+		err := clnt.RunRestoreInSecure(clientRestoreIP, paths)
 		if err != nil {
 			log.Error("Could not run backup of client")
 			os.Exit(1)

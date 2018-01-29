@@ -94,9 +94,9 @@ func (s *MainSession) Authenticate(password string) error {
 	return nil
 }
 
-func (s *MainSession) SessionDispatcher() error {
+func (s *MainSession) SessionDispatcher(createSessionMetadata bool) error {
 	//Receiving type of session (TPUT, TGET)
-
+	//TODO Might be useful to have configurable session metadata, but now it's not used. For backup create always
 	log.Println("Dispatching incoming connection")
 	transfer := new(common.Transfer)
 	tr := gob.NewDecoder(s.Conn)

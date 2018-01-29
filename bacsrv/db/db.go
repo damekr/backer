@@ -80,6 +80,16 @@ func (d DB) GetClientsNames() []string {
 	return clientNames
 }
 
+func (d DB) GetBackupsMetadata() []BackupMetadata {
+	var clientsAssets []BackupMetadata
+	clientsNames := d.GetClientsNames()
+	for _, v := range clientsNames {
+		clientAsset := d.GetClientBackupsMetadata(v)
+		clientsAssets = append(clientsAssets, clientAsset...)
+	}
+	return clientsAssets
+}
+
 func (d DB) GetClientBackupsMetadata(clientName string) []BackupMetadata {
 	var clientAssets []BackupMetadata
 	files, err := ioutil.ReadDir(filepath.Join(d.Location, clientName))

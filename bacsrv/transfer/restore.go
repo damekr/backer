@@ -18,6 +18,8 @@ func CreateRestoreSession(mainSession *MainSession) *RestoreSession {
 	}
 }
 
+//TODO Add logic to read file from specific backup(json file)
+
 func (r *RestoreSession) HandleRestoreSession() error {
 	log.Println("Handling incomming TGET transfer type")
 	fileT := new(common.FileMetadata)

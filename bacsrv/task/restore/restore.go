@@ -2,7 +2,6 @@ package restore
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/damekr/backer/bacsrv/network"
 	"github.com/damekr/backer/common/protoclnt"
@@ -34,6 +33,7 @@ func (r *Restore) Run() {
 		log.Errorf("Cannot connect to address %s", r.ClientIP)
 		return
 	}
+	// TODO Consider close grpc connection before restore gets done
 	defer conn.Close()
 	c := protoclnt.NewBaclntClient(conn)
 	response, err := c.Restore(context.Background(), &protoclnt.RestoreRequest{Ip: r.ClientIP, Paths: r.RequestedPaths})
@@ -47,7 +47,7 @@ func (r *Restore) Run() {
 }
 
 func (r *Restore) Stop() {
-	fmt.Println("Stopping")
+	log.Println("Stopping")
 }
 
 func (r *Restore) Setup(paths []string) {

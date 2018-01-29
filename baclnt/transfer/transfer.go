@@ -30,6 +30,7 @@ func NewSession(id uint64, params *common.ConnParameters, conn net.Conn) *MainSe
 }
 
 func (s *MainSession) CloseSession() error {
+	log.Debugln("Closing connection...")
 	return s.Conn.Close()
 }
 

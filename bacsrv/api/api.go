@@ -25,6 +25,9 @@ func (s *server) Ping(ctx context.Context, in *protosrv.PingRequest) (*protosrv.
 	md, ok := metadata.FromIncomingContext(ctx)
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
+	if in.Ip == "" {
+		return &protosrv.PingResponse{Message: "OK FROM SERVER"}, nil
+	}
 	clientMessage, err := pingClient(in.Ip)
 	if err != nil {
 		log.Errorln("Cannot ping client, err: ", err)
@@ -95,7 +98,11 @@ func (s *server) ListBackups(ctx context.Context, listBackupsRequest *protosrv.L
 	md, ok := metadata.FromIncomingContext(ctx)
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
+	if listBackupsRequest.ClientName == "" {
+		log.Println("No client given, listing all available backups")
+	}
 	clientName, backupIds := listBackups(listBackupsRequest.ClientName)
+
 	log.Debugf("Client: %s backups: %x", clientName, backupIds)
 	return &protosrv.ListBackupsResponse{
 		ClientName: clientName,

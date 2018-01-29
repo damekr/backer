@@ -28,7 +28,7 @@ func (s *server) Ping(ctx context.Context, in *protoclnt.PingRequest) (*protocln
 }
 
 func (s *server) Backup(ctx context.Context, backupRequest *protoclnt.BackupRequest) (*protoclnt.BackupResponse, error) {
-	log.Printf("Got request to fs client: %s", backupRequest.Ip)
+	log.Printf("Got request to backup client: %s", backupRequest.Ip)
 	log.Println("Paths to be validated: ", backupRequest.Paths)
 	md, ok := metadata.FromIncomingContext(ctx)
 	log.Print("OK: ", ok)
@@ -46,10 +46,11 @@ func (s *server) Backup(ctx context.Context, backupRequest *protoclnt.BackupRequ
 }
 
 func runBackup(paths []string, serverIp string) error {
+	// TODO Consider extend gRPC API to send client and server IP or external NAME it allows trigger backup from many servers to one client
 	client := network.CreateTransferClient()
-	session, err := client.Connect(serverIp, config.MainConfig.ServerDataPort)
+	session, err := client.Connect(config.MainConfig.ServerExternalName, config.MainConfig.ServerDataPort)
 	if err != nil {
-		log.Errorln("Cannot initialize connection")
+		log.Errorln("Cannot initialize connection, err: ", err.Error())
 	}
 	log.Println("Session ID: ", session.Id)
 	err = session.StartBackup(paths)
@@ -66,7 +67,7 @@ func runBackup(paths []string, serverIp string) error {
 }
 
 func (s *server) Restore(ctx context.Context, restoreRequest *protoclnt.RestoreRequest) (*protoclnt.RestoreResponse, error) {
-	log.Printf("Got request to fs client: %s", restoreRequest.Ip)
+	log.Printf("Got request to run restore of client: %s", restoreRequest.Ip)
 	log.Println("Paths to be validated: ", restoreRequest.Paths)
 	md, ok := metadata.FromIncomingContext(ctx)
 	log.Print("OK: ", ok)
@@ -74,14 +75,15 @@ func (s *server) Restore(ctx context.Context, restoreRequest *protoclnt.RestoreR
 
 	err := runRestore(restoreRequest.Paths, restoreRequest.Ip)
 	if err != nil {
-		log.Errorf("Backup Failed, err: ", err.Error())
+		log.Errorf("Restore Failed, err: ", err.Error())
 	}
 	return &protoclnt.RestoreResponse{Status: "OK"}, nil
 }
 
 func runRestore(paths []string, serverIp string) error {
+	//TODO Consider extend gRPC API to send client and server IP or external NAME it allows trigger backup from many servers to one client
 	client := network.CreateTransferClient()
-	session, err := client.Connect(serverIp, config.MainConfig.ServerDataPort)
+	session, err := client.Connect(config.MainConfig.ServerExternalName, config.MainConfig.ServerDataPort)
 	if err != nil {
 		log.Errorln("Could not connect to server for restore, err: ", err.Error())
 		return err

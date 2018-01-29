@@ -3,7 +3,6 @@ package client
 import (
 	"fmt"
 	"net"
-	"os"
 	"time"
 
 	"github.com/damekr/backer/common/protosrv"
@@ -37,7 +36,7 @@ type ClientREST struct {
 	Port     string
 }
 
-func (c ClientGRPC) PingInSecure() (string, error) {
+func (c ClientGRPC) PingInSecure(clientIP string) (string, error) {
 	md := metadata.Pairs("timestamp", time.Now().Format(time.StampNano))
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
@@ -49,12 +48,8 @@ func (c ClientGRPC) PingInSecure() (string, error) {
 	defer conn.Close()
 	cn := protosrv.NewBacsrvClient(conn)
 	//Contact the server and print out its response.
-	hostname, err := os.Hostname()
-	if err != nil {
-		log.Error("Cannot get hostname setting default")
-		hostname = "client"
-	}
-	r, err := cn.Ping(ctx, &protosrv.PingRequest{Ip: hostname})
+
+	r, err := cn.Ping(ctx, &protosrv.PingRequest{Ip: clientIP})
 	if err != nil {
 		log.Warningf("Could not get client name: %v", err)
 		return "", err
@@ -129,7 +124,7 @@ func (c ClientGRPC) RunBackupInSecure(backupClientIP string, paths []string) err
 	return nil
 }
 
-func (c ClientGRPC) RunRestoreInSecure(paths []string) error {
+func (c ClientGRPC) RunRestoreInSecure(restoreClientIP string, paths []string) error {
 	log.Infof("Using GRPC protocol to run restore")
 	conn, err := c.ConnectInSecure(c.Server, c.Port)
 	if err != nil {
@@ -141,14 +136,9 @@ func (c ClientGRPC) RunRestoreInSecure(paths []string) error {
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
 	cn := protosrv.NewBacsrvClient(conn)
-	//Contact the server and print out its response.
-	hostname, err := os.Hostname()
-	if err != nil {
-		log.Error("Cannot get hostname setting default")
-		hostname = "client"
-	}
+
 	r, err := cn.Restore(ctx, &protosrv.RestoreRequest{
-		Ip:    hostname,
+		Ip:    restoreClientIP,
 		Paths: paths,
 	})
 	if err != nil {

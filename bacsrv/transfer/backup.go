@@ -3,19 +3,24 @@ package transfer
 import (
 	"bufio"
 	"encoding/gob"
+	"encoding/json"
+	"path/filepath"
 	"time"
 
+	"github.com/damekr/backer/bacsrv/db"
 	"github.com/damekr/backer/bacsrv/storage"
 	"github.com/damekr/backer/common"
 )
 
 type BackupSession struct {
 	MainSession *MainSession
+	Database    db.DB
 }
 
 func CreateBackupSession(mainSession *MainSession) *BackupSession {
 	return &BackupSession{
 		MainSession: mainSession,
+		Database:    db.Get(),
 	}
 }
 
@@ -55,7 +60,7 @@ func (b *BackupSession) sendFileTransferAcknowledge(acknowledge *common.FileAckn
 }
 
 func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumber int) error {
-	log.Println("Handling incomming TPUT transfer type")
+	log.Println("Handling incoming TPUT transfer type")
 	for i := 0; i < objectsNumber; i++ {
 		log.Debugln("Receiving object: ", i)
 		// Getting file metadata
@@ -87,6 +92,9 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 		if err != nil {
 			log.Error(err)
 		}
+	}
+	if err := b.createMetadata(); err != nil {
+		log.Errorln("Could not create session metadata, err: ", err)
 	}
 
 	return nil
@@ -139,5 +147,17 @@ func (b *BackupSession) downloadFile(name, localFilePath string, size int64, sav
 	log.Println("Backup duration: ", timeFinishBackup.String())
 	fileSizeInMb := wroteToFile / 1000 / 1000
 	log.Printf("Average speed: %f MiB/s", float64(fileSizeInMb)/timeFinishBackup.Seconds())
+	return nil
+}
+
+func (b *BackupSession) createMetadata() error {
+	jsonData, err := json.Marshal(b.MainSession.Metadata)
+	if err != nil {
+		return err
+	} else {
+		if err := b.Database.WriteBackupMetadata(jsonData, filepath.Base(b.MainSession.Metadata.SavesetPath), b.MainSession.Metadata.ClientName); err != nil {
+			return err
+		}
+	}
 	return nil
 }
