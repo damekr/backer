@@ -70,27 +70,48 @@ func backupClient(clientIP string, paths []string) (bool, error) {
 	return backupTask.Status, nil
 }
 
-func (s *server) Restore(ctx context.Context, restoreRequest *protosrv.RestoreRequest) (*protosrv.RestoreResponse, error) {
+func (s *server) RestoreWholeBackup(ctx context.Context, restoreRequest *protosrv.RestoreRequest) (*protosrv.RestoreResponse, error) {
 	log.Printf("Got request to restore client: %s", restoreRequest.Ip)
 	md, ok := metadata.FromIncomingContext(ctx)
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
 
 	//Sending gRPC request to start restore (client initialize)
-	err := restoreClient(restoreRequest.Ip, restoreRequest.Paths)
+	err := restoreWholeBackupToClient(restoreRequest.Ip, int(restoreRequest.Backupid))
 	if err != nil {
 		log.Errorln("Cannot restore client, err: ", err)
 	}
 	return &protosrv.RestoreResponse{Status: "OK"}, nil
 }
 
-func restoreClient(clientIP string, paths []string) error {
+func restoreWholeBackupToClient(clientIP string, backupID int) error {
 	log.Debugln("Creating restore job of client: ", clientIP)
-	restoreTask := restore.Create(clientIP, paths)
+	log.Debugln("Restore job on backupID: ", backupID)
+	restoreTask := restore.Create(clientIP, backupID)
+	err := restoreTask.Setup()
+	if err != nil {
+		log.Errorln("Error", err)
+		return err
+	}
 	restoreJob := job.Create("restore")
 	restoreJob.AddTask(restoreTask)
 	restoreJob.Start()
 	return nil
+}
+
+func (s *server) RestoreWholeBackupDifferentPlace(ctx context.Context, request *protosrv.RestoreWholeBackupDifferentPlaceRequest) (*protosrv.RestoreResponse, error) {
+
+	return &protosrv.RestoreResponse{Status: "OK"}, nil
+}
+
+func (s *server) RestoreDir(ctx context.Context, request *protosrv.RestoreDirRequest) (*protosrv.RestoreResponse, error) {
+
+	return &protosrv.RestoreResponse{Status: "OK"}, nil
+}
+
+func (s *server) RestoreDirRemoteDifferentPlace(ctx context.Context, request *protosrv.RestoreDirRemoteDifferentPlaceRequest) (*protosrv.RestoreResponse, error) {
+
+	return &protosrv.RestoreResponse{Status: "OK"}, nil
 }
 
 func (s *server) ListBackups(ctx context.Context, listBackupsRequest *protosrv.ListBackupsRequest) (*protosrv.ListBackupsResponse, error) {

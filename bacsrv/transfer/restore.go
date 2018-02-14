@@ -76,7 +76,6 @@ func (r *RestoreSession) HandleRestoreSession() error {
 
 func (r *RestoreSession) uploadFile(localFilePath string, size int64) error {
 	log.Println("Starting sending file: ", localFilePath)
-	// Creating storage in current path, just for testing
 	file, err := r.MainSession.Storage.OpenFile(localFilePath)
 	if err != nil {
 		log.Println("Cannot create localfile to write")

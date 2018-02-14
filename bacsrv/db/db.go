@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/damekr/backer/bacsrv/config"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -41,6 +42,7 @@ func Get() DB {
 
 func (d DB) createClientMetaCatalogue(clientName string) (string, error) {
 	dbLocation := filepath.Join(config.MainConfig.Storage.Location, "/.meta/db")
+	log.Debugln("DB Location: ", dbLocation)
 	clientDbLocation := filepath.Join(dbLocation, clientName)
 	if err := os.MkdirAll(clientDbLocation, 0700); err != nil {
 		return "", err
@@ -70,7 +72,7 @@ func (d DB) GetClientsNames() []string {
 	var clientNames []string
 	files, err := ioutil.ReadDir(d.Location)
 	if err != nil {
-		log.Errorln("Cannot read files from db")
+		log.Errorln("Cannot read files from db, err: ", err)
 	}
 	for _, v := range files {
 		if v.IsDir() {
@@ -100,6 +102,21 @@ func (d DB) GetClientBackupsMetadata(clientName string) []BackupMetadata {
 		clientAssets = append(clientAssets, d.readAsset(filepath.Join(d.Location, clientName, v.Name())))
 	}
 	return clientAssets
+}
+
+func (d DB) GetBackupMetadata(backupID int) (BackupMetadata, error) {
+	var seekingBackupMetadata BackupMetadata
+	backupsMetadata := d.GetBackupsMetadata()
+	for _, v := range backupsMetadata {
+		log.Println("Backup id: ", v.BackupID)
+		if v.BackupID == backupID {
+			seekingBackupMetadata = v
+		}
+	}
+	if seekingBackupMetadata.BackupID == 0 {
+		return seekingBackupMetadata, errors.New("Backup metadata not found")
+	}
+	return seekingBackupMetadata, nil
 }
 
 func (d DB) readAsset(filePath string) BackupMetadata {

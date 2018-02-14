@@ -2,7 +2,9 @@ package restore
 
 import (
 	"context"
+	"path/filepath"
 
+	"github.com/damekr/backer/bacsrv/db"
 	"github.com/damekr/backer/bacsrv/network"
 	"github.com/damekr/backer/common/protoclnt"
 	"github.com/sirupsen/logrus"
@@ -12,6 +14,7 @@ var log = logrus.WithFields(logrus.Fields{"prefix": "task:restore"})
 
 type Restore struct {
 	ClientIP       string   `json:"clientIP"`
+	BackupID       int      `json:"backupID"`
 	RequestedPaths []string `json:"requestedPaths"`
 	ValidPaths     []string `json:"validPaths"`
 	Progress       int      `json:"-"`
@@ -19,10 +22,10 @@ type Restore struct {
 	BucketLocation string   `json:"bucketLocation"`
 }
 
-func Create(clientIP string, paths []string) *Restore {
+func Create(clientIP string, backupID int) *Restore {
 	return &Restore{
-		ClientIP:       clientIP,
-		RequestedPaths: paths,
+		ClientIP: clientIP,
+		BackupID: backupID,
 	}
 }
 
@@ -50,6 +53,15 @@ func (r *Restore) Stop() {
 	log.Println("Stopping")
 }
 
-func (r *Restore) Setup(paths []string) {
-	r.RequestedPaths = paths
+func (r *Restore) Setup() error {
+	backupMetadata, err := db.Get().GetBackupMetadata(r.BackupID)
+	if err != nil {
+		return err
+	}
+	var backupFilesPathOnServer []string
+	for _, v := range backupMetadata.FilesMetadata {
+		backupFilesPathOnServer = append(backupFilesPathOnServer, filepath.Join(backupMetadata.BucketPath, v.FileWithPath))
+	}
+	log.Debugln("Local backup files: ", backupFilesPathOnServer)
+	return nil
 }

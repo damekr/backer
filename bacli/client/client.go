@@ -37,8 +37,6 @@ type ClientREST struct {
 }
 
 func (c ClientGRPC) PingInSecure(clientIP string) (string, error) {
-	md := metadata.Pairs("timestamp", time.Now().Format(time.StampNano))
-	ctx := metadata.NewOutgoingContext(context.Background(), md)
 	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
 	conn, err := c.ConnectInSecure(c.Server, c.Port)
 	if err != nil {
@@ -49,7 +47,7 @@ func (c ClientGRPC) PingInSecure(clientIP string) (string, error) {
 	cn := protosrv.NewBacsrvClient(conn)
 	//Contact the server and print out its response.
 
-	r, err := cn.Ping(ctx, &protosrv.PingRequest{Ip: clientIP})
+	r, err := cn.Ping(c.prepareGRPCContext(), &protosrv.PingRequest{Ip: clientIP})
 	if err != nil {
 		log.Warningf("Could not get client name: %v", err)
 		return "", err
@@ -107,12 +105,10 @@ func (c ClientGRPC) RunBackupInSecure(backupClientIP string, paths []string) err
 	}
 	defer conn.Close()
 
-	md := metadata.Pairs("timestamp", time.Now().Format(time.StampNano))
-	ctx := metadata.NewOutgoingContext(context.Background(), md)
 	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
 	cn := protosrv.NewBacsrvClient(conn)
 	//Contact the server and print out its response.
-	r, err := cn.Backup(ctx, &protosrv.BackupRequest{
+	r, err := cn.Backup(c.prepareGRPCContext(), &protosrv.BackupRequest{
 		Ip:    backupClientIP,
 		Paths: paths,
 	})
@@ -124,22 +120,104 @@ func (c ClientGRPC) RunBackupInSecure(backupClientIP string, paths []string) err
 	return nil
 }
 
-func (c ClientGRPC) RunRestoreInSecure(restoreClientIP string, paths []string) error {
-	log.Infof("Using GRPC protocol to run restore")
+func (c ClientGRPC) RunRestoreWholeBackupInSecure(clientIP string, backupID int64) error {
+	log.Infof("Using GRPC protocol to run restore of whole backupid: ", backupID)
 	conn, err := c.ConnectInSecure(c.Server, c.Port)
 	if err != nil {
 		log.Warningf("Cannot connect to address %s", c.Server)
 		return err
 	}
 	defer conn.Close()
-	md := metadata.Pairs("timestamp", time.Now().Format(time.StampNano))
-	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
 	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
 	cn := protosrv.NewBacsrvClient(conn)
 
-	r, err := cn.Restore(ctx, &protosrv.RestoreRequest{
-		Ip:    restoreClientIP,
-		Paths: paths,
+	r, err := cn.RestoreWholeBackup(c.prepareGRPCContext(), &protosrv.RestoreRequest{
+		Ip:       clientIP,
+		Backupid: backupID,
+	})
+	if err != nil {
+		log.Warningf("Could not send client name: %v", err)
+	}
+	log.Debug("Received status of restore: ", r.Status)
+
+	return nil
+}
+
+func (c ClientGRPC) RunRestoreWholeBackupDifferentPlaceInSecure(clientIP, remoteDir string, backupID int64) error {
+	log.Infof("Using GRPC protocol to run restore of whole backup to remote dir: ", remoteDir)
+	conn, err := c.ConnectInSecure(c.Server, c.Port)
+	if err != nil {
+		log.Warningf("Cannot connect to address %s", c.Server)
+		return err
+	}
+	defer conn.Close()
+
+	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
+	cn := protosrv.NewBacsrvClient(conn)
+	restoreRequest := &protosrv.RestoreRequest{
+		Ip:       clientIP,
+		Backupid: backupID,
+	}
+
+	r, err := cn.RestoreWholeBackupDifferentPlace(c.prepareGRPCContext(), &protosrv.RestoreWholeBackupDifferentPlaceRequest{
+		Restorerequest: restoreRequest,
+		Remotedir:      remoteDir,
+	})
+	if err != nil {
+		log.Warningf("Could not send client name: %v", err)
+	}
+	log.Debug("Received status of restore: ", r.Status)
+
+	return nil
+}
+
+func (c ClientGRPC) RunRestoreOfDirInSecure(clientIP, dir string, backupID int64) error {
+	log.Infof("Using GRPC protocol to run restore dir:", dir)
+	conn, err := c.ConnectInSecure(c.Server, c.Port)
+	if err != nil {
+		log.Warningf("Cannot connect to address %s", c.Server)
+		return err
+	}
+	defer conn.Close()
+
+	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
+	cn := protosrv.NewBacsrvClient(conn)
+	restoreRequest := &protosrv.RestoreRequest{
+		Ip:       clientIP,
+		Backupid: backupID,
+	}
+	r, err := cn.RestoreDir(c.prepareGRPCContext(), &protosrv.RestoreDirRequest{
+		Restorerequest: restoreRequest,
+		Dir:            dir,
+	})
+	if err != nil {
+		log.Warningf("Could not send client name: %v", err)
+	}
+	log.Debug("Received status of restore: ", r.Status)
+
+	return nil
+}
+
+func (c ClientGRPC) RunRestoreOfDirDifferentPlaceInSecure(clientIP, dir, remoteDir string, backupID int64) error {
+	log.Infof("Using GRPC protocol to run restore dir: ", dir)
+	conn, err := c.ConnectInSecure(c.Server, c.Port)
+	if err != nil {
+		log.Warningf("Cannot connect to address %s", c.Server)
+		return err
+	}
+	defer conn.Close()
+
+	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
+	cn := protosrv.NewBacsrvClient(conn)
+	restoreRequest := &protosrv.RestoreRequest{
+		Ip:       clientIP,
+		Backupid: backupID,
+	}
+	r, err := cn.RestoreDirRemoteDifferentPlace(c.prepareGRPCContext(), &protosrv.RestoreDirRemoteDifferentPlaceRequest{
+		Restorerequest: restoreRequest,
+		Dir:            dir,
+		Remotedir:      remoteDir,
 	})
 	if err != nil {
 		log.Warningf("Could not send client name: %v", err)
@@ -162,13 +240,12 @@ func (c ClientGRPC) ListBackupsInSecure(clientName string) error {
 		return err
 	}
 	defer conn.Close()
-	md := metadata.Pairs("timestamp", time.Now().Format(time.StampNano))
-	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
 	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
 	cn := protosrv.NewBacsrvClient(conn)
 	//Contact the server and print out its response.
 
-	r, err := cn.ListBackups(ctx, &protosrv.ListBackupsRequest{
+	r, err := cn.ListBackups(c.prepareGRPCContext(), &protosrv.ListBackupsRequest{
 		ClientName: clientName,
 	})
 	if err != nil {
@@ -177,6 +254,12 @@ func (c ClientGRPC) ListBackupsInSecure(clientName string) error {
 	fmt.Println(r)
 
 	return nil
+}
+
+func (c ClientGRPC) prepareGRPCContext() context.Context {
+	md := metadata.Pairs("timestamp", time.Now().Format(time.StampNano))
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	return ctx
 }
 
 func (c ClientGRPC) ConnectInSecure(server string, port string) (*grpc.ClientConn, error) {

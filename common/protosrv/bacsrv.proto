@@ -8,7 +8,10 @@ service Bacsrv {
 
     rpc Ping (PingRequest) returns (PingResponse) {}
     rpc Backup (BackupRequest) returns (BackupResponse) {}
-    rpc Restore (RestoreRequest) returns (RestoreResponse) {}
+    rpc RestoreWholeBackup (RestoreRequest) returns (RestoreResponse) {}
+    rpc RestoreWholeBackupDifferentPlace (RestoreWholeBackupDifferentPlaceRequest) returns (RestoreResponse) {}
+    rpc RestoreDir (RestoreDirRequest) returns (RestoreResponse) {}
+    rpc RestoreDirRemoteDifferentPlace (RestoreDirRemoteDifferentPlaceRequest) returns (RestoreResponse) {}
     rpc ListBackups (ListBackupsRequest) returns (ListBackupsResponse) {}
 }
 
@@ -35,11 +38,33 @@ message BackupResponse {
 
 //RESTORE
 
+// Main message must be always
 message RestoreRequest {
     string ip = 1;
-    repeated string paths = 2;
+    int64 backupid = 2;
 }
 
+// Remote path specified of restore
+message RestoreWholeBackupDifferentPlaceRequest {
+    RestoreRequest restorerequest = 1;
+    string remotedir = 2;
+}
+
+// Restoring just file or directory to the same place
+message RestoreDirRequest {
+    RestoreRequest restorerequest = 1;
+    string dir = 2;
+}
+
+// Restoring file or directory to different remote place
+message RestoreDirRemoteDifferentPlaceRequest {
+    RestoreRequest restorerequest = 1;
+    string dir = 2;
+    string remotedir = 3;
+}
+
+// We just want to know a status
+// TODO Consider to put here progress of restore
 message RestoreResponse {
     string status = 1;
 }

@@ -7,8 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var log = logrus.WithFields(logrus.Fields{"prefix": "cmds"})
-
 const mgmtPort = "8090"
 
 var (
@@ -17,15 +15,16 @@ var (
 	verboseLog  bool
 	quiet       bool
 	disableAuth bool
+	logFile     string
+	server      string
+	user        string
+	password    string
+	port        string
+	clientIP    string
+
+	log = logrus.WithFields(logrus.Fields{"prefix": "cmds"})
 )
 
-var (
-	logFile  string
-	server   string
-	user     string
-	password string
-	port     string
-)
 var RootCmd = &cobra.Command{
 	Use:   "bacli",
 	Short: "Backer Server CLI Tool",
@@ -49,8 +48,10 @@ func Execute() {
 func AddCommands() {
 	//RootCmd.AddCommand(versionCmd)
 	RootCmd.AddCommand(pingCmd)
-	RootCmd.AddCommand(runCmd)
+	RootCmd.AddCommand(jobCmd)
 	RootCmd.AddCommand(listCmd)
+	RootCmd.AddCommand(runBackup)
+	RootCmd.AddCommand(runRestore)
 }
 
 func init() {
@@ -63,4 +64,5 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&password, "password", "admin", "password to authenticate to server")
 	RootCmd.PersistentFlags().StringVarP(&port, "port", "p", mgmtPort, "port for management interface of bacsrv")
 	RootCmd.PersistentFlags().BoolVar(&disableAuth, "disableAuth", false, "disable authentication to server")
+
 }
