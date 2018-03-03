@@ -70,6 +70,7 @@ func backupClient(clientIP string, paths []string) (bool, error) {
 	return backupTask.Status, nil
 }
 
+//RestoreWholeBackup restores whole backup chosen by backupID to the same location as it was on client
 func (s *server) RestoreWholeBackup(ctx context.Context, restoreRequest *protosrv.RestoreRequest) (*protosrv.RestoreResponse, error) {
 	log.Printf("Got request to restore client: %s", restoreRequest.Ip)
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -77,18 +78,18 @@ func (s *server) RestoreWholeBackup(ctx context.Context, restoreRequest *protosr
 	log.Print("METADATA: ", md)
 
 	//Sending gRPC request to start restore (client initialize)
-	err := restoreWholeBackupToClient(restoreRequest.Ip, int(restoreRequest.Backupid))
+	err := restoreWholeBackup(restoreRequest.Ip, int(restoreRequest.Backupid))
 	if err != nil {
 		log.Errorln("Cannot restore client, err: ", err)
 	}
 	return &protosrv.RestoreResponse{Status: "OK"}, nil
 }
 
-func restoreWholeBackupToClient(clientIP string, backupID int) error {
+func restoreWholeBackup(clientIP string, backupID int) error {
 	log.Debugln("Creating restore job of client: ", clientIP)
 	log.Debugln("Restore job on backupID: ", backupID)
 	restoreTask := restore.Create(clientIP, backupID)
-	err := restoreTask.Setup()
+	err := restoreTask.Setup("", "")
 	if err != nil {
 		log.Errorln("Error", err)
 		return err
@@ -100,14 +101,71 @@ func restoreWholeBackupToClient(clientIP string, backupID int) error {
 	return nil
 }
 
+//RestoreWholeBackupDifferentPlace restores whole backup chosen by backupID to different remote location
 func (s *server) RestoreWholeBackupDifferentPlace(ctx context.Context, request *protosrv.RestoreWholeBackupDifferentPlaceRequest) (*protosrv.RestoreResponse, error) {
+	log.Infoln("Got request to restore client with different remote path: ", request.Restorerequest.Ip)
+	log.Debugln("Remote path to restore data: ", request.Remotedir)
+	md, ok := metadata.FromIncomingContext(ctx)
+	log.Print("OK: ", ok)
+	log.Print("METADATA: ", md)
+
+	//Sending gRPC request to start restore (client initialize)
+	err := restoreWholeBackupDifferentPlace(request.Restorerequest.Ip, request.Remotedir, int(request.Restorerequest.Backupid))
+	if err != nil {
+		log.Errorln("Cannot restore client, err: ", err)
+	}
+	return &protosrv.RestoreResponse{Status: "OK"}, nil
+}
+
+func restoreWholeBackupDifferentPlace(clientIP, remotePath string, backupID int) error {
+	log.Debugln("Creating restore job of client: ", clientIP)
+	log.Debugln("Restore job on backupID: ", backupID)
+	restoreTask := restore.Create(clientIP, backupID)
+	err := restoreTask.Setup(remotePath, "")
+	if err != nil {
+		log.Errorln("Error", err)
+		return err
+	}
+	log.Debugln("Restore paths on the server with different location: ", remotePath)
+	restoreJob := job.Create("restore")
+	restoreJob.AddTask(restoreTask)
+	restoreJob.Start()
+
+	return nil
+}
+
+//RestoreDir restores single directory or file to the same location on client
+func (s *server) RestoreDir(ctx context.Context, request *protosrv.RestoreDirRequest) (*protosrv.RestoreResponse, error) {
+	log.Infoln("Got request to restore client with different remote path: ", request.Restorerequest.Ip)
+	log.Debugln("Path to restore data: ", request.Dir)
+	md, ok := metadata.FromIncomingContext(ctx)
+	log.Print("OK: ", ok)
+	log.Print("METADATA: ", md)
+
+	//Sending gRPC request to start restore (client initialize)
+	err := restoreDir(request.Restorerequest.Ip, request.Dir, int(request.Restorerequest.Backupid))
+	if err != nil {
+		log.Errorln("Cannot restore client, err: ", err)
+	}
 
 	return &protosrv.RestoreResponse{Status: "OK"}, nil
 }
 
-func (s *server) RestoreDir(ctx context.Context, request *protosrv.RestoreDirRequest) (*protosrv.RestoreResponse, error) {
+func restoreDir(clientIP, dirPath string, backupID int) error {
+	log.Debugln("Creating restore job of client: ", clientIP)
+	log.Debugln("Restore job on backupID: ", backupID)
+	restoreTask := restore.Create(clientIP, backupID)
+	err := restoreTask.Setup("", dirPath)
+	if err != nil {
+		log.Errorln("Error", err)
+		return err
+	}
+	log.Debugf("Restore path: %s to the same location", dirPath)
+	restoreJob := job.Create("restore")
+	restoreJob.AddTask(restoreTask)
+	restoreJob.Start()
 
-	return &protosrv.RestoreResponse{Status: "OK"}, nil
+	return nil
 }
 
 func (s *server) RestoreDirRemoteDifferentPlace(ctx context.Context, request *protosrv.RestoreDirRemoteDifferentPlaceRequest) (*protosrv.RestoreResponse, error) {

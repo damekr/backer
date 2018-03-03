@@ -55,15 +55,28 @@ func (r *Restore) Stop() {
 	log.Println("Stopping")
 }
 
-func (r *Restore) Setup() error {
+//Setup configures restore job, should be splited into different kind of setups(singleDir, wholeBackup etc.).
+func (r *Restore) Setup(remotePath string, singleDirPath string) error {
 	backupMetadata, err := db.Get().GetBackupMetadata(r.BackupID)
 	if err != nil {
 		return err
 	}
-	for _, v := range backupMetadata.FilesMetadata {
-		r.FilesLocationOnServer = append(r.FilesLocationOnServer, filepath.Join(backupMetadata.SavesetPath, v.OriginalFileLocation))
-		r.OriginalFilesLocations = append(r.OriginalFilesLocations, v.OriginalFileLocation)
+	log.Println("SINGLE PATH DIR: ", singleDirPath)
+	if singleDirPath != "" {
+		for _, v := range backupMetadata.FilesMetadata {
+			if v.OriginalFileLocation == singleDirPath {
+				log.Infoln("Adding to restore single dir: ", v.OriginalFileLocation)
+				r.FilesLocationOnServer = append(r.FilesLocationOnServer, filepath.Join(backupMetadata.SavesetPath, v.OriginalFileLocation))
+				r.OriginalFilesLocations = append(r.OriginalFilesLocations, filepath.Join(remotePath, v.OriginalFileLocation))
+			}
+		}
+	} else {
+		for _, v := range backupMetadata.FilesMetadata {
+			r.FilesLocationOnServer = append(r.FilesLocationOnServer, filepath.Join(backupMetadata.SavesetPath, v.OriginalFileLocation))
+			r.OriginalFilesLocations = append(r.OriginalFilesLocations, filepath.Join(remotePath, v.OriginalFileLocation))
+		}
 	}
+
 	log.Debugln("Local on server backup files: ", r.FilesLocationOnServer)
 	log.Debugln("Original files paths: ", r.OriginalFilesLocations)
 	return nil

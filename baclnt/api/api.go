@@ -76,10 +76,10 @@ func (s *server) Restore(ctx context.Context, restoreRequest *protoclnt.RestoreR
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
 	var restoreFilesMetadata []transfer.RestoreFileMetadata
-	// TODO Fast fix to match paths
+	// TODO Fast fix to match paths - does not work! FIXME
 	for _, v := range restoreRequest.PathsOnServer {
 		for _, k := range restoreRequest.OriginalPaths {
-			if strings.Contains(v, k) {
+			if strings.ContainsAny(v, k) {
 				fileMetadata := transfer.RestoreFileMetadata{
 					PathOnServer: v,
 					PathOnClient: k,
