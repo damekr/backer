@@ -93,6 +93,7 @@ func restoreWholeBackupToClient(clientIP string, backupID int) error {
 		log.Errorln("Error", err)
 		return err
 	}
+	log.Debugln("Restore paths on the server: ", restoreTask.OriginalFilesLocations)
 	restoreJob := job.Create("restore")
 	restoreJob.AddTask(restoreTask)
 	restoreJob.Start()

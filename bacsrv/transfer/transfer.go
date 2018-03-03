@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/damekr/backer/bacsrv/db"
 	"github.com/damekr/backer/bacsrv/storage"
 	"github.com/damekr/backer/common"
 	"github.com/sirupsen/logrus"
@@ -27,12 +28,7 @@ type SessionMetaData struct {
 	BackupID      int    `json:"backupID"`
 	BucketPath    string `json:"bucketLocation"`
 	SavesetPath   string `json:"savesetLocation"`
-	FilesMetadata []FileMetaData
-}
-
-type FileMetaData struct {
-	FileWithPath string `json:"fileWithPath"`
-	BackupTime   string `json:"backupTime"`
+	FilesMetadata []db.FileMetaData
 }
 
 func NewSession(id uint64, params *common.ConnParameters, conn net.Conn, storage storage.Storage) *MainSession {
@@ -106,7 +102,7 @@ func (s *MainSession) SessionDispatcher(createSessionMetadata bool) error {
 			log.Println("Client closed connection")
 			return err
 		}
-		log.Println("Cannot decode incoming transfer type, responding with empty struct. Error: ", err)
+		log.Errorln("Cannot decode incoming transfer type, responding with empty struct. Error: ", err)
 	}
 	log.Println("Got incoming transfer type connection: ", transfer.TransferType)
 	s.Transfer = transfer
@@ -120,7 +116,7 @@ func (s *MainSession) SessionDispatcher(createSessionMetadata bool) error {
 		}
 		restoreSession := CreateRestoreSession(s)
 		log.Debugln("Handling restore session")
-		return restoreSession.HandleRestoreSession()
+		return restoreSession.HandleRestoreSession(transfer.ObjectsNumber)
 
 	case common.TPUT:
 		transfer.Buffer = common.BUFFERSIZE

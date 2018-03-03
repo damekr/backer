@@ -109,8 +109,8 @@ func (b *BackupSession) downloadFile(name, localFilePath string, size int64, sav
 		//	TODO Respond with failed transfer, error on server side
 	}
 	defer file.Close()
-	fileMetadata := FileMetaData{
-		FileWithPath: localFilePath,
+	fileMetadata := db.FileMetaData{
+		OriginalFileLocation: localFilePath,
 	}
 	writer := bufio.NewWriter(file)
 	reader := bufio.NewReader(b.MainSession.Conn)

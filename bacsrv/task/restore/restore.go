@@ -13,13 +13,13 @@ import (
 var log = logrus.WithFields(logrus.Fields{"prefix": "task:restore"})
 
 type Restore struct {
-	ClientIP       string   `json:"clientIP"`
-	BackupID       int      `json:"backupID"`
-	RequestedPaths []string `json:"requestedPaths"`
-	ValidPaths     []string `json:"validPaths"`
-	Progress       int      `json:"-"`
-	Status         bool     `json:"status"`
-	BucketLocation string   `json:"bucketLocation"`
+	ClientIP               string   `json:"clientIP"`
+	BackupID               int      `json:"backupID"`
+	OriginalFilesLocations []string `json:"originalFilesLocations"` // Paths to be restored on client
+	FilesLocationOnServer  []string `json:"filesLocationOnServer"`  // Paths on server
+	Progress               int      `json:"-"`
+	Status                 bool     `json:"status"`
+	BucketLocation         string   `json:"bucketLocation"`
 }
 
 func Create(clientIP string, backupID int) *Restore {
@@ -30,7 +30,7 @@ func Create(clientIP string, backupID int) *Restore {
 }
 
 func (r *Restore) Run() {
-	log.Println("Running backup of client client: ", r.ClientIP)
+	log.Println("Running restore of client: ", r.ClientIP)
 	conn, err := network.EstablishGRPCConnection(r.ClientIP)
 	if err != nil {
 		log.Errorf("Cannot connect to address %s", r.ClientIP)
@@ -39,9 +39,11 @@ func (r *Restore) Run() {
 	// TODO Consider close grpc connection before restore gets done
 	defer conn.Close()
 	c := protoclnt.NewBaclntClient(conn)
-	response, err := c.Restore(context.Background(), &protoclnt.RestoreRequest{Ip: r.ClientIP, Paths: r.RequestedPaths})
+	response, err := c.Restore(context.Background(),
+		&protoclnt.RestoreRequest{Ip: r.ClientIP,
+			PathsOnServer: r.FilesLocationOnServer, OriginalPaths: r.OriginalFilesLocations})
 	if err != nil {
-		log.Warningf("Could not get paths of client: %v", err)
+		log.Warningf("Could not get response from restore request, err: ", err)
 		r.Status = false
 		return
 	}
@@ -58,10 +60,11 @@ func (r *Restore) Setup() error {
 	if err != nil {
 		return err
 	}
-	var backupFilesPathOnServer []string
 	for _, v := range backupMetadata.FilesMetadata {
-		backupFilesPathOnServer = append(backupFilesPathOnServer, filepath.Join(backupMetadata.BucketPath, v.FileWithPath))
+		r.FilesLocationOnServer = append(r.FilesLocationOnServer, filepath.Join(backupMetadata.SavesetPath, v.OriginalFileLocation))
+		r.OriginalFilesLocations = append(r.OriginalFilesLocations, v.OriginalFileLocation)
 	}
-	log.Debugln("Local backup files: ", backupFilesPathOnServer)
+	log.Debugln("Local on server backup files: ", r.FilesLocationOnServer)
+	log.Debugln("Original files paths: ", r.OriginalFilesLocations)
 	return nil
 }

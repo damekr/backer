@@ -28,7 +28,7 @@ func (c Client) Connect(serverIP string, serverPort string) (*transfer.MainSessi
 	c.Params.Port = serverPort
 	conn, err := connectToHost(serverIP, serverPort)
 	if err != nil {
-		log.Println("Cannot connect")
+		log.Println("Cannot connect, error: ", err)
 		return nil, err
 	}
 	mainSession := transfer.NewSession(sessionID, c.Params, conn)

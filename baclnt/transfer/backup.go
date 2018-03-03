@@ -72,7 +72,7 @@ func (b *BackupSession) PutFile(fileLocalPath, fileRemotePath string) error {
 	// Receiving the same as acknowledge
 	acknMetadata, err := b.receiveFileMetadataAcknowledge()
 	if err != nil {
-		log.Errorln("Could not receive file meta data ackowledge, err: ", err.Error())
+		log.Errorln("Could not receive file meta data acknowledge, err: ", err.Error())
 	}
 	log.Debugln("Received file metadata acknowledge: ", acknMetadata)
 

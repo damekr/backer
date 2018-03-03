@@ -42,7 +42,8 @@ message BackupResponse {
 
 message RestoreRequest {
   string ip = 1;
-  repeated string paths = 2;
+  repeated string pathsOnServer = 2;
+  repeated string originalPaths = 3;
 }
 
 message RestoreResponse {

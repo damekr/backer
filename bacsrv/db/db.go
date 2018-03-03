@@ -24,8 +24,8 @@ type BackupMetadata struct {
 }
 
 type FileMetaData struct {
-	FileWithPath string `json:"fileWithPath"`
-	BackupTime   string `json:"backupTime"`
+	OriginalFileLocation string `json:"originalFileLocation"`
+	BackupTime           string `json:"backupTime"`
 }
 
 type DB struct {

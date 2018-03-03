@@ -14,6 +14,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	defaultDirPerm = os.FileMode(0744)
+)
+
 type FileInfo struct {
 	Path   string
 	Size   int64
@@ -70,27 +74,6 @@ func (f *FS) ValidatePaths(paths []string) []string {
 	return validatedPaths
 }
 
-//func GetFilesInformations(paths []string) []FileInfo {
-//	log.Debug("Getting files informations")
-//	filesInfo := []FileInfo{}
-//	absFilePaths := GetAbsolutePaths(paths)
-//	for _, f := range absFilePaths {
-//		fileInfo := new(FileInfo)
-//		info, err := os.Stat(f)
-//		if err != nil {
-//			log.Error("Cannot open file: %s", f)
-//		}
-//		fileInfo.Exists = true
-//		log.Debug("Adding path ", f)
-//		fileInfo.Path = f
-//		log.Debug("File size: ", info.Size())
-//		fileInfo.Size = info.Size()
-//		filesInfo = append(filesInfo, *fileInfo)
-//	}
-//	log.Debug("Size of list, ", len(filesInfo))
-//	return filesInfo
-//}
-
 func calculateMD5Sum(fileLocation string) (string, error) {
 	log.Debugf("Calculating file %s md5 checksum", fileLocation)
 	file, err := os.Open(fileLocation)
@@ -138,11 +121,20 @@ func NewFS(path string) *FileSystem {
 }
 
 func (f *FileSystem) CreateFile(name string) (*os.File, error) {
+	// We need to create dir in case of rebuilding directory structure
+	if err := f.CreateNeededDirs(f.Path); err != nil {
+		log.Errorln("Cannot create needed dir, err: ", err)
+	}
 	file, err := os.Create(path.Join(f.Path, name))
 	if err != nil {
 		return nil, err
 	}
 	return file, nil
+}
+
+func (f *FileSystem) CreateNeededDirs(path string) error {
+	log.Debugln("Rebuilding needed directory: ", path)
+	return os.MkdirAll(path, defaultDirPerm)
 }
 
 func (f *FileSystem) OpenFile(name string) (*os.File, error) {
