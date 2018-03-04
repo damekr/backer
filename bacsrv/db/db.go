@@ -25,6 +25,7 @@ type BackupMetadata struct {
 
 type FileMetaData struct {
 	OriginalFileLocation string `json:"originalFileLocation"`
+	LocationOnServer     string `json:"locationOnServer"`
 	BackupTime           string `json:"backupTime"`
 }
 
@@ -93,13 +94,14 @@ func (d DB) GetBackupsMetadata() []BackupMetadata {
 }
 
 func (d DB) GetClientBackupsMetadata(clientName string) []BackupMetadata {
+	//TODO When clientName not specified does not work, should list all backups
 	var clientAssets []BackupMetadata
 	files, err := ioutil.ReadDir(filepath.Join(d.Location, clientName))
 	if err != nil {
 		log.Warningln("Could not find any client assets")
 	}
 	for _, v := range files {
-		clientAssets = append(clientAssets, d.readAsset(filepath.Join(d.Location, clientName, v.Name())))
+		clientAssets = append(clientAssets, d.readClientAssets(filepath.Join(d.Location, clientName, v.Name())))
 	}
 	return clientAssets
 }
@@ -119,9 +121,9 @@ func (d DB) GetBackupMetadata(backupID int) (BackupMetadata, error) {
 	return seekingBackupMetadata, nil
 }
 
-func (d DB) readAsset(filePath string) BackupMetadata {
+func (d DB) readClientAssets(clientAssetPath string) BackupMetadata {
 	var asset BackupMetadata
-	raw, err := ioutil.ReadFile(filePath)
+	raw, err := ioutil.ReadFile(clientAssetPath)
 	if err != nil {
 		log.Error("Cannot read client asset, err: ", err.Error())
 		return asset

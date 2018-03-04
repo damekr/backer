@@ -2,7 +2,6 @@ package restore
 
 import (
 	"context"
-	"path/filepath"
 
 	"github.com/damekr/backer/bacsrv/db"
 	"github.com/damekr/backer/bacsrv/network"
@@ -13,13 +12,12 @@ import (
 var log = logrus.WithFields(logrus.Fields{"prefix": "task:restore"})
 
 type Restore struct {
-	ClientIP               string   `json:"clientIP"`
-	BackupID               int      `json:"backupID"`
-	OriginalFilesLocations []string `json:"originalFilesLocations"` // Paths to be restored on client
-	FilesLocationOnServer  []string `json:"filesLocationOnServer"`  // Paths on server
-	Progress               int      `json:"-"`
-	Status                 bool     `json:"status"`
-	BucketLocation         string   `json:"bucketLocation"`
+	ClientIP       string `json:"clientIP"`
+	BackupID       int    `json:"backupID"`
+	FilesMetadata  []db.FileMetaData
+	Progress       int    `json:"-"`
+	Status         bool   `json:"status"`
+	BucketLocation string `json:"bucketLocation"`
 }
 
 func Create(clientIP string, backupID int) *Restore {
@@ -39,9 +37,20 @@ func (r *Restore) Run() {
 	// TODO Consider close grpc connection before restore gets done
 	defer conn.Close()
 	c := protoclnt.NewBaclntClient(conn)
+	var restoreFilesInfo []*protoclnt.RestoreFileInfo
+	log.Debugln("FIles metadata: ", r.FilesMetadata)
+	for _, v := range r.FilesMetadata {
+		fileMeta := protoclnt.RestoreFileInfo{
+			LocationOnServer: v.LocationOnServer,
+			OriginalLocation: v.OriginalFileLocation,
+		}
+		restoreFilesInfo = append(restoreFilesInfo, &fileMeta)
+	}
+	log.Debugln("Restore Files info: ", restoreFilesInfo)
 	response, err := c.Restore(context.Background(),
 		&protoclnt.RestoreRequest{Ip: r.ClientIP,
-			PathsOnServer: r.FilesLocationOnServer, OriginalPaths: r.OriginalFilesLocations})
+			RestoreFileInfo: restoreFilesInfo})
+
 	if err != nil {
 		log.Warningf("Could not get response from restore request, err: ", err)
 		r.Status = false
@@ -61,23 +70,20 @@ func (r *Restore) Setup(remotePath string, singleDirPath string) error {
 	if err != nil {
 		return err
 	}
-	log.Println("SINGLE PATH DIR: ", singleDirPath)
+
 	if singleDirPath != "" {
 		for _, v := range backupMetadata.FilesMetadata {
 			if v.OriginalFileLocation == singleDirPath {
 				log.Infoln("Adding to restore single dir: ", v.OriginalFileLocation)
-				r.FilesLocationOnServer = append(r.FilesLocationOnServer, filepath.Join(backupMetadata.SavesetPath, v.OriginalFileLocation))
-				r.OriginalFilesLocations = append(r.OriginalFilesLocations, filepath.Join(remotePath, v.OriginalFileLocation))
+				r.FilesMetadata = append(r.FilesMetadata, v)
 			}
 		}
 	} else {
 		for _, v := range backupMetadata.FilesMetadata {
-			r.FilesLocationOnServer = append(r.FilesLocationOnServer, filepath.Join(backupMetadata.SavesetPath, v.OriginalFileLocation))
-			r.OriginalFilesLocations = append(r.OriginalFilesLocations, filepath.Join(remotePath, v.OriginalFileLocation))
+			r.FilesMetadata = append(r.FilesMetadata, v)
 		}
 	}
 
-	log.Debugln("Local on server backup files: ", r.FilesLocationOnServer)
-	log.Debugln("Original files paths: ", r.OriginalFilesLocations)
+	log.Debugln("Files to be restored metadata: ", r.FilesMetadata)
 	return nil
 }

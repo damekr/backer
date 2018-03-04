@@ -6,11 +6,14 @@ import (
 
 	"github.com/damekr/backer/bacsrv/storage"
 	"github.com/damekr/backer/common"
+	"github.com/sirupsen/logrus"
 )
 
 type RestoreSession struct {
 	MainSession *MainSession
 }
+
+var logRestore = logrus.WithFields(logrus.Fields{"prefix": "transfer:restore"})
 
 func CreateRestoreSession(mainSession *MainSession) *RestoreSession {
 	return &RestoreSession{
@@ -21,7 +24,7 @@ func CreateRestoreSession(mainSession *MainSession) *RestoreSession {
 //TODO Add logic to read file from specific backup(json file)
 
 func (r *RestoreSession) HandleRestoreSession(objectsNumber int) error {
-	log.Println("Handling incomming TGET transfer type")
+	logRestore.Debugln("Handling incomming TGET transfer type")
 	for i := 0; i < objectsNumber; i++ {
 
 		fileT := new(common.FileMetadata)
@@ -31,20 +34,20 @@ func (r *RestoreSession) HandleRestoreSession(objectsNumber int) error {
 		fileTDec := gob.NewDecoder(r.MainSession.Conn)
 		err := fileTDec.Decode(&fileT)
 		if err != nil {
-			log.Print("Could not decode FileMetadata struct, error: ", err)
+			logRestore.Errorln("Could not decode FileMetadata struct, error: ", err)
 			fileTEnc := gob.NewEncoder(r.MainSession.Conn)
 			if err := fileTEnc.Encode(&fileTEmpty); err != nil {
-				log.Println("Could not encode empty FileMetadata struct")
+				logRestore.Errorln("Could not encode empty FileMetadata struct, err: ", err)
 				return err
 			}
 			return err
 		}
-		log.Printf("Checking if file %s exists", fileT.FullPath)
+		logRestore.Debugf("Checking if file %s exists", fileT.FullPath)
 		if !storage.CheckIfFileExists(fileT.FullPath) {
-			log.Printf("File: %s does not exist", fileT.FullPath)
+			logRestore.Debugf("File: %s does not exist", fileT.FullPath)
 			fileTEncNotExist := gob.NewEncoder(r.MainSession.Conn)
 			if err := fileTEncNotExist.Encode(&fileTEmpty); err != nil {
-				log.Println("Could not encode empty FileMetadata struct")
+				logRestore.Errorln("Could not encode empty FileMetadata struct, err: ", err)
 				return err
 			}
 		}
@@ -53,34 +56,34 @@ func (r *RestoreSession) HandleRestoreSession(objectsNumber int) error {
 		fileTEnc := gob.NewEncoder(r.MainSession.Conn)
 		fileT.FileSize = storage.GetFileSize(fileT.FullPath)
 		if err := fileTEnc.Encode(&fileT); err != nil {
-			log.Println("Could not encode empty FileMetadata struct")
+			logRestore.Errorln("Could not encode empty FileMetadata struct, err: ", err)
 			return err
 		}
-		log.Println("Handling transfer with sending file to client, file: ", fileT.FullPath)
+		logRestore.Debugln("Handling transfer with sending file to client, file: ", fileT.FullPath)
 
 		//Sending file
 		err = r.uploadFile(fileT.FullPath, fileT.FileSize)
 		if err != nil {
-			log.Println("Could not send file, err: ", err.Error())
+			logRestore.Errorln("Could not send file, err: ", err.Error())
 		}
 
 		//Receiving file acknowledge
 		fileSize := new(common.FileAcknowledge)
 		fileSizeEncoder := gob.NewDecoder(r.MainSession.Conn)
 		if err := fileSizeEncoder.Decode(&fileSize); err != nil {
-			log.Println("Could not decode FileAcknowledge struct")
+			logRestore.Errorln("Could not decode FileAcknowledge struct, err: ", err)
 			return err
 		}
-		log.Println("Received file acknowledge, file size: ", fileSize.Size)
+		logRestore.Debugln("Received file acknowledge, file size: ", fileSize.Size)
 	}
 	return nil
 }
 
 func (r *RestoreSession) uploadFile(localFilePath string, size int64) error {
-	log.Println("Starting sending file: ", localFilePath)
+	logRestore.Debugln("Starting sending file: ", localFilePath)
 	file, err := r.MainSession.Storage.OpenFile(localFilePath)
 	if err != nil {
-		log.Println("Cannot create localfile to write")
+		logRestore.Errorln("Cannot create localfile to write, err: ", err)
 		return err
 	}
 	defer file.Close()
@@ -90,24 +93,24 @@ func (r *RestoreSession) uploadFile(localFilePath string, size int64) error {
 	var wroteToConnection int64
 	buffer := make([]byte, r.MainSession.Transfer.Buffer)
 	if size < int64(r.MainSession.Transfer.Buffer) {
-		log.Println("Shrinking buffer to filesize: ", size)
+		logRestore.Debugln("Shrinking buffer to filesize: ", size)
 		buffer = make([]byte, size)
 	}
 	for {
 		read, err := reader.Read(buffer)
 		if err != nil {
-			log.Println("SRV: Could not read from file reader, error: ", err)
+			logRestore.Errorln("SRV: Could not read from file reader, error: ", err)
 			break
 		}
 		readFromFile += int64(read)
 		wrote, err := writer.Write(buffer[:read])
 		if err != nil {
-			log.Println("SRV: Could not write to connection buffer, error: ", err)
+			logRestore.Errorln("SRV: Could not write to connection buffer, error: ", err)
 			break
 		}
 		wroteToConnection += int64(wrote)
 		if wroteToConnection == size {
-			log.Println("Wrote all data to connection")
+			logRestore.Errorln("Wrote all data to connection")
 			break
 		}
 	}

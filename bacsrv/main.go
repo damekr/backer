@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 
 	"github.com/damekr/backer/bacsrv/config"
 	"github.com/damekr/backer/bacsrv/network"
@@ -134,7 +133,7 @@ func initConfigs(mainConfigPath string) error {
 //}
 
 func main() {
-	fmt.Println("COMMIT: ", commit)
+	log.Println("COMMIT: ", commit)
 	setFlags()
 	err := initConfigs(*configFlag)
 	if err != nil {
@@ -142,16 +141,6 @@ func main() {
 	}
 	setLogger()
 	initStorage(config.MainConfig.Storage.Type)
-	//test()
-	//config.InitClientsConfig(srvConfig)
-	//config.InitBackupConfig(srvConfig)
-	//initRepository()
-	//initClientsBuckets()
-	//serverTest
 	mainLoop()
-	//fmt.Println("REPO", repo.Location)
-	//fmt.Printf("Storage status: %#v\n", repo.GetCapacityStatus())
-	//clientBucket := storage.CreateClient("minitx")
-	//fmt.Printf("clientDefinition %#v\n", clientBucket)
 
 }

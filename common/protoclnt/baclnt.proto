@@ -42,9 +42,15 @@ message BackupResponse {
 
 message RestoreRequest {
   string ip = 1;
-  repeated string pathsOnServer = 2;
-  repeated string originalPaths = 3;
+  repeated RestoreFileInfo restoreFileInfo = 2;
+
 }
+
+message RestoreFileInfo {
+  string locationOnServer = 1;
+  string originalLocation = 2;
+}
+
 
 message RestoreResponse {
   string status = 1;

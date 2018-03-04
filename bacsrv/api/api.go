@@ -21,22 +21,22 @@ var log = logrus.WithFields(logrus.Fields{"prefix": "api"})
 
 // Ping returns hostname of client
 func (s *server) Ping(ctx context.Context, in *protosrv.PingRequest) (*protosrv.PingResponse, error) {
-	log.Printf("Got request to ping client: %s", in.Ip)
+	log.WithField("task", "ping").Printf("Got request to ping client: %s", in.Ip)
 	md, ok := metadata.FromIncomingContext(ctx)
-	log.Print("OK: ", ok)
-	log.Print("METADATA: ", md)
+	log.WithField("task", "ping").Print("OK: ", ok)
+	log.WithField("task", "ping").Print("METADATA: ", md)
 	if in.Ip == "" {
 		return &protosrv.PingResponse{Message: "OK FROM SERVER"}, nil
 	}
 	clientMessage, err := pingClient(in.Ip)
 	if err != nil {
-		log.Errorln("Cannot ping client, err: ", err)
+		log.WithField("task", "ping").Errorln("Cannot ping client, err: ", err)
 	}
 	return &protosrv.PingResponse{Message: clientMessage}, nil
 }
 
 func pingClient(clientIP string) (string, error) {
-	log.Println("PINGING CLIENT: ", clientIP)
+	log.WithField("task", "ping").Println("PINGING CLIENT: ", clientIP)
 	pingTask := ping.CreatePing(clientIP)
 	pingJob := job.Create("ping")
 	pingJob.AddTask(pingTask)
@@ -46,10 +46,10 @@ func pingClient(clientIP string) (string, error) {
 }
 
 func (s *server) Backup(ctx context.Context, backupRequest *protosrv.BackupRequest) (*protosrv.BackupResponse, error) {
-	log.Printf("Got request to backup client: %s", backupRequest.Ip)
+	log.WithField("task", "backup").Printf("Got request to backup client: %s", backupRequest.Ip)
 	md, ok := metadata.FromIncomingContext(ctx)
-	log.Print("OK: ", ok)
-	log.Print("METADATA: ", md)
+	log.WithField("task", "backup").Print("OK: ", ok)
+	log.WithField("task", "backup").Print("METADATA: ", md)
 
 	//Sending gRPC request to start backup (client initialize)
 	status, err := backupClient(backupRequest.Ip, backupRequest.Paths)
@@ -94,7 +94,7 @@ func restoreWholeBackup(clientIP string, backupID int) error {
 		log.Errorln("Error", err)
 		return err
 	}
-	log.Debugln("Restore paths on the server: ", restoreTask.OriginalFilesLocations)
+	log.Debugln("Restore paths on the server: ", restoreTask.FilesMetadata)
 	restoreJob := job.Create("restore")
 	restoreJob.AddTask(restoreTask)
 	restoreJob.Start()

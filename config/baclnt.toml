@@ -3,8 +3,7 @@ DataPort = 9000
 MgmtPort = 9090
 LogOutput = "STDOUT"
 Debug = true
-TempDir = "/tmp/backer"
-ExternalName = "foo" # External name of client, can be hosts/ip/DNS
+ExternalName = "localhost" # External name of client, can be hosts/ip/DNS
 DataTransferInterface = "127.0.0.1" # IP addres on which data server will listen
 
 [server]

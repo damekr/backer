@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"net"
-	"strings"
+	"time"
 
 	"github.com/damekr/backer/baclnt/config"
 	"github.com/damekr/backer/baclnt/fs"
@@ -70,23 +70,21 @@ func runBackup(paths []string) error {
 
 func (s *server) Restore(ctx context.Context, restoreRequest *protoclnt.RestoreRequest) (*protoclnt.RestoreResponse, error) {
 	log.Printf("Got request to run restore of client: %s", restoreRequest.Ip)
-	log.Debugln("Need to restore files on server: ", restoreRequest.PathsOnServer)
-	log.Println("Original files locations: ", restoreRequest.OriginalPaths)
+	log.Debugln("Need to restore files on server: ", restoreRequest.RestoreFileInfo)
 	md, ok := metadata.FromIncomingContext(ctx)
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
 	var restoreFilesMetadata []transfer.RestoreFileMetadata
 	// TODO Fast fix to match paths - does not work! FIXME
-	for _, v := range restoreRequest.PathsOnServer {
-		for _, k := range restoreRequest.OriginalPaths {
-			if strings.ContainsAny(v, k) {
-				fileMetadata := transfer.RestoreFileMetadata{
-					PathOnServer: v,
-					PathOnClient: k,
-				}
-				restoreFilesMetadata = append(restoreFilesMetadata, fileMetadata)
-			}
+	startTime := time.Now()
+	log.Println("Start time: ", startTime)
+	for _, v := range restoreRequest.RestoreFileInfo {
+		fileMetadata := transfer.RestoreFileMetadata{
+			PathOnServer: v.LocationOnServer,
+			PathOnClient: v.OriginalLocation,
 		}
+		restoreFilesMetadata = append(restoreFilesMetadata, fileMetadata)
+
 	}
 	err := runRestore(restoreFilesMetadata)
 	if err != nil {

@@ -8,11 +8,11 @@ ____          _____ _  ________ _____
 |____/_/    \_\_____|_|\_\______|_|  \_\
 ```
 
-### Architecture
+### Simple Architecture Overview
 
 Current approach assumes existing application Server <--> Client with RPC connection to make possible management
 connection between these daemons and data communications through sockets.
-Server is able to invoke operation on client side using gRPC. An operations can be triggered from server and client side. Either client or server have two listeners - data and management and can "talk" each other.
+Server is able to invoke operation on client side using gRPC. An operations can be triggered from server ~~and client side~~. Either client or server have two listeners - data and management and can "talk" each other.
 
 Main points for the first release:
 
@@ -37,4 +37,9 @@ The points described above are ganeral. More information can be find in the docu
 - [x] Make backup working!
 - [x] BACLI: List backups
 - [x] BACLI: Trigger backup
-- [-] Make restore working!
+- [x] BACLI: Trigger restore with options (different remote path, one file restore)
+- [x] Make restore working!
+- [-] Restore files metadata -- in progress
+- [-] Encryption
+- [-] Python testing framework -- in progress
+- [-] DOCS (manual doc update, create how to doc)

@@ -251,7 +251,10 @@ func (c ClientGRPC) ListBackupsInSecure(clientName string) error {
 	if err != nil {
 		log.Warningf("Could not send client name: %v", err)
 	}
-	fmt.Println(r)
+	fmt.Println("Client Name: ", r.ClientName)
+	for _, v := range r.BackupID {
+		fmt.Println("   BackupID: ", v)
+	}
 
 	return nil
 }
