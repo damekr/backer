@@ -15,4 +15,6 @@ into account as a testcase
 
 From this files every method from class will be executed.
 
-3. Thinking :)
+3. Methods from dir "pre_*" are always executed before all tests in random order
+4. Methods from dir "post_*" are always executed after all tests in random order  
+5. Thinking :)
