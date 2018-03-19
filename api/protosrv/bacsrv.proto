@@ -1,0 +1,81 @@
+
+syntax = "proto3";
+
+
+package protosrv;
+
+service Bacsrv {
+
+    rpc Ping (PingRequest) returns (PingResponse) {}
+    rpc Backup (BackupRequest) returns (BackupResponse) {}
+    rpc RestoreWholeBackup (RestoreRequest) returns (RestoreResponse) {}
+    rpc RestoreWholeBackupDifferentPlace (RestoreWholeBackupDifferentPlaceRequest) returns (RestoreResponse) {}
+    rpc RestoreDir (RestoreDirRequest) returns (RestoreResponse) {}
+    rpc RestoreDirRemoteDifferentPlace (RestoreDirRemoteDifferentPlaceRequest) returns (RestoreResponse) {}
+    rpc ListBackups (ListBackupsRequest) returns (ListBackupsResponse) {}
+}
+
+message PingRequest {
+  string ip = 1;
+}
+
+message PingResponse {
+  string message = 1;
+}
+
+//BACKUP
+
+//From  server
+message BackupRequest {
+  string ip = 1;
+  repeated string paths = 2;
+}
+
+//For Cli
+message BackupResponse {
+    bool backupstatus = 1;
+}
+
+//RESTORE
+
+// Main message must be always
+message RestoreRequest {
+    string ip = 1;
+    int64 backupid = 2;
+}
+
+// Remote path specified of restore
+message RestoreWholeBackupDifferentPlaceRequest {
+    RestoreRequest restorerequest = 1;
+    string remotedir = 2;
+}
+
+// Restoring just file or directory to the same place
+message RestoreDirRequest {
+    RestoreRequest restorerequest = 1;
+    string dir = 2;
+}
+
+// Restoring file or directory to different remote place
+message RestoreDirRemoteDifferentPlaceRequest {
+    RestoreRequest restorerequest = 1;
+    string dir = 2;
+    string remotedir = 3;
+}
+
+// We just want to know a status
+// TODO Consider to put here progress of restore
+message RestoreResponse {
+    string status = 1;
+}
+
+//LIST
+
+message ListBackupsRequest {
+    string clientName = 1;
+}
+
+message ListBackupsResponse {
+    string clientName = 1;
+    repeated int64 backupID = 2;
+}

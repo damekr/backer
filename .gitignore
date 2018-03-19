@@ -24,8 +24,8 @@ _testmain.go
 *.exe
 *.test
 *.prof
-./baclnt/baclnt
-./bacsrv/bacsrv
 .idea
-bacsrv/job/backup/
-test/
+cmd/bacli/bacli
+cmd/baclnt/baclnt
+cmd/bacsrv/bacsrv
+

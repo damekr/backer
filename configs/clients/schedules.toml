@@ -1,0 +1,26 @@
+[test1_hourly]
+ID = 1
+Description = "Example hourly schedule"
+Frequency = "hourly"
+Hour = "07:00:00"
+
+[test2_daily]
+ID = 2
+Description = "Example daily schedule"
+Frequency = "daily"
+Hour = "07:32:00"
+
+[test3_weekly]
+ID = 3
+Description  = "Example weekly schedule"
+Frequency = "weekly"
+Hour = "07:32:02"
+Day = "Monday"
+
+[test4_monthly]
+ID = 4
+Description  = "Example monthly schedule"
+Frequency = "monthly"
+Hour = "07:32:02"
+Day = "Monday"
+Month = "January"

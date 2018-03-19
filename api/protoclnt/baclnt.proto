@@ -1,0 +1,57 @@
+
+syntax = "proto3";
+
+
+package protoclnt;
+
+service Baclnt {
+
+  rpc Ping (PingRequest) returns (PingResponse) {}
+  rpc Backup (BackupRequest) returns (BackupResponse) {}
+  rpc Restore (RestoreRequest) returns (RestoreResponse) {}
+
+}
+
+message PingRequest {
+  string ip = 1;
+  
+}
+
+message PingResponse {
+  string message = 1;
+}
+
+
+//BACKUP
+
+//From server
+message BackupRequest {
+  string ip = 1;
+  repeated string paths = 2;
+}
+
+
+//For server
+message BackupResponse {
+  repeated string validpaths = 1;
+
+}
+
+
+//RESTORE
+
+message RestoreRequest {
+  string ip = 1;
+  repeated RestoreFileInfo restoreFileInfo = 2;
+
+}
+
+message RestoreFileInfo {
+  string locationOnServer = 1;
+  string originalLocation = 2;
+}
+
+
+message RestoreResponse {
+  string status = 1;
+}

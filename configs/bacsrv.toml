@@ -1,0 +1,14 @@
+[server]
+MgmtPort = 8090
+DataPort = 8000
+RestApiPort = 8080
+ClntMgmtPort = 9090
+LogOutput = "STDOUT"
+Debug = true
+ExternalName = "127.0.0.1" # External name of server, can be hosts/ip/DNS
+DataTransferInterface = "0.0.0.0" # IP addres on which data server will listen
+DBLocation = "/home/dixi/repository"
+
+[storage]
+Type = "local"
+Location = "/home/dixi/repository"
