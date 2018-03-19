@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/damekr/backer/pkg/bftp"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,18 +25,18 @@ type FileInfo struct {
 	Exists bool
 }
 
-type FileTransferInfo struct {
-	Name     string
-	Location string
-	Size     int64
-	UID      int
-	GID      int
-	Mode     os.FileMode
-	Checksum string
-}
-
 type FS struct {
 	AbsoluteFilesPaths []string
+}
+
+type FileSystem struct {
+	Path string
+}
+
+func NewFS(path string) *FileSystem {
+	return &FileSystem{
+		Path: path,
+	}
 }
 
 func (f *FS) checkPathForRegularFile(path string, file os.FileInfo, err error) error {
@@ -90,8 +91,8 @@ func calculateMD5Sum(fileLocation string) (string, error) {
 	return returnMD5String, nil
 }
 
-func ReadFileHeader(fileLocation string) (*FileTransferInfo, error) {
-	var fileHeader FileTransferInfo
+func (f *FileSystem) ReadFileMetadata(fileLocation string) (*bftp.FileMetadata, error) {
+	var fileHeader bftp.FileMetadata
 	info, err := os.Stat(fileLocation)
 	if err != nil {
 		log.Errorf("File %s does not exist", fileLocation)
@@ -103,21 +104,11 @@ func ReadFileHeader(fileLocation string) (*FileTransferInfo, error) {
 		checksum = "0"
 	}
 	fileHeader.Checksum = checksum
-	fileHeader.Location = fileLocation
+	fileHeader.FullPath = fileLocation
 	fileHeader.Mode = info.Mode()
-	fileHeader.Size = info.Size()
+	fileHeader.FileSize = info.Size()
 	fileHeader.Name = path.Base(fileLocation)
 	return &fileHeader, nil
-}
-
-type FileSystem struct {
-	Path string
-}
-
-func NewFS(path string) *FileSystem {
-	return &FileSystem{
-		Path: path,
-	}
 }
 
 func (f *FileSystem) CreateFile(name string) (*os.File, error) {
@@ -145,7 +136,7 @@ func (f *FileSystem) OpenFile(name string) (*os.File, error) {
 	return file, nil
 }
 
-func CheckIfFileExists(fullFilePath string) bool {
+func (f *FileSystem) CheckIfFileExists(fullFilePath string) bool {
 	if _, err := os.Stat(fullFilePath); err != nil {
 		fmt.Print(err)
 		if os.IsNotExist(err) {
@@ -155,7 +146,7 @@ func CheckIfFileExists(fullFilePath string) bool {
 	return true
 }
 
-func GetFileSize(fullPath string) int64 {
+func (f *FileSystem) GetFileSize(fullPath string) int64 {
 	file, err := os.Open(fullPath)
 	defer file.Close()
 	fstat, err := file.Stat()

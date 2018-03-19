@@ -1,7 +1,7 @@
 package storage
 
 //func checkIfClientBucketExists(name string) bool {
-//	repolocation := Storage.Location
+//	repolocation := Storage.AssetsLocation
 //	log.Debugf("Checking if %s  bucket exists, under mainrepository: %s", name, repolocation)
 //	bucketFolder := filepath.Join(repolocation, bucketsLocation, name)
 //	log.Debug("Checking file bucket as foleder: ", bucketFolder)

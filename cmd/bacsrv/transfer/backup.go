@@ -27,6 +27,47 @@ func CreateBackupSession(mainSession *MainSession) *BackupSession {
 	}
 }
 
+func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumber int) error {
+	logBackup.Debugln("Handling incoming TPUT transfer type")
+	for i := 0; i < objectsNumber; i++ {
+		logBackup.Debugln("Receiving object: ", i)
+		// Getting file metadata
+		fileMetadata, err := b.receiveFileMetadata()
+		if err != nil {
+			logBackup.Errorln("Could not decode file metadata, err: ", err.Error())
+		}
+		log.Debugln("Received metadata: ", fileMetadata)
+		// Sending acknowledge
+		// TODO Make checks like: disk space
+		err = b.sendFileMetaDataAcknowledge(fileMetadata)
+		if err != nil {
+			logBackup.Errorln("Could not send file metadata as an acknowledge")
+		}
+
+		// Downloading file
+		err = b.downloadFile(*fileMetadata, savesetLocation)
+		if err != nil {
+			logBackup.Errorln("Cannot upload file, err: ", err.Error())
+			return err
+		}
+		logBackup.Debugln("Received file, sending acknowledge")
+
+		//Sending file acknowledge
+		fileSize := storage.GetFileSize(fileMetadata.FullPath)
+		fileSizeAckn := new(bftp.FileAcknowledge)
+		fileSizeAckn.Size = fileSize
+		err = b.sendFileTransferAcknowledge(fileSizeAckn)
+		if err != nil {
+			logBackup.Error(err)
+		}
+	}
+	if err := b.createMetadata(); err != nil {
+		logBackup.Errorln("Could not create session metadata, err: ", err)
+	}
+
+	return nil
+}
+
 func (b *BackupSession) receiveFileMetadata() (*bftp.FileMetadata, error) {
 	fileMetadata := new(bftp.FileMetadata)
 	fileTEmpty := new(bftp.FileMetadata)
@@ -62,68 +103,24 @@ func (b *BackupSession) sendFileTransferAcknowledge(acknowledge *bftp.FileAcknow
 	return nil
 }
 
-func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumber int) error {
-	logBackup.Debugln("Handling incoming TPUT transfer type")
-	for i := 0; i < objectsNumber; i++ {
-		logBackup.Debugln("Receiving object: ", i)
-		// Getting file metadata
-		fileMetadata, err := b.receiveFileMetadata()
-		if err != nil {
-			logBackup.Errorln("Could not decode file metadata, err: ", err.Error())
-		}
-
-		// Sending acknowledge
-		// TODO Make checks like: disk space
-		err = b.sendFileMetaDataAcknowledge(fileMetadata)
-		if err != nil {
-			logBackup.Errorln("Could not send file metadata as an acknowledge")
-		}
-
-		// Downloading file
-		err = b.downloadFile(fileMetadata.Name, fileMetadata.FullPath, fileMetadata.FileSize, savesetLocation)
-		if err != nil {
-			logBackup.Errorln("Cannot upload file, err: ", err.Error())
-			return err
-		}
-		logBackup.Debugln("Received file, sending acknowledge")
-
-		//Sending file acknowledge
-		fileSize := storage.GetFileSize(fileMetadata.FullPath)
-		fileSizeAckn := new(bftp.FileAcknowledge)
-		fileSizeAckn.Size = fileSize
-		err = b.sendFileTransferAcknowledge(fileSizeAckn)
-		if err != nil {
-			logBackup.Error(err)
-		}
-	}
-	if err := b.createMetadata(); err != nil {
-		logBackup.Errorln("Could not create session metadata, err: ", err)
-	}
-
-	return nil
-}
-
-func (b *BackupSession) downloadFile(name, localFilePath string, size int64, savesetLocation string) error {
-	logBackup.Debugln("Starting downloading file to path: ", localFilePath)
-	file, err := b.MainSession.Storage.CreateFile(savesetLocation, localFilePath)
+func (b *BackupSession) downloadFile(fileMetadata bftp.FileMetadata, savesetLocation string) error {
+	logBackup.Debugln("Starting downloading file to path: ", fileMetadata.FullPath)
+	file, err := b.MainSession.Storage.CreateFile(savesetLocation, fileMetadata.FullPath)
 	if err != nil {
 		logBackup.Errorln("Cannot create localfile to write")
 		return err
 		//	TODO Respond with failed transfer, error on server side
 	}
 	defer file.Close()
-	fileMetadata := db.FileMetaData{
-		OriginalFileLocation: localFilePath,
-	}
 	writer := bufio.NewWriter(file)
 	reader := bufio.NewReader(b.MainSession.Conn)
 	var readFromConnection int64
 	var wroteToFile int64
 	timeStartBackup := time.Now()
 	buffer := make([]byte, b.MainSession.Transfer.Buffer)
-	if size < int64(b.MainSession.Transfer.Buffer) {
-		logBackup.Debugln("Shrinking buffer to filesize: ", size)
-		buffer = make([]byte, size)
+	if fileMetadata.FileSize < int64(b.MainSession.Transfer.Buffer) {
+		logBackup.Debugln("Shrinking buffer to filesize: ", fileMetadata.FileSize)
+		buffer = make([]byte, fileMetadata.FileSize)
 	}
 	for {
 		read, err := reader.Read(buffer)
@@ -138,13 +135,14 @@ func (b *BackupSession) downloadFile(name, localFilePath string, size int64, sav
 			break
 		}
 		wroteToFile += int64(wrote)
-		if wroteToFile == size {
+		if wroteToFile == fileMetadata.FileSize {
 			logBackup.Debugln("Wrote all data to file")
 			break
 		}
 	}
 	writer.Flush()
-	fileMetadata.LocationOnServer = filepath.Join(savesetLocation, localFilePath)
+	fileMetadata.LocationOnServer = filepath.Join(savesetLocation, fileMetadata.FullPath)
+	fileMetadata.OriginalFileLocation = fileMetadata.FullPath
 	timeFinishBackup := time.Since(timeStartBackup)
 	fileMetadata.BackupTime = timeFinishBackup.String()
 	b.MainSession.Metadata.FilesMetadata = append(b.MainSession.Metadata.FilesMetadata, fileMetadata)

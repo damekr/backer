@@ -24,14 +24,12 @@ message PingResponse {
 
 //BACKUP
 
-//From server
 message BackupRequest {
   string ip = 1;
   repeated string paths = 2;
 }
 
 
-//For server
 message BackupResponse {
   repeated string validpaths = 1;
 

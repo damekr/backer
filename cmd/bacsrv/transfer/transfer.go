@@ -6,7 +6,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/damekr/backer/cmd/bacsrv/db"
 	"github.com/damekr/backer/cmd/bacsrv/storage"
 	"github.com/damekr/backer/pkg/bftp"
 	"github.com/sirupsen/logrus"
@@ -28,7 +27,7 @@ type SessionMetaData struct {
 	BackupID      int    `json:"backupID"`
 	BucketPath    string `json:"bucketLocation"`
 	SavesetPath   string `json:"savesetLocation"`
-	FilesMetadata []db.FileMetaData
+	FilesMetadata []bftp.FileMetadata
 }
 
 func NewSession(id uint64, params *bftp.ConnParameters, conn net.Conn, storage storage.Storage) *MainSession {

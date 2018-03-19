@@ -13,6 +13,7 @@ service Bacsrv {
     rpc RestoreDir (RestoreDirRequest) returns (RestoreResponse) {}
     rpc RestoreDirRemoteDifferentPlace (RestoreDirRemoteDifferentPlaceRequest) returns (RestoreResponse) {}
     rpc ListBackups (ListBackupsRequest) returns (ListBackupsResponse) {}
+    rpc ListClients (ListClientsRequest) returns (ListClientsResponse) {}
 }
 
 message PingRequest {
@@ -78,4 +79,12 @@ message ListBackupsRequest {
 message ListBackupsResponse {
     string clientName = 1;
     repeated int64 backupID = 2;
+}
+
+message ListClientsRequest {
+
+}
+
+message ListClientsResponse {
+    repeated string clients = 1;
 }

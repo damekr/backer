@@ -39,7 +39,7 @@ The points described above are ganeral. More information can be find in the docu
 - [x] BACLI: Trigger backup
 - [x] BACLI: Trigger restore with options (different remote path, one file restore)
 - [x] Make restore working!
-- [-] Restore files metadata -- in progress
-- [-] Encryption
-- [-] Python testing framework -- in progress
-- [-] DOCS (manual doc update, create how to doc)
+- [ ] Restore files metadata -- in progress
+- [ ] Encryption
+- [ ] Python testing framework -- in progress
+- [ ] DOCS (manual doc update, create how to doc)

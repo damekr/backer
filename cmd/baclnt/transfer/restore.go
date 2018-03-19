@@ -94,7 +94,8 @@ func (r *RestoreSession) receiveFileMetadata() (*bftp.FileMetadata, error) {
 
 //TODO it is the same in backup also, consider put it into main session struct
 func (r *RestoreSession) sendTransferAcknowledge(filePath string) (*bftp.FileAcknowledge, error) {
-	fileSize := fs.GetFileSize(filePath)
+	localfs := fs.NewFS(filePath)
+	fileSize := localfs.GetFileSize(filePath)
 	fileSizeAckn := new(bftp.FileAcknowledge)
 	fileSizeEncoder := gob.NewEncoder(r.MainSession.Conn)
 	fileSizeAckn.Size = fileSize

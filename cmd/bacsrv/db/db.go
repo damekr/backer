@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/damekr/backer/cmd/bacsrv/config"
+	"github.com/damekr/backer/pkg/bftp"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -20,30 +21,24 @@ type BackupMetadata struct {
 	BackupID      int    `json:"backupID"`
 	BucketPath    string `json:"bucketLocation"`
 	SavesetPath   string `json:"savesetLocation"`
-	FilesMetadata []FileMetaData
-}
-
-type FileMetaData struct {
-	OriginalFileLocation string `json:"originalFileLocation"`
-	LocationOnServer     string `json:"locationOnServer"`
-	BackupTime           string `json:"backupTime"`
+	FilesMetadata []bftp.FileMetadata
 }
 
 type DB struct {
-	Location   string
-	FileSchema BackupMetadata
+	AssetsLocation string // Means clients metadata location, where all backups related information exist
+	FileSchema     BackupMetadata
 }
 
 func Get() DB {
 	return DB{
-		Location:   filepath.Join(config.MainConfig.Storage.Location, ".meta/db"),
-		FileSchema: BackupMetadata{},
+		AssetsLocation: filepath.Join(config.MainConfig.Storage.Location, ".meta/db"),
+		FileSchema:     BackupMetadata{},
 	}
 }
 
 func (d DB) createClientMetaCatalogue(clientName string) (string, error) {
 	dbLocation := filepath.Join(config.MainConfig.Storage.Location, "/.meta/db")
-	log.Debugln("DB Location: ", dbLocation)
+	log.Debugln("DB Assets Location: ", dbLocation)
 	clientDbLocation := filepath.Join(dbLocation, clientName)
 	if err := os.MkdirAll(clientDbLocation, 0700); err != nil {
 		return "", err
@@ -58,12 +53,14 @@ func (d DB) WriteBackupMetadata(data []byte, fileName, clientName string) error 
 		log.Errorln("Cannot create client DB location, err: ", err.Error())
 		return err
 	}
+
 	log.Debugln("Creating backup metadata file")
 	file, err := os.Create(filepath.Join(clientMetadataDbLocation, fileName) + ".json")
 	defer file.Close()
 	if err != nil {
 		return err
 	}
+
 	wrote, err := file.Write(data)
 	log.Debugln("Wrote backup metadata: ", wrote)
 	return nil
@@ -71,7 +68,7 @@ func (d DB) WriteBackupMetadata(data []byte, fileName, clientName string) error 
 
 func (d DB) GetClientsNames() []string {
 	var clientNames []string
-	files, err := ioutil.ReadDir(d.Location)
+	files, err := ioutil.ReadDir(d.AssetsLocation)
 	if err != nil {
 		log.Errorln("Cannot read files from db, err: ", err)
 	}
@@ -94,14 +91,13 @@ func (d DB) GetBackupsMetadata() []BackupMetadata {
 }
 
 func (d DB) GetClientBackupsMetadata(clientName string) []BackupMetadata {
-	//TODO When clientName not specified does not work, should list all backups
 	var clientAssets []BackupMetadata
-	files, err := ioutil.ReadDir(filepath.Join(d.Location, clientName))
+	files, err := ioutil.ReadDir(filepath.Join(d.AssetsLocation, clientName))
 	if err != nil {
 		log.Warningln("Could not find any client assets")
 	}
 	for _, v := range files {
-		clientAssets = append(clientAssets, d.readClientAssets(filepath.Join(d.Location, clientName, v.Name())))
+		clientAssets = append(clientAssets, d.readClientAssets(filepath.Join(d.AssetsLocation, clientName, v.Name())))
 	}
 	return clientAssets
 }

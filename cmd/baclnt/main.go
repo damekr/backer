@@ -90,7 +90,6 @@ func main() {
 	config.ReadInConfig(*configFlag)
 	setLogger()
 	config.MainConfig.ShowConfig()
-	config.MainConfig.ShowConfig()
 	log.Info("Starting baclnt application...")
 	srv, err := mainLoop()
 	if err != nil {

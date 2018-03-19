@@ -70,7 +70,6 @@ func (m *PingResponse) GetMessage() string {
 	return ""
 }
 
-// From server
 type BackupRequest struct {
 	Ip    string   `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
 	Paths []string `protobuf:"bytes,2,rep,name=paths" json:"paths,omitempty"`
@@ -95,7 +94,6 @@ func (m *BackupRequest) GetPaths() []string {
 	return nil
 }
 
-// For server
 type BackupResponse struct {
 	Validpaths []string `protobuf:"bytes,1,rep,name=validpaths" json:"validpaths,omitempty"`
 }

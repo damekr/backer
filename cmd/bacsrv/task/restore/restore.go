@@ -6,6 +6,7 @@ import (
 	"github.com/damekr/backer/api/protoclnt"
 	"github.com/damekr/backer/cmd/bacsrv/db"
 	"github.com/damekr/backer/cmd/bacsrv/network"
+	"github.com/damekr/backer/pkg/bftp"
 	"github.com/sirupsen/logrus"
 )
 
@@ -14,7 +15,7 @@ var log = logrus.WithFields(logrus.Fields{"prefix": "task:restore"})
 type Restore struct {
 	ClientIP       string `json:"clientIP"`
 	BackupID       int    `json:"backupID"`
-	FilesMetadata  []db.FileMetaData
+	FilesMetadata  []bftp.FileMetadata
 	Progress       int    `json:"-"`
 	Status         bool   `json:"status"`
 	BucketLocation string `json:"bucketLocation"`

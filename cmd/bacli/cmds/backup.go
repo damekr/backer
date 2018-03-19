@@ -9,7 +9,7 @@ import (
 
 /*
 CLI Options in backup
-./bacli backup <client_IP> <path_1>...
+./bacli backup -c|--client <client_IP> -d|--dirs <path_1>...
 
 */
 

@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"os"
 	"path"
-	"path/filepath"
 
 	"github.com/damekr/backer/cmd/baclnt/fs"
 	"github.com/damekr/backer/pkg/bftp"
@@ -21,50 +20,20 @@ func CreateBackupSession(mainSession *MainSession) *BackupSession {
 	}
 }
 
-func (b *BackupSession) sendFileMetadata(metadata *bftp.FileMetadata) error {
-	ftran := gob.NewEncoder(b.MainSession.Conn)
-	err := ftran.Encode(&metadata)
-	if err != nil {
-		log.Error("Could not encode FileMetadata struct")
-		return err
-	}
-	return nil
-}
-
-func (b *BackupSession) receiveFileMetadataAcknowledge() (*bftp.FileMetadata, error) {
-	fileRecTransfer := new(bftp.FileMetadata)
-	frect := gob.NewDecoder(b.MainSession.Conn)
-	err := frect.Decode(&fileRecTransfer)
-	if err != nil {
-		log.Errorln("Could not decode FileMetadata struct from server, error: ", err)
-		return nil, err
-	}
-	return fileRecTransfer, nil
-}
-
-func (b *BackupSession) receiveFileTransferAcknowledge() (*bftp.FileAcknowledge, error) {
-	fileTransferAcknowledge := new(bftp.FileAcknowledge)
-	fileSizeEncoder := gob.NewDecoder(b.MainSession.Conn)
-	if err := fileSizeEncoder.Decode(&fileTransferAcknowledge); err != nil {
-		log.Println("Could not decode FileAcknowledge struct")
-		return nil, err
-	}
-	return fileTransferAcknowledge, nil
-}
-
 func (b *BackupSession) PutFile(fileLocalPath, fileRemotePath string) error {
-	fileMetadata := new(bftp.FileMetadata)
-	if fs.CheckIfFileExists(fileLocalPath) {
-		fileMetadata.FileSize = fs.GetFileSize(fileLocalPath)
+	// TODO Create FileSystem once per backup and then read files.
+	localfs := fs.NewFS(path.Dir(fileLocalPath))
+
+	fileMetadata, err := localfs.ReadFileMetadata(fileRemotePath)
+
+	if localfs.CheckIfFileExists(fileLocalPath) {
 		log.Println("Size of sending file: ", fileMetadata.FileSize)
 	} else {
 		return bftp.FileDoesNotExist
 	}
-	fileMetadata.FullPath = fileRemotePath
-	fileMetadata.Name = filepath.Base(fileLocalPath)
 
 	// Sending file info
-	err := b.sendFileMetadata(fileMetadata)
+	err = b.sendFileMetadata(fileMetadata)
 	if err != nil {
 		log.Errorln("Could not send file metadata info, err: ", err.Error())
 	}
@@ -76,8 +45,6 @@ func (b *BackupSession) PutFile(fileLocalPath, fileRemotePath string) error {
 	}
 	log.Debugln("Received file metadata acknowledge: ", acknMetadata)
 
-	// Creating local storage to reading from
-	localfs := fs.NewFS(path.Dir(fileLocalPath))
 	file, err := localfs.OpenFile(path.Base(fileLocalPath))
 	if err != nil {
 		log.Println("Cannot open localfile, err: ", err.Error())
@@ -100,6 +67,27 @@ func (b *BackupSession) PutFile(fileLocalPath, fileRemotePath string) error {
 	log.Println("Received file acknowledge, file size: ", fileTransferAckn.Size)
 
 	return nil
+}
+
+func (b *BackupSession) sendFileMetadata(metadata *bftp.FileMetadata) error {
+	ftran := gob.NewEncoder(b.MainSession.Conn)
+	err := ftran.Encode(&metadata)
+	if err != nil {
+		log.Error("Could not encode FileMetadata struct")
+		return err
+	}
+	return nil
+}
+
+func (b *BackupSession) receiveFileMetadataAcknowledge() (*bftp.FileMetadata, error) {
+	fileRecTransfer := new(bftp.FileMetadata)
+	frect := gob.NewDecoder(b.MainSession.Conn)
+	err := frect.Decode(&fileRecTransfer)
+	if err != nil {
+		log.Errorln("Could not decode FileMetadata struct from server, error: ", err)
+		return nil, err
+	}
+	return fileRecTransfer, nil
 }
 
 func (b *BackupSession) uploadFile(file *os.File, size int64) error {
@@ -133,4 +121,14 @@ func (b *BackupSession) uploadFile(file *os.File, size int64) error {
 	}
 	writer.Flush()
 	return nil
+}
+
+func (b *BackupSession) receiveFileTransferAcknowledge() (*bftp.FileAcknowledge, error) {
+	fileTransferAcknowledge := new(bftp.FileAcknowledge)
+	fileSizeEncoder := gob.NewDecoder(b.MainSession.Conn)
+	if err := fileSizeEncoder.Decode(&fileTransferAcknowledge); err != nil {
+		log.Println("Could not decode FileAcknowledge struct")
+		return nil, err
+	}
+	return fileTransferAcknowledge, nil
 }

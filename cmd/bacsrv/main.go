@@ -127,9 +127,9 @@ func initConfigs(mainConfigPath string) error {
 
 //func test() {
 //	bucket := storage.DefaultStorage.CreateBucket("TESTCLIENT_BUCKET")
-//	log.Println("BucketLocation: ", bucket.Location)
+//	log.Println("BucketLocation: ", bucket.AssetsLocation)
 //	saveset := bucket.CreateSaveset()
-//	log.Println("SavesetLocation: ", saveset.Location)
+//	log.Println("SavesetLocation: ", saveset.AssetsLocation)
 //}
 
 func main() {

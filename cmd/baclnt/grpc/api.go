@@ -39,7 +39,7 @@ func (s *server) Backup(ctx context.Context, backupRequest *protoclnt.BackupRequ
 	validatedPaths := fileSystem.GetAbsolutePaths(backupRequest.Paths)
 	log.Printf("Validated paths: ", validatedPaths)
 
-	//TODO backupRequest.IP is probably client ip, this message should contains server external ip
+	// TODO backupRequest.IP is probably client ip, this message should contain server external ip
 	err := runBackup(validatedPaths)
 	if err != nil {
 		log.Errorf("Backup Failed, err: ", err.Error())

@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"io"
+	"os"
 )
 
 // TODO Exclude whole bftp protocol to pkg directory
@@ -57,9 +58,20 @@ type Transfer struct {
 }
 
 type FileMetadata struct {
-	Name     string
-	FullPath string
-	FileSize int64
+	Name                 string `json:"fileName"`
+	FullPath             string `json:"fullPathOnClient"`
+	FileSize             int64  `json:"fileSize"`
+	UID                  int    `json:"userID"`
+	GID                  int    `json:"groupID"`
+	Mode                 os.FileMode
+	Checksum             string `json:"fileMD5Checksum"`
+	LocationOnServer     string `json:"locationOnServer"`
+	BackupTime           string `json:"backupTime"`
+	OriginalFileLocation string `json:"originalFileLocation"` // Needs to be clarified - now it's doubled
+
+}
+
+type FileTransferInfo struct {
 }
 
 type FileAcknowledge struct {

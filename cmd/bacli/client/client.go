@@ -259,6 +259,30 @@ func (c ClientGRPC) ListBackupsInSecure(clientName string) error {
 	return nil
 }
 
+func (c ClientGRPC) ListClientsInSecure() error {
+	log.Infof("Using GRPC protocol to list clients")
+	conn, err := c.ConnectInSecure(c.Server, c.Port)
+	if err != nil {
+		log.Warningf("Cannot connect to address %s", c.Server)
+		return err
+	}
+	defer conn.Close()
+
+	log.Printf("Sending message to: %s:%s", c.Server, c.Port)
+	cn := protosrv.NewBacsrvClient(conn)
+
+	r, err := cn.ListClients(c.prepareGRPCContext(), &protosrv.ListClientsRequest{})
+	if err != nil {
+		log.Warningf("Could not send list client request, err: ", err)
+		return err
+	}
+	for _, v := range r.Clients {
+		fmt.Println(v)
+	}
+
+	return nil
+}
+
 func (c ClientGRPC) prepareGRPCContext() context.Context {
 	md := metadata.Pairs("timestamp", time.Now().Format(time.StampNano))
 	ctx := metadata.NewOutgoingContext(context.Background(), md)

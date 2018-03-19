@@ -11,13 +11,13 @@ type DiskStatus struct {
 }
 
 //func GetRepository() *Storage {
-//	log.Debug("Getting a storage under: ", Storage.Location)
+//	log.Debug("Getting a storage under: ", Storage.AssetsLocation)
 //	return Storage
 //}
 //
 //func (r *Storage) GetCapacityStatus() (disk DiskStatus) {
 //	fs := syscall.Statfs_t{}
-//	err := syscall.Statfs(r.Location, &fs)
+//	err := syscall.Statfs(r.AssetsLocation, &fs)
 //	if err != nil {
 //		log.Error("Cannot check file system capacity")
 //	}
@@ -28,7 +28,7 @@ type DiskStatus struct {
 //}
 //
 //func (r *Storage) CreateClientBucket(name string) error {
-//	clientBucketLocation := r.Location + bucketsLocation + name
+//	clientBucketLocation := r.AssetsLocation + bucketsLocation + name
 //	log.Debugf("Creating client bucket under: ", clientBucketLocation)
 //	err := os.MkdirAll(clientBucketLocation, 0700)
 //	if err != nil {
@@ -38,18 +38,18 @@ type DiskStatus struct {
 //}
 //
 //func (r *Storage) GetClientBucket(name string) (*ClientBucket, error) {
-//	clientLocation := filepath.Join(r.Location, bucketsLocation, name)
+//	clientLocation := filepath.Join(r.AssetsLocation, bucketsLocation, name)
 //	if !checkIfClientBucketExists(name) {
 //		log.Errorf("clientDefinition %s bucket does not exist", name)
 //		return nil, errors.New("clientDefinition bucket does not exists")
 //	}
 //	return &ClientBucket{
-//		Location: clientLocation,
+//		AssetsLocation: clientLocation,
 //	}, nil
 //}
 //
 //func (r *Storage) GetMetadataPath() string {
-//	return filepath.Join(r.Location, ".meta/db")
+//	return filepath.Join(r.AssetsLocation, ".meta/db")
 //}
 //
 //func InitRepository() error {
