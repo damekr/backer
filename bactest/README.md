@@ -1,7 +1,7 @@
 # BACTEST
 
 It's a common tool/framework used for testing backer solution. The design is focused to provide a possibility
-to use it also in different projects.
+to use it also in other projects.
 
 
 ## Assumptions in nutshell
