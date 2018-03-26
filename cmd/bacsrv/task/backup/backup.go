@@ -20,8 +20,6 @@ type Backup struct {
 	ValidPaths     []string `json:"validPaths"`
 }
 
-// TODO - maybe make tasks like: backupDefinition, BackupTask, PreBackupTask, PostBackupTask
-
 func CreateBackup(clientIP string, paths []string) *Backup {
 	return &Backup{
 		ClientIP:       clientIP,

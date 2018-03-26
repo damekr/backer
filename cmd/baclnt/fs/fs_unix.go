@@ -5,7 +5,6 @@ package fs
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"fmt"
 	"io"
 	"os"
 	"path"
@@ -19,60 +18,135 @@ const (
 	defaultDirPerm = os.FileMode(0744)
 )
 
-type FileInfo struct {
-	Path   string
-	Size   int64
-	Exists bool
+type LocalFileSystem struct {
 }
 
-type FS struct {
-	AbsoluteFilesPaths []string
+func NewLocalFileSystem() LocalFileSystem {
+	return LocalFileSystem{}
 }
 
-type FileSystem struct {
-	Path string
-}
-
-func NewFS(path string) *FileSystem {
-	return &FileSystem{
-		Path: path,
+func (l LocalFileSystem) CreateFile(metadata bftp.FileMetadata) error {
+	log.Debugln("Creating file: ", metadata)
+	err := l.createFileDir(metadata)
+	if err != nil {
+		log.Errorln("Cannot rebuild file dir, err: ", err)
+		return err
 	}
-}
-
-func (f *FS) checkPathForRegularFile(path string, file os.FileInfo, err error) error {
-	if file.Mode().IsRegular() {
-		log.Debugf("Adding file %s to list", path)
-		f.AbsoluteFilesPaths = append(f.AbsoluteFilesPaths, path)
-	} else {
-		log.Debug("Found not regular file: ", path)
+	file, err := os.Create(path.Join(metadata.FullPath, metadata.Name))
+	defer file.Close()
+	if err != nil {
+		return err
 	}
+	err = file.Chmod(metadata.Mode)
+	if err != nil {
+		return err
+	}
+	// Not all filesystems supports
+	// err = file.Chown(metadata.UID, metadata.GID)
+	// if err != nil {
+	// 	return err
+	// }
 	return nil
 }
 
-func (f *FS) GetAbsolutePaths(paths []string) []string {
-	log.Debug("Checking absolutive paths for: ", paths)
-	validatedPaths := f.ValidatePaths(paths)
-	for i := range validatedPaths {
-		err := filepath.Walk(validatedPaths[i], f.checkPathForRegularFile)
-		if err != nil {
-			log.Error(err)
-		}
-	}
-	return f.AbsoluteFilesPaths
+func (l LocalFileSystem) createFileDir(metadata bftp.FileMetadata) error {
+	log.Debugln("Rebuilding needed directory for file full path: ", metadata.FullPath)
+	return os.MkdirAll(metadata.FullPath, metadata.DirMode)
 }
 
-func (f *FS) ValidatePaths(paths []string) []string {
-	var validatedPaths []string
-	for _, vPath := range paths {
-		log.Printf("Checking vPath %s", vPath)
-		_, err := os.Stat(vPath)
+func (l LocalFileSystem) ReadFile(filePath string) (io.ReadCloser, error) {
+	log.Debugln("Reading file: ", filePath)
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Errorln("Cannot open file for reading, err: ", err)
+		return nil, err
+	}
+	return io.ReadCloser(file), nil
+}
+
+func (l LocalFileSystem) WriteFile(metadata bftp.FileMetadata) (io.WriteCloser, error) {
+	log.Debugln("Writing file: ", metadata)
+	file, err := os.OpenFile(path.Join(metadata.FullPath, metadata.Name), os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		return nil, err
+	}
+	return io.WriteCloser(file), nil
+}
+
+func (l LocalFileSystem) ReadFileMetadata(filePath string) (*bftp.FileMetadata, error) {
+	file, err := os.Open(filePath)
+	defer file.Close()
+	if err != nil {
+		return nil, err
+	}
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	fileMetadata := new(bftp.FileMetadata)
+	fileMetadata.Name = file.Name()
+	fileMetadata.FileSize = fileInfo.Size()
+	fileMetadata.ModTime = fileInfo.ModTime()
+	fileMetadata.Mode = fileInfo.Mode()
+	fileMetadata.FullPath = path.Dir(filePath)
+	return fileMetadata, nil
+}
+
+func (l LocalFileSystem) CheckIfFileExists(fullFilePath string) bool {
+	if _, err := os.Stat(fullFilePath); err != nil {
+		log.Errorln(err)
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func (l LocalFileSystem) ExpandDirsForFiles(paths []string) ([]string, error) {
+	log.Debug("Checking absolute paths for: ", paths)
+	validatedPaths := l.validatePaths(paths)
+	var filesToBeBackedUp []string
+	for i := range validatedPaths {
+		err := filepath.Walk(validatedPaths[i], func(path string, info os.FileInfo, err error) error {
+			if info.Mode().IsRegular() {
+				log.Debugf("Adding file %s to list", path)
+				filesToBeBackedUp = append(filesToBeBackedUp, path)
+			} else if info.Mode()&os.ModeSymlink != 0 {
+				log.Debugln("Found symlink: ", path)
+			} else if info.Mode().IsDir() {
+				log.Debugln("Found dir: ", path)
+			} else {
+				log.Debug("Found not regular file: ", path)
+			}
+			return nil
+		})
 		if err != nil {
-			log.Printf("Path %s does not exist\n", vPath)
+			return filesToBeBackedUp, err
+		}
+	}
+	return filesToBeBackedUp, nil
+}
+
+func (m LocalFileSystem) validatePaths(paths []string) []string {
+	var validatedPaths []string
+	for _, p := range paths {
+		log.Debugln("Checking path: ", p)
+		_, err := os.Stat(p)
+		if err != nil {
+			log.Warningf("AbsolutePath %s does not exist\n", p)
 		} else {
-			validatedPaths = append(validatedPaths, vPath)
+			validatedPaths = append(validatedPaths, p)
 		}
 	}
 	return validatedPaths
+}
+
+func (l LocalFileSystem) handleSymlinkFile() {
+
+}
+
+func (l LocalFileSystem) handleHardlinkFile() {
+
 }
 
 func calculateMD5Sum(fileLocation string) (string, error) {
@@ -89,70 +163,4 @@ func calculateMD5Sum(fileLocation string) (string, error) {
 	hashInBytes := hash.Sum(nil)[:16]
 	returnMD5String := hex.EncodeToString(hashInBytes)
 	return returnMD5String, nil
-}
-
-func (f *FileSystem) ReadFileMetadata(fileLocation string) (*bftp.FileMetadata, error) {
-	var fileHeader bftp.FileMetadata
-	info, err := os.Stat(fileLocation)
-	if err != nil {
-		log.Errorf("File %s does not exist", fileLocation)
-		return &fileHeader, err
-	}
-	checksum, err := calculateMD5Sum(fileLocation)
-	if err != nil {
-		log.Error("Was not able to calculate checksum, setting 0")
-		checksum = "0"
-	}
-	fileHeader.Checksum = checksum
-	fileHeader.FullPath = fileLocation
-	fileHeader.Mode = info.Mode()
-	fileHeader.FileSize = info.Size()
-	fileHeader.Name = path.Base(fileLocation)
-	return &fileHeader, nil
-}
-
-func (f *FileSystem) CreateFile(name string) (*os.File, error) {
-	// We need to create dir in case of rebuilding directory structure
-	if err := f.CreateNeededDirs(f.Path); err != nil {
-		log.Errorln("Cannot create needed dir, err: ", err)
-	}
-	file, err := os.Create(path.Join(f.Path, name))
-	if err != nil {
-		return nil, err
-	}
-	return file, nil
-}
-
-func (f *FileSystem) CreateNeededDirs(path string) error {
-	log.Debugln("Rebuilding needed directory: ", path)
-	return os.MkdirAll(path, defaultDirPerm)
-}
-
-func (f *FileSystem) OpenFile(name string) (*os.File, error) {
-	file, err := os.Open(path.Join(f.Path, name))
-	if err != nil {
-		return nil, err
-	}
-	return file, nil
-}
-
-func (f *FileSystem) CheckIfFileExists(fullFilePath string) bool {
-	if _, err := os.Stat(fullFilePath); err != nil {
-		fmt.Print(err)
-		if os.IsNotExist(err) {
-			return false
-		}
-	}
-	return true
-}
-
-func (f *FileSystem) GetFileSize(fullPath string) int64 {
-	file, err := os.Open(fullPath)
-	defer file.Close()
-	fstat, err := file.Stat()
-	if err != nil {
-		log.Println("Cannot do stat on file, returning 0")
-		return 0
-	}
-	return fstat.Size()
 }

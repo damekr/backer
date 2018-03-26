@@ -19,15 +19,7 @@ type MainSession struct {
 	Id         uint64
 	Transfer   *bftp.Transfer
 	Storage    storage.Storage
-	Metadata   SessionMetaData
-}
-
-type SessionMetaData struct {
-	ClientName    string `json:"clientName"`
-	BackupID      int    `json:"backupID"`
-	BucketPath    string `json:"bucketLocation"`
-	SavesetPath   string `json:"savesetLocation"`
-	FilesMetadata []bftp.FileMetadata
+	Metadata   bftp.BackupMetaData
 }
 
 func NewSession(id uint64, params *bftp.ConnParameters, conn net.Conn, storage storage.Storage) *MainSession {

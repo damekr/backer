@@ -25,12 +25,16 @@ func (l *ListBackups) Run() {
 	log.Println("Getting backups")
 	var backupIds []int64
 	database := db.Get()
-	clientAssets := database.GetClientBackupsMetadata(l.ClientName)
-	for _, v := range clientAssets {
-		backupIds = append(backupIds, int64(v.BackupID))
+	clientAssets, err := database.ReadBackupsMetadataOfClient(l.ClientName)
+	if err != nil {
+		log.Errorln("Could not read backups metadata of client, err: ", err)
+	} else {
+		for _, v := range clientAssets {
+			backupIds = append(backupIds, int64(v.BackupID))
+		}
+		l.BackupIDs = backupIds
+		log.Debugln("Found client backups ids: ", backupIds)
 	}
-	l.BackupIDs = backupIds
-	log.Debugln("Found client backups ids: ", backupIds)
 
 }
 

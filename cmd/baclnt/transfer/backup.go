@@ -3,8 +3,7 @@ package transfer
 import (
 	"bufio"
 	"encoding/gob"
-	"os"
-	"path"
+	"io"
 
 	"github.com/damekr/backer/cmd/baclnt/fs"
 	"github.com/damekr/backer/pkg/bftp"
@@ -12,21 +11,21 @@ import (
 
 type BackupSession struct {
 	MainSession *MainSession
+	FileSystem  fs.FileSystem
 }
 
-func CreateBackupSession(mainSession *MainSession) *BackupSession {
+func CreateBackupSession(mainSession *MainSession, fileSystem fs.FileSystem) *BackupSession {
 	return &BackupSession{
 		MainSession: mainSession,
+		FileSystem:  fileSystem,
 	}
 }
 
 func (b *BackupSession) PutFile(fileLocalPath, fileRemotePath string) error {
-	// TODO Create FileSystem once per backup and then read files.
-	localfs := fs.NewFS(path.Dir(fileLocalPath))
 
-	fileMetadata, err := localfs.ReadFileMetadata(fileRemotePath)
+	fileMetadata, err := b.FileSystem.ReadFileMetadata(fileRemotePath)
 
-	if localfs.CheckIfFileExists(fileLocalPath) {
+	if b.FileSystem.CheckIfFileExists(fileLocalPath) {
 		log.Println("Size of sending file: ", fileMetadata.FileSize)
 	} else {
 		return bftp.FileDoesNotExist
@@ -45,26 +44,26 @@ func (b *BackupSession) PutFile(fileLocalPath, fileRemotePath string) error {
 	}
 	log.Debugln("Received file metadata acknowledge: ", acknMetadata)
 
-	file, err := localfs.OpenFile(path.Base(fileLocalPath))
+	fileReader, err := b.FileSystem.ReadFile(fileLocalPath)
 	if err != nil {
-		log.Println("Cannot open localfile, err: ", err.Error())
+		log.Println("Cannot open file, err: ", err.Error())
 	}
-	defer file.Close()
+	defer fileReader.Close()
 
-	// Uploading file using current session
+	// Uploading file using current backup session
 	log.Println("Starting sending file: ", fileLocalPath)
-	err = b.uploadFile(file, fileMetadata.FileSize)
+	err = b.uploadFile(fileReader, fileMetadata)
 	if err != nil {
-		log.Println("Could not upload file, error: ", err)
+		log.Debugln("Could not upload file, error: ", err)
 	}
-	log.Println("Uploaded file, waiting for acknowledge")
+	log.Debugln("Uploaded file, waiting for acknowledge")
 
-	//Receiving file acknowledge
+	// Receiving file acknowledge
 	fileTransferAckn, err := b.receiveFileTransferAcknowledge()
 	if err != nil {
 		log.Errorln("Could not receive fileTransferAcknowledge")
 	}
-	log.Println("Received file acknowledge, file size: ", fileTransferAckn.Size)
+	log.Debugln("Received file acknowledge, file size: ", fileTransferAckn.Size)
 
 	return nil
 }
@@ -90,19 +89,18 @@ func (b *BackupSession) receiveFileMetadataAcknowledge() (*bftp.FileMetadata, er
 	return fileRecTransfer, nil
 }
 
-func (b *BackupSession) uploadFile(file *os.File, size int64) error {
-	log.Println("Starting uploading file, size: ", size)
-	reader := bufio.NewReader(file)
+func (b *BackupSession) uploadFile(fileReader io.Reader, metadata *bftp.FileMetadata) error {
+	log.Println("Starting uploading file, size: ", metadata.FileSize)
 	writer := bufio.NewWriter(b.MainSession.Conn)
 	var readFromFile int64
 	var wroteToConnection int64
 	buffer := make([]byte, b.MainSession.Transfer.Buffer)
-	if size < int64(b.MainSession.Transfer.Buffer) {
-		log.Println("Shrinking buffer to filesize: ", size)
-		buffer = make([]byte, size)
+	if metadata.FileSize < int64(b.MainSession.Transfer.Buffer) {
+		log.Println("Shrinking buffer to file size: ", metadata.FileSize)
+		buffer = make([]byte, metadata.FileSize)
 	}
 	for {
-		read, err := reader.Read(buffer)
+		read, err := fileReader.Read(buffer)
 		if err != nil {
 			log.Print("CLNT - Upload: Could not read from file reader, error: ", err)
 			return err
@@ -114,7 +112,7 @@ func (b *BackupSession) uploadFile(file *os.File, size int64) error {
 			break
 		}
 		wroteToConnection += int64(wrote)
-		if wroteToConnection == size {
+		if wroteToConnection == metadata.FileSize {
 			log.Print("Wrote all data to connection")
 			break
 		}

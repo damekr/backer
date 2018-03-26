@@ -53,32 +53,6 @@ func Create(location string) (*Local, error) {
 	return local, nil
 }
 
-func (l Local) CreateBucket(clientName string) (string, error) {
-	log.Debugln("Creating client bucket: ", clientName)
-	//TODO If bucket exist, just return it. Should be handled already by MkdirAll
-	bucketLocation := filepath.Join(config.MainConfig.Storage.Location, "data", clientName)
-	err := os.MkdirAll(bucketLocation, 0700)
-	if err != nil {
-		log.Errorln("Could not create client bucket")
-		return "", err
-	}
-	return bucketLocation, nil
-}
-
-func (l Local) OpenFile(fileLocation string) (*os.File, error) {
-	log.Println("Opening file: ", fileLocation)
-	file, err := os.Open(fileLocation)
-	if err != nil {
-		return nil, err
-	}
-
-	return file, nil
-}
-
-func (l Local) RemoveBucket(clientName string) {
-
-}
-
 func (l Local) CreateSaveset(bucketLocation string) (string, error) {
 	savesetName := "fullbackup" + "_" + strconv.Itoa(time.Now().Nanosecond())
 	log.Debug("Creating saveset: ", savesetName)
@@ -92,15 +66,26 @@ func (l Local) CreateSaveset(bucketLocation string) (string, error) {
 	return savesetLocation, nil
 }
 
-func createFileOriginalPath(savesetLocation, filePath string) (string, error) {
-	log.Infof("Creating path: %s under saveset: %s\n", filePath, savesetLocation)
-	fullFilePath := filepath.Join(savesetLocation, filePath)
-	err := os.MkdirAll(fullFilePath, 0700)
+func (l Local) CreateBucket(clientName string) (string, error) {
+	log.Debugln("Creating client bucket: ", clientName)
+	//TODO If bucket exist, just return it. Should be handled already by MkdirAll
+	bucketLocation := filepath.Join(config.MainConfig.Storage.Location, "data", clientName)
+	err := os.MkdirAll(bucketLocation, 0700)
 	if err != nil {
-		log.Errorf("Cannot create path: %s under saveset: %s\n", filePath, savesetLocation)
+		log.Errorln("Could not create client bucket")
 		return "", err
 	}
-	return fullFilePath, nil
+	return bucketLocation, nil
+}
+
+func (l Local) ReadFile(fileLocation string) (*os.File, error) {
+	log.Println("Opening file: ", fileLocation)
+	file, err := os.Open(fileLocation)
+	if err != nil {
+		return nil, err
+	}
+
+	return file, nil
 }
 
 func (l Local) CreateFile(savesetLocation, fileOriginalPath string) (*os.File, error) {
@@ -116,4 +101,19 @@ func (l Local) CreateFile(savesetLocation, fileOriginalPath string) (*os.File, e
 		return nil, err
 	}
 	return file, nil
+}
+
+func createFileOriginalPath(savesetLocation, filePath string) (string, error) {
+	log.Infof("Creating path: %s under saveset: %s\n", filePath, savesetLocation)
+	fullFilePath := filepath.Join(savesetLocation, filePath)
+	err := os.MkdirAll(fullFilePath, 0700)
+	if err != nil {
+		log.Errorf("Cannot create path: %s under saveset: %s\n", filePath, savesetLocation)
+		return "", err
+	}
+	return fullFilePath, nil
+}
+
+func (l Local) RemoveBucket(clientName string) {
+
 }

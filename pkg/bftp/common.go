@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"time"
 )
 
 // TODO Exclude whole bftp protocol to pkg directory
@@ -57,18 +58,26 @@ type Transfer struct {
 	Buffer        int
 }
 
-type FileMetadata struct {
-	Name                 string      `json:"fileName"`
-	FullPath             string      `json:"fullPathOnClient"`
-	FileSize             int64       `json:"fileSize"`
-	UID                  int         `json:"userID"`
-	GID                  int         `json:"groupID"`
-	Mode                 os.FileMode `json:"fileMode"`
-	Checksum             string      `json:"fileMD5Checksum"`
-	LocationOnServer     string      `json:"locationOnServer"`
-	BackupTime           string      `json:"backupTime"`
-	OriginalFileLocation string      `json:"originalFileLocation"` // Needs to be clarified - now it's doubled
+type BackupMetaData struct {
+	ClientName    string `json:"clientName"`
+	BackupID      int    `json:"backupID"`
+	BucketPath    string `json:"bucketLocation"`
+	SavesetPath   string `json:"savesetLocation"`
+	FilesMetadata []FileMetadata
+}
 
+type FileMetadata struct {
+	Name             string      `json:"fileName"`
+	FullPath         string      `json:"fullPathOfFile"`
+	FileSize         int64       `json:"fileSize"`
+	ModTime          time.Time   `json:"modTime"`
+	UID              int         `json:"userID"`
+	GID              int         `json:"groupID"`
+	Mode             os.FileMode `json:"fileMode"`
+	DirMode          os.FileMode `json:"dirMode"`
+	Checksum         string      `json:"fileMD5Checksum"`
+	LocationOnServer string      `json:"locationOnServer"`
+	BackupTime       string      `json:"backupTime"`
 }
 
 type FileTransferInfo struct {

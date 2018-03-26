@@ -20,7 +20,13 @@ func Create() *ListClients {
 func (b *ListClients) Run() {
 	log.Println("Getting clients")
 	database := db.Get()
-	b.Names = database.GetClientsNames()
+	names, err := database.ReadClientsNames()
+	if err != nil {
+		log.Errorln("Could not read clients names, err: ", err)
+	} else {
+		b.Names = names
+	}
+
 }
 
 func (b *ListClients) Stop() {

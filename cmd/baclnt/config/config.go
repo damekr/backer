@@ -18,7 +18,7 @@ type ClientConfig struct {
 	ExternalName          string
 	DataTransferInterface string
 	Debug                 bool
-	TempDir               string // Path to store temporary data
+	TempDir               string // AbsolutePath to store temporary data
 	CID                   string
 	ServerDataPort        string
 	ServerExternalName    string

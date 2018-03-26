@@ -135,7 +135,7 @@ func restoreWholeBackupDifferentPlace(clientIP, remotePath string, backupID int)
 // RestoreDir restores single directory or file to the same location on client
 func (s *server) RestoreDir(ctx context.Context, request *protosrv.RestoreDirRequest) (*protosrv.RestoreResponse, error) {
 	log.Infoln("Got request to restore client with different remote path. Client IP:  ", request.Restorerequest.Ip)
-	log.Debugln("Path to restore data: ", request.Dir)
+	log.Debugln("AbsolutePath to restore data: ", request.Dir)
 
 	s.metadataHandler(ctx)
 
@@ -167,7 +167,7 @@ func restoreDir(clientIP, localDirPath string, backupID int) error {
 
 func (s *server) RestoreDirRemoteDifferentPlace(ctx context.Context, request *protosrv.RestoreDirRemoteDifferentPlaceRequest) (*protosrv.RestoreResponse, error) {
 	log.Infoln("Got request to restore client's dir in different remote path. Client IP:  ", request.Restorerequest.Ip)
-	log.Debugln("Path  to be restored: ", request.Dir)
+	log.Debugln("AbsolutePath  to be restored: ", request.Dir)
 
 	s.metadataHandler(ctx)
 

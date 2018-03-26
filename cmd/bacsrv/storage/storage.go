@@ -28,7 +28,7 @@ type Storage interface {
 	CreateBucket(clientName string) (string, error)
 	CreateSaveset(bucketLocation string) (string, error)
 	CreateFile(savesetLocation, fileOriginalPath string) (*os.File, error)
-	OpenFile(fileLocation string) (*os.File, error)
+	ReadFile(fileLocation string) (*os.File, error)
 }
 
 func setDefaultStorage(storage Storage) {

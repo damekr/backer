@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/damekr/backer/cmd/baclnt/fs"
 	"github.com/sirupsen/logrus"
 	"github.com/x-cray/logrus-prefixed-formatter"
 
@@ -84,11 +86,52 @@ func setFlags() {
 
 }
 
+func testFileRead() {
+	localFS := fs.NewLocalFileSystem()
+	// dataBuff := make([]byte, 1024)
+	// file, _ := os.Open("/tmp/file.txt")
+	// defer file.Close()
+	// metadata, err := localFS.ReadFileMetadata("/tmp/file.txt")
+	// metadata.FullPath = "/"
+	// metadata.Name = "myfile2.txt"
+	// err = localFS.CreateFile(metadata)
+	// if err != nil {
+	// 	log.Errorln("Cannot create file, err: ", err)
+	// }
+	// writer, err := localFS.WriteFile(metadata)
+	// defer writer.Close()
+	// if err != nil {
+	// 	log.Errorln("Cannot create writer, err: ", err)
+	// }
+	//
+	// written, err := io.Copy(writer, file)
+	// if err != nil {
+	// 	log.Errorln("Error during copy: ", err)
+	// }
+	// log.Infoln("Written: ", written)
+	//
+	// reader, err := localFS.ReadFile("/tmp/myfile.txt")
+	// defer reader.Close()
+	// data, err := ioutil.ReadAll(reader)
+	// if err != nil {
+	// 	log.Errorln("Cannot read from file, err: ", err)
+	// }
+	//
+	// fmt.Println(string(data))
+	files, err := localFS.ExpandDirsForFiles([]string{"/tmp"})
+	if err != nil {
+		log.Errorln("Error: ", err)
+	}
+	fmt.Println(files)
+
+}
+
 func main() {
 	setFlags()
 	log.Debugf("COMMIT: %s", commit)
 	config.ReadInConfig(*configFlag)
 	setLogger()
+	// testFileRead()
 	config.MainConfig.ShowConfig()
 	log.Info("Starting baclnt application...")
 	srv, err := mainLoop()

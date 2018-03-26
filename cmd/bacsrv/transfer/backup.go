@@ -3,7 +3,6 @@ package transfer
 import (
 	"bufio"
 	"encoding/gob"
-	"encoding/json"
 	"path/filepath"
 	"time"
 
@@ -15,7 +14,7 @@ import (
 
 type BackupSession struct {
 	MainSession *MainSession
-	Database    db.DB
+	Database    db.BackupsDB
 }
 
 var logBackup = logrus.WithFields(logrus.Fields{"prefix": "transfer:backup"})
@@ -31,6 +30,7 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 	logBackup.Debugln("Handling incoming TPUT transfer type")
 	for i := 0; i < objectsNumber; i++ {
 		logBackup.Debugln("Receiving object: ", i)
+
 		// Getting file metadata
 		fileMetadata, err := b.receiveFileMetadata()
 		if err != nil {
@@ -52,7 +52,7 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 		}
 		logBackup.Debugln("Received file, sending acknowledge")
 
-		//Sending file acknowledge
+		// Sending file acknowledge
 		fileSize := storage.GetFileSize(fileMetadata.FullPath)
 		fileSizeAckn := new(bftp.FileAcknowledge)
 		fileSizeAckn.Size = fileSize
@@ -142,7 +142,6 @@ func (b *BackupSession) downloadFile(fileMetadata bftp.FileMetadata, savesetLoca
 	}
 	writer.Flush()
 	fileMetadata.LocationOnServer = filepath.Join(savesetLocation, fileMetadata.FullPath)
-	fileMetadata.OriginalFileLocation = fileMetadata.FullPath
 	timeFinishBackup := time.Since(timeStartBackup)
 	fileMetadata.BackupTime = timeFinishBackup.String()
 	b.MainSession.Metadata.FilesMetadata = append(b.MainSession.Metadata.FilesMetadata, fileMetadata)
@@ -153,13 +152,8 @@ func (b *BackupSession) downloadFile(fileMetadata bftp.FileMetadata, savesetLoca
 }
 
 func (b *BackupSession) createMetadata() error {
-	jsonData, err := json.Marshal(b.MainSession.Metadata)
-	if err != nil {
+	if err := b.Database.CreateBackupMetadata(b.MainSession.Metadata); err != nil {
 		return err
-	} else {
-		if err := b.Database.WriteBackupMetadata(jsonData, filepath.Base(b.MainSession.Metadata.SavesetPath), b.MainSession.Metadata.ClientName); err != nil {
-			return err
-		}
 	}
 	return nil
 }

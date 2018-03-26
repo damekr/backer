@@ -35,12 +35,15 @@ func (s *server) Backup(ctx context.Context, backupRequest *protoclnt.BackupRequ
 	md, ok := metadata.FromIncomingContext(ctx)
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
-	fileSystem := fs.FS{}
-	validatedPaths := fileSystem.GetAbsolutePaths(backupRequest.Paths)
+	fileSystem := fs.NewLocalFileSystem()
+	validatedPaths, err := fileSystem.ExpandDirsForFiles(backupRequest.Paths)
+	if err != nil {
+		log.Errorln("Could not expand dirs for files, err: ", err)
+	}
 	log.Printf("Validated paths: ", validatedPaths)
 
 	// TODO backupRequest.IP is probably client ip, this message should contain server external ip
-	err := runBackup(validatedPaths)
+	err = runBackup(validatedPaths)
 	if err != nil {
 		log.Errorf("Backup Failed, err: ", err.Error())
 	}

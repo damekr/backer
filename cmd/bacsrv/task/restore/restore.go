@@ -43,7 +43,7 @@ func (r *Restore) Run() {
 	for _, v := range r.FilesMetadata {
 		fileMeta := protoclnt.RestoreFileInfo{
 			LocationOnServer: v.LocationOnServer,
-			OriginalLocation: v.OriginalFileLocation,
+			OriginalLocation: v.FullPath,
 		}
 		restoreFilesInfo = append(restoreFilesInfo, &fileMeta)
 	}
@@ -65,17 +65,17 @@ func (r *Restore) Stop() {
 	log.Println("Stopping")
 }
 
-//Setup configures restore job, should be splited into different kind of setups(singleDir, wholeBackup etc.).
+// Setup configures restore job, should be splited into different kind of setups(singleDir, wholeBackup etc.).
 func (r *Restore) Setup(remotePath string, singleDirPath string) error {
-	backupMetadata, err := db.Get().GetBackupMetadata(r.BackupID)
+	backupMetadata, err := db.Get().ReadBackupMetadata(r.BackupID)
 	if err != nil {
 		return err
 	}
 
 	if singleDirPath != "" {
 		for _, v := range backupMetadata.FilesMetadata {
-			if v.OriginalFileLocation == singleDirPath {
-				log.Infoln("Adding to restore single dir: ", v.OriginalFileLocation)
+			if v.FullPath == singleDirPath {
+				log.Infoln("Adding to restore single dir: ", v.FullPath)
 				r.FilesMetadata = append(r.FilesMetadata, v)
 			}
 		}

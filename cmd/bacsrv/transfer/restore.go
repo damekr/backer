@@ -30,7 +30,7 @@ func (r *RestoreSession) HandleRestoreSession(objectsNumber int) error {
 		fileT := new(bftp.FileMetadata)
 		fileTEmpty := new(bftp.FileMetadata)
 
-		//Decoding file path to be transfered
+		// Decoding file path to be transfered
 		fileTDec := gob.NewDecoder(r.MainSession.Conn)
 		err := fileTDec.Decode(&fileT)
 		if err != nil {
@@ -52,7 +52,7 @@ func (r *RestoreSession) HandleRestoreSession(objectsNumber int) error {
 			}
 		}
 
-		//Sending size of file being transfered
+		// Sending size of file being transfered
 		fileTEnc := gob.NewEncoder(r.MainSession.Conn)
 		fileT.FileSize = storage.GetFileSize(fileT.FullPath)
 		if err := fileTEnc.Encode(&fileT); err != nil {
@@ -61,13 +61,13 @@ func (r *RestoreSession) HandleRestoreSession(objectsNumber int) error {
 		}
 		logRestore.Debugln("Handling transfer with sending file to client, file: ", fileT.FullPath)
 
-		//Sending file
+		// Sending file
 		err = r.uploadFile(fileT.FullPath, fileT.FileSize)
 		if err != nil {
 			logRestore.Errorln("Could not send file, err: ", err.Error())
 		}
 
-		//Receiving file acknowledge
+		// Receiving file acknowledge
 		fileSize := new(bftp.FileAcknowledge)
 		fileSizeEncoder := gob.NewDecoder(r.MainSession.Conn)
 		if err := fileSizeEncoder.Decode(&fileSize); err != nil {
@@ -81,7 +81,7 @@ func (r *RestoreSession) HandleRestoreSession(objectsNumber int) error {
 
 func (r *RestoreSession) uploadFile(localFilePath string, size int64) error {
 	logRestore.Debugln("Starting sending file: ", localFilePath)
-	file, err := r.MainSession.Storage.OpenFile(localFilePath)
+	file, err := r.MainSession.Storage.ReadFile(localFilePath)
 	if err != nil {
 		logRestore.Errorln("Cannot create localfile to write, err: ", err)
 		return err

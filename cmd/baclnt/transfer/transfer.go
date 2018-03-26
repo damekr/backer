@@ -18,7 +18,7 @@ type MainSession struct {
 	Conn       net.Conn
 	Id         uint64
 	Transfer   *bftp.Transfer
-	Storage    *fs.FileSystem
+	Storage    *fs.LocalFileSystem
 }
 
 type RestoreFileMetadata struct {
@@ -39,7 +39,7 @@ func (s *MainSession) StartBackup(filesPaths []string) error {
 		TransferType:  bftp.TPUT,
 		ObjectsNumber: len(filesPaths),
 	}
-	//Sending transfer type
+	// Sending transfer type
 	log.Println("Opening transfer with server, type: ", backupTransfer.TransferType)
 	tr := gob.NewEncoder(s.Conn)
 	err := tr.Encode(&backupTransfer)
@@ -47,7 +47,7 @@ func (s *MainSession) StartBackup(filesPaths []string) error {
 		log.Println("Could not encode transfer struct, error: ", err)
 		return err
 	}
-	//Acknowledge
+	// Acknowledge message
 	log.Println("Waiting for response...")
 	tranType := new(bftp.Transfer)
 	trInc := gob.NewDecoder(s.Conn)
@@ -56,14 +56,18 @@ func (s *MainSession) StartBackup(filesPaths []string) error {
 		log.Println("Could not decode response of transfer type")
 		return err
 	}
-	//Server response an empty string when does not support requesting operation
+	// Server response an empty string when does not support requesting operation
 	if tranType.TransferType == "" {
 		log.Println("Server does not support such operation")
 		return bftp.ServerDoesNotSupportSuchOperation
 	}
 	log.Println("Server accepts connection type")
 	s.Transfer = tranType
-	backupSession := CreateBackupSession(s)
+
+	// Creating new filesystem object to handle backup session - TODO Consider put it in main session
+	fileSystem := fs.NewLocalFileSystem()
+
+	backupSession := CreateBackupSession(s, fileSystem)
 	for fileNumber, path := range filesPaths {
 		log.Debugf("Sending file %s, number %s", path, fileNumber)
 		backupSession.PutFile(path, path)
@@ -91,7 +95,7 @@ func (s *MainSession) StartRestore(restoreFileMetadata []RestoreFileMetadata) er
 		log.Println("Could not decode response of transfer type")
 		return err
 	}
-	//Server response an empty string when does not support requesting operation
+	// Server response an empty string when does not support requesting operation
 	if tranType.TransferType == "" {
 		log.Println("Server does not support such operation")
 		return bftp.ServerDoesNotSupportSuchOperation
@@ -99,7 +103,11 @@ func (s *MainSession) StartRestore(restoreFileMetadata []RestoreFileMetadata) er
 	log.Println("Server accepts connection type")
 	s.Transfer = tranType
 	log.Debugln("Creating restore session")
-	restoreSession := CreateRestoreSession(s)
+
+	// Creating new filesystem object to handle backup session - TODO consider place it in main session
+	fileSystem := fs.NewLocalFileSystem()
+
+	restoreSession := CreateRestoreSession(s, fileSystem)
 	for _, v := range restoreFileMetadata {
 		log.Debugf("Downloading file from server path: %s, to local path: %s", v.PathOnServer, v.PathOnServer)
 		err = restoreSession.GetFile(v.PathOnServer, v.PathOnClient)

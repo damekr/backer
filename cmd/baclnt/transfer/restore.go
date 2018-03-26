@@ -3,8 +3,7 @@ package transfer
 import (
 	"bufio"
 	"encoding/gob"
-	"os"
-	"path"
+	"io"
 
 	"github.com/damekr/backer/cmd/baclnt/fs"
 	"github.com/damekr/backer/pkg/bftp"
@@ -12,11 +11,13 @@ import (
 
 type RestoreSession struct {
 	MainSession *MainSession
+	FileSystem  fs.FileSystem
 }
 
-func CreateRestoreSession(mainSession *MainSession) *RestoreSession {
+func CreateRestoreSession(mainSession *MainSession, fileSystem fs.FileSystem) *RestoreSession {
 	return &RestoreSession{
 		MainSession: mainSession,
+		FileSystem:  fileSystem,
 	}
 }
 
@@ -42,17 +43,21 @@ func (r *RestoreSession) GetFile(fileRemotePath, fileLocalPath string) error {
 		return bftp.FileDoesNotExist
 	}
 	log.Println("Creating local file: ", fileLocalPath)
-	localStorage := fs.NewFS(path.Dir(fileLocalPath))
-	file, err := localStorage.CreateFile(path.Base(fileLocalPath))
+	err = r.FileSystem.CreateFile(*receivedFileMetadata)
 	if err != nil {
 		log.Println("Cannot create localfile to write, err: ", err)
 		return err
 	}
-	defer file.Close()
+	// TODO, This part might not work
+	fileWritter, err := r.FileSystem.WriteFile(*receivedFileMetadata)
+	if err != nil {
+		log.Errorln("Could not create file writter, err: ", err)
+	}
+	defer fileWritter.Close()
 
 	// Downloading file part
 	log.Println("Server has such file starting downloading file to local path: ", fileLocalPath)
-	err = r.downloadFile(file, receivedFileMetadata.FileSize)
+	err = r.downloadFile(fileWritter, receivedFileMetadata)
 	if err != nil {
 		log.Println("Could not download file, error: ", err)
 		return err
@@ -94,11 +99,13 @@ func (r *RestoreSession) receiveFileMetadata() (*bftp.FileMetadata, error) {
 
 //TODO it is the same in backup also, consider put it into main session struct
 func (r *RestoreSession) sendTransferAcknowledge(filePath string) (*bftp.FileAcknowledge, error) {
-	localfs := fs.NewFS(filePath)
-	fileSize := localfs.GetFileSize(filePath)
+	fileMetadata, err := r.FileSystem.ReadFileMetadata(filePath)
+	if err != nil {
+		log.Errorln("Could not read file metadata, err: ", err)
+	}
 	fileSizeAckn := new(bftp.FileAcknowledge)
 	fileSizeEncoder := gob.NewEncoder(r.MainSession.Conn)
-	fileSizeAckn.Size = fileSize
+	fileSizeAckn.Size = fileMetadata.FileSize
 	log.Debugln("Filetransfer acknowledge struct: ", fileSizeAckn)
 	if err := fileSizeEncoder.Encode(&fileSizeAckn); err != nil {
 		log.Warningln("Could not encode FileAcknowledge struct, err: ", err)
@@ -108,16 +115,15 @@ func (r *RestoreSession) sendTransferAcknowledge(filePath string) (*bftp.FileAck
 	return fileSizeAckn, nil
 }
 
-func (r *RestoreSession) downloadFile(file *os.File, size int64) error {
-	log.Println("Starting downloading file, size: ", size)
-	writer := bufio.NewWriter(file)
+func (r *RestoreSession) downloadFile(fileWritter io.Writer, metadata *bftp.FileMetadata) error {
+	log.Println("Starting downloading file, size: ", metadata.FileSize)
 	reader := bufio.NewReader(r.MainSession.Conn)
 	var readFromConnection int64
 	var wroteToFile int64
 	buffer := make([]byte, r.MainSession.Transfer.Buffer)
-	if size < int64(r.MainSession.Transfer.Buffer) {
-		log.Println("Shrinking buffer to filesize: ", size)
-		buffer = make([]byte, size)
+	if metadata.FileSize < int64(r.MainSession.Transfer.Buffer) {
+		log.Println("Shrinking buffer to filesize: ", metadata.FileSize)
+		buffer = make([]byte, metadata.FileSize)
 	}
 	for {
 		read, err := reader.Read(buffer)
@@ -126,18 +132,18 @@ func (r *RestoreSession) downloadFile(file *os.File, size int64) error {
 			break
 		}
 		readFromConnection += int64(read)
-		wrote, err := writer.Write(buffer[:read])
+		wrote, err := fileWritter.Write(buffer[:read])
 		if err != nil {
 			log.Println("Could not write to file writter, error: ", err)
 			break
 		}
 		wroteToFile += int64(wrote)
-		if wroteToFile == size {
+		if wroteToFile == metadata.FileSize {
 			log.Println("Wrote all data to file")
 			break
 		}
 
 	}
-	writer.Flush()
+	// fileWritter.Flush()
 	return nil
 }
