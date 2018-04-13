@@ -5,6 +5,7 @@ import (
 
 	"github.com/damekr/backer/cmd/bacsrv/config"
 	"github.com/damekr/backer/cmd/bacsrv/storage/local"
+	"github.com/damekr/backer/pkg/bftp"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,6 +29,7 @@ type Storage interface {
 	CreateBucket(clientName string) (string, error)
 	CreateSaveset(bucketLocation string) (string, error)
 	CreateFile(savesetLocation, fileOriginalPath string) (*os.File, error)
+	CreateDir(savesetLocation string, dirMetadata bftp.DirMetadata) error
 	ReadFile(fileLocation string) (*os.File, error)
 }
 

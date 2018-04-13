@@ -21,7 +21,32 @@ func CreateBackupSession(mainSession *MainSession, fileSystem fs.FileSystem) *Ba
 	}
 }
 
-func (b *BackupSession) PutFile(fileLocalPath, fileRemotePath string) error {
+func (b *BackupSession) sendDirsStructure(dirPaths []string) error {
+	log.Debugln("Sending paths structure")
+	var dirsMetadata []*bftp.DirMetadata
+	for _, v := range dirPaths {
+		dirMetadata, err := b.FileSystem.ReadDirMetadata(v)
+		if err != nil {
+			log.Errorln("Cannot read dir metadata, err: ", err)
+		} else {
+			dirsMetadata = append(dirsMetadata, dirMetadata)
+		}
+	}
+	return b.sendDirsMetadata(dirsMetadata)
+}
+
+func (b *BackupSession) sendDirsMetadata(metadata []*bftp.DirMetadata) error {
+	log.Debugln("Sending dirs metadata")
+	dirsMetadataEncoder := gob.NewEncoder(b.MainSession.Conn)
+	err := dirsMetadataEncoder.Encode(&metadata)
+	if err != nil {
+		log.Error("Could not encode DirMetadata struct")
+		return err
+	}
+	return nil
+}
+
+func (b *BackupSession) putFile(fileLocalPath, fileRemotePath string) error {
 
 	fileMetadata, err := b.FileSystem.ReadFileMetadata(fileRemotePath)
 

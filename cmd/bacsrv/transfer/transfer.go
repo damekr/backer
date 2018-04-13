@@ -82,8 +82,8 @@ func (s *MainSession) Authenticate(password string) error {
 }
 
 func (s *MainSession) SessionDispatcher(createSessionMetadata bool) error {
-	//Receiving type of session (TPUT, TGET)
-	//TODO Might be useful to have configurable session metadata, but now it's not used. For backup create always
+	// Receiving type of session (TPUT, TGET)
+	// TODO Might be useful to have configurable session metadata, but now it's not used. For backup create always
 	log.Println("Dispatching incoming connection")
 	transfer := new(bftp.Transfer)
 	tr := gob.NewDecoder(s.Conn)

@@ -118,7 +118,7 @@ func testFileRead() {
 	// }
 	//
 	// fmt.Println(string(data))
-	files, err := localFS.ExpandDirsForFiles([]string{"/tmp"})
+	files, err := localFS.ReadBackupObjectsLocations([]string{"/tmp"})
 	if err != nil {
 		log.Errorln("Error: ", err)
 	}

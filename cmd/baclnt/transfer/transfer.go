@@ -34,13 +34,14 @@ func NewSession(id uint64, params *bftp.ConnParameters, conn net.Conn) *MainSess
 	}
 }
 
-func (s *MainSession) StartBackup(filesPaths []string) error {
+func (s *MainSession) StartBackup(backupObjects fs.BackupObjects) error {
 	backupTransfer := bftp.Transfer{
 		TransferType:  bftp.TPUT,
-		ObjectsNumber: len(filesPaths),
+		ObjectsNumber: len(backupObjects.Files),
 	}
-	// Sending transfer type
-	log.Println("Opening transfer with server, type: ", backupTransfer.TransferType)
+	// Sending transfer type and number of objects
+	log.Debugln("Opening transfer with server, type: ", backupTransfer.TransferType)
+	log.Debugln("Number of objects to be transferred: ", backupTransfer.ObjectsNumber)
 	tr := gob.NewEncoder(s.Conn)
 	err := tr.Encode(&backupTransfer)
 	if err != nil {
@@ -68,9 +69,15 @@ func (s *MainSession) StartBackup(filesPaths []string) error {
 	fileSystem := fs.NewLocalFileSystem()
 
 	backupSession := CreateBackupSession(s, fileSystem)
-	for fileNumber, path := range filesPaths {
+
+	// Sending full dirs structure
+	err = backupSession.sendDirsStructure(backupObjects.Dirs)
+	if err != nil {
+		return err
+	}
+	for fileNumber, path := range backupObjects.Files {
 		log.Debugf("Sending file %s, number %s", path, fileNumber)
-		backupSession.PutFile(path, path)
+		backupSession.putFile(path, path)
 	}
 	return nil
 }

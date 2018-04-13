@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/d8x/bftp/storage"
 	"github.com/damekr/backer/cmd/bacsrv/db"
-	"github.com/damekr/backer/cmd/bacsrv/storage"
 	"github.com/damekr/backer/pkg/bftp"
 	"github.com/sirupsen/logrus"
 )
@@ -28,9 +28,19 @@ func CreateBackupSession(mainSession *MainSession) *BackupSession {
 
 func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumber int) error {
 	logBackup.Debugln("Handling incoming TPUT transfer type")
+	dirsMetadata, err := b.receiveDirsStructure()
+	if err != nil {
+		log.Errorln("Cannot receive dirs metadata structure, err: ", err)
+	}
+	for _, v := range *dirsMetadata {
+		err = b.MainSession.Storage.CreateDir(savesetLocation, v)
+		if err != nil {
+			log.Errorln("Could not create dir in storage, err: ", err)
+		}
+	}
+
 	for i := 0; i < objectsNumber; i++ {
 		logBackup.Debugln("Receiving object: ", i)
-
 		// Getting file metadata
 		fileMetadata, err := b.receiveFileMetadata()
 		if err != nil {
@@ -43,15 +53,13 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 		if err != nil {
 			logBackup.Errorln("Could not send file metadata as an acknowledge")
 		}
-
 		// Downloading file
 		err = b.downloadFile(*fileMetadata, savesetLocation)
 		if err != nil {
-			logBackup.Errorln("Cannot upload file, err: ", err.Error())
+			logBackup.Errorln("Cannot download file, err: ", err.Error())
 			return err
 		}
 		logBackup.Debugln("Received file, sending acknowledge")
-
 		// Sending file acknowledge
 		fileSize := storage.GetFileSize(fileMetadata.FullPath)
 		fileSizeAckn := new(bftp.FileAcknowledge)
@@ -66,6 +74,18 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 	}
 
 	return nil
+}
+
+func (b *BackupSession) receiveDirsStructure() (*[]bftp.DirMetadata, error) {
+	log.Debugln("Receiving dir structure")
+	dirsStructure := new([]bftp.DirMetadata)
+	dirsMetadataDecoder := gob.NewDecoder(b.MainSession.Conn)
+	err := dirsMetadataDecoder.Decode(&dirsStructure)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugln("Received dirs metadata struct: ", dirsStructure)
+	return dirsStructure, nil
 }
 
 func (b *BackupSession) receiveFileMetadata() (*bftp.FileMetadata, error) {
@@ -104,10 +124,10 @@ func (b *BackupSession) sendFileTransferAcknowledge(acknowledge *bftp.FileAcknow
 }
 
 func (b *BackupSession) downloadFile(fileMetadata bftp.FileMetadata, savesetLocation string) error {
-	logBackup.Debugln("Starting downloading file to path: ", fileMetadata.FullPath)
+	logBackup.Debugln("Starting downloading file:", fileMetadata.Name)
 	file, err := b.MainSession.Storage.CreateFile(savesetLocation, fileMetadata.FullPath)
 	if err != nil {
-		logBackup.Errorln("Cannot create localfile to write")
+		logBackup.Errorln("Cannot create localfile to write, err: ", err)
 		return err
 		//	TODO Respond with failed transfer, error on server side
 	}

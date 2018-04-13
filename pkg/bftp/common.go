@@ -80,6 +80,15 @@ type FileMetadata struct {
 	BackupTime       string      `json:"backupTime"`
 }
 
+type DirMetadata struct {
+	Path       string      `json:"dirPath"`
+	ModTime    time.Time   `json:"modTime"`
+	UID        int         `json:"userID"`
+	GID        int         `json:"groupID"`
+	Mode       os.FileMode `json:"dirMode"`
+	BackupTime string      `json:"backupTime"`
+}
+
 type FileTransferInfo struct {
 }
 

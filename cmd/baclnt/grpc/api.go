@@ -36,21 +36,21 @@ func (s *server) Backup(ctx context.Context, backupRequest *protoclnt.BackupRequ
 	log.Print("OK: ", ok)
 	log.Print("METADATA: ", md)
 	fileSystem := fs.NewLocalFileSystem()
-	validatedPaths, err := fileSystem.ExpandDirsForFiles(backupRequest.Paths)
+	backupObjects, err := fileSystem.ReadBackupObjectsLocations(backupRequest.Paths)
 	if err != nil {
 		log.Errorln("Could not expand dirs for files, err: ", err)
 	}
-	log.Printf("Validated paths: ", validatedPaths)
+	log.Printf("Validated paths: ", backupObjects)
 
 	// TODO backupRequest.IP is probably client ip, this message should contain server external ip
-	err = runBackup(validatedPaths)
+	err = runBackup(backupObjects)
 	if err != nil {
 		log.Errorf("Backup Failed, err: ", err.Error())
 	}
-	return &protoclnt.BackupResponse{Validpaths: validatedPaths}, nil
+	return &protoclnt.BackupResponse{Validpaths: backupObjects.Files}, nil
 }
 
-func runBackup(paths []string) error {
+func runBackup(backupObjects fs.BackupObjects) error {
 	// TODO Consider extend gRPC API to send client and server IP or external NAME it allows trigger backup from many servers to one client
 	client := network.CreateTransferClient()
 	session, err := client.Connect(config.MainConfig.ServerExternalName, config.MainConfig.ServerDataPort)
@@ -58,7 +58,7 @@ func runBackup(paths []string) error {
 		log.Errorln("Cannot initialize connection, err: ", err.Error())
 	}
 	log.Println("Session ID: ", session.Id)
-	err = session.StartBackup(paths)
+	err = session.StartBackup(backupObjects)
 	if err != nil {
 		log.Error("Backup failed, err: ", err.Error())
 	}

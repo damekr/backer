@@ -9,13 +9,10 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 
 	"github.com/damekr/backer/pkg/bftp"
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	defaultDirPerm = os.FileMode(0744)
 )
 
 type LocalFileSystem struct {
@@ -88,7 +85,7 @@ func (l LocalFileSystem) ReadFileMetadata(filePath string) (*bftp.FileMetadata, 
 	fileMetadata.FileSize = fileInfo.Size()
 	fileMetadata.ModTime = fileInfo.ModTime()
 	fileMetadata.Mode = fileInfo.Mode()
-	fileMetadata.FullPath = path.Dir(filePath)
+	fileMetadata.FullPath = filePath
 	return fileMetadata, nil
 }
 
@@ -102,32 +99,52 @@ func (l LocalFileSystem) CheckIfFileExists(fullFilePath string) bool {
 	return true
 }
 
-func (l LocalFileSystem) ExpandDirsForFiles(paths []string) ([]string, error) {
-	log.Debug("Checking absolute paths for: ", paths)
+func (l LocalFileSystem) ReadDirMetadata(path string) (*bftp.DirMetadata, error) {
+	dir, err := os.Open(path)
+	defer dir.Close()
+	if err != nil {
+		return nil, err
+	}
+	dirInfo, err := dir.Stat()
+	if err != nil {
+		return nil, err
+	}
+	dirMetadata := new(bftp.DirMetadata)
+	dirMetadata.Path = path
+	dirMetadata.Mode = dirInfo.Mode()
+	dirMetadata.ModTime = dirInfo.ModTime()
+	dirMetadata.BackupTime = time.Now().String()
+
+	return dirMetadata, nil
+}
+
+func (l LocalFileSystem) ReadBackupObjectsLocations(paths []string) (BackupObjects, error) {
+	log.Debug("Reading backup objects with paths:", paths)
+	backupObjects := BackupObjects{}
 	validatedPaths := l.validatePaths(paths)
-	var filesToBeBackedUp []string
 	for i := range validatedPaths {
 		err := filepath.Walk(validatedPaths[i], func(path string, info os.FileInfo, err error) error {
 			if info.Mode().IsRegular() {
 				log.Debugf("Adding file %s to list", path)
-				filesToBeBackedUp = append(filesToBeBackedUp, path)
+				backupObjects.Files = append(backupObjects.Files, path)
 			} else if info.Mode()&os.ModeSymlink != 0 {
 				log.Debugln("Found symlink: ", path)
 			} else if info.Mode().IsDir() {
 				log.Debugln("Found dir: ", path)
+				backupObjects.Dirs = append(backupObjects.Dirs, path)
 			} else {
 				log.Debug("Found not regular file: ", path)
 			}
 			return nil
 		})
 		if err != nil {
-			return filesToBeBackedUp, err
+			return backupObjects, err
 		}
 	}
-	return filesToBeBackedUp, nil
+	return backupObjects, nil
 }
 
-func (m LocalFileSystem) validatePaths(paths []string) []string {
+func (l LocalFileSystem) validatePaths(paths []string) []string {
 	var validatedPaths []string
 	for _, p := range paths {
 		log.Debugln("Checking path: ", p)

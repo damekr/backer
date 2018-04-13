@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/damekr/backer/cmd/bacsrv/config"
+	"github.com/damekr/backer/pkg/bftp"
 	"github.com/sirupsen/logrus"
 	"github.com/x-cray/logrus-prefixed-formatter"
 )
@@ -89,29 +90,26 @@ func (l Local) ReadFile(fileLocation string) (*os.File, error) {
 }
 
 func (l Local) CreateFile(savesetLocation, fileOriginalPath string) (*os.File, error) {
-	filePath := filepath.Dir(fileOriginalPath)
+	// filePath := filepath.Dir(fileOriginalPath)
 	fileName := filepath.Base(fileOriginalPath)
 	log.Infof("Creating file: %s, in saveset: %s", fileName, savesetLocation)
-	fullFilePath, err := createFileOriginalPath(savesetLocation, filePath)
-	if err != nil {
-		log.Errorln("Cannot create path for file backup")
-	}
-	file, err := os.Create(filepath.Join(fullFilePath, fileName))
+
+	file, err := os.Create(filepath.Join(savesetLocation, fileOriginalPath))
 	if err != nil {
 		return nil, err
 	}
 	return file, nil
 }
 
-func createFileOriginalPath(savesetLocation, filePath string) (string, error) {
-	log.Infof("Creating path: %s under saveset: %s\n", filePath, savesetLocation)
-	fullFilePath := filepath.Join(savesetLocation, filePath)
-	err := os.MkdirAll(fullFilePath, 0700)
+func (l Local) CreateDir(savesetLocation string, dirMetadata bftp.DirMetadata) error {
+	log.Debugf("Creating dir: %s under saveset: %s\n", dirMetadata.Path, savesetLocation)
+	dirFullPath := filepath.Join(savesetLocation, dirMetadata.Path)
+	err := os.MkdirAll(dirFullPath, dirMetadata.Mode)
 	if err != nil {
-		log.Errorf("Cannot create path: %s under saveset: %s\n", filePath, savesetLocation)
-		return "", err
+		log.Errorf("Cannot create dir: %s under saveset: %s\n", dirMetadata, savesetLocation)
+		return err
 	}
-	return fullFilePath, nil
+	return nil
 }
 
 func (l Local) RemoveBucket(clientName string) {
