@@ -67,7 +67,7 @@ func (r *Restore) Stop() {
 
 // Setup configures restore job, should be splited into different kind of setups(singleDir, wholeBackup etc.).
 func (r *Restore) Setup(remotePath string, singleDirPath string) error {
-	backupMetadata, err := db.Get().ReadBackupMetadata(r.BackupID)
+	backupMetadata, err := db.DB().ReadBackupMetadata(r.BackupID)
 	if err != nil {
 		return err
 	}

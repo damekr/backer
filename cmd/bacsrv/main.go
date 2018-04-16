@@ -83,7 +83,7 @@ func startDataServer() {
 
 func checkConfigFile(configPath string) error {
 	// It works for one file, as viper supports directory with given extensions,
-	// it shall be extended by this feature
+	// it shall be extended about this feature
 
 	_, err := os.Stat(configPath)
 	if err == nil {

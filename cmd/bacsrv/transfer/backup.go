@@ -22,12 +22,14 @@ var logBackup = logrus.WithFields(logrus.Fields{"prefix": "transfer:backup"})
 func CreateBackupSession(mainSession *MainSession) *BackupSession {
 	return &BackupSession{
 		MainSession: mainSession,
-		Database:    db.Get(),
+		Database:    db.DB(),
 	}
 }
 
 func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumber int) error {
 	logBackup.Debugln("Handling incoming TPUT transfer type")
+
+	// Receiving dirs structure if any
 	dirsMetadata, err := b.receiveDirsStructure()
 	if err != nil {
 		log.Errorln("Cannot receive dirs metadata structure, err: ", err)
@@ -37,6 +39,12 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 		if err != nil {
 			log.Errorln("Could not create dir in storage, err: ", err)
 		}
+	}
+
+	// Sending acknowledge message
+	err = b.sendEmptyAckMessage()
+	if err != nil {
+		return err
 	}
 
 	for i := 0; i < objectsNumber; i++ {
@@ -73,6 +81,17 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 		logBackup.Errorln("Could not create session metadata, err: ", err)
 	}
 
+	return nil
+}
+
+func (b *BackupSession) sendEmptyAckMessage() error {
+	log.Debugln("Sending empty ack message")
+	ackMessage := new(bftp.EmtpyAck)
+	fileAEnc := gob.NewEncoder(b.MainSession.Conn)
+	if err := fileAEnc.Encode(&ackMessage); err != nil {
+		logBackup.Errorln("Could not send acknowledge, err: ", err)
+		return err
+	}
 	return nil
 }
 

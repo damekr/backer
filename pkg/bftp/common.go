@@ -96,6 +96,9 @@ type FileAcknowledge struct {
 	Size int64
 }
 
+type EmtpyAck struct {
+}
+
 type BFTPAcknowledgeMessage struct {
 	Status bool
 }

@@ -24,7 +24,7 @@ func Create(clientName string) *ListBackups {
 func (l *ListBackups) Run() {
 	log.Println("Getting backups")
 	var backupIds []int64
-	database := db.Get()
+	database := db.DB()
 	clientAssets, err := database.ReadBackupsMetadataOfClient(l.ClientName)
 	if err != nil {
 		log.Errorln("Could not read backups metadata of client, err: ", err)
@@ -35,7 +35,6 @@ func (l *ListBackups) Run() {
 		l.BackupIDs = backupIds
 		log.Debugln("Found client backups ids: ", backupIds)
 	}
-
 }
 
 func (l *ListBackups) Stop() {

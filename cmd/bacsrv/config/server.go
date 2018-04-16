@@ -51,8 +51,7 @@ func ReadInServerConfig(path string) error {
 		LogOutput:             viper.GetString("server.LogOutput"),
 		Debug:                 viper.GetBool("server.Debug"),
 		Storage:               storage,
-
-		DBLocation: viper.GetString("server.DBLocation"),
+		DBLocation:            viper.GetString("server.DBLocation"),
 	}
 	return nil
 }

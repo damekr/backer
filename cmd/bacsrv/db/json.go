@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/damekr/backer/cmd/bacsrv/config"
 	"github.com/damekr/backer/pkg/bftp"
 )
 
@@ -53,9 +52,8 @@ func (j Json) CreateBackupMetadata(backupMetadata bftp.BackupMetaData) error {
 }
 
 func (j Json) createClientMetaCatalogue(clientName string) (string, error) {
-	dbLocation := filepath.Join(config.MainConfig.Storage.Location, "/.meta/db")
-	log.Debugln("DB Assets DBLocation: ", dbLocation)
-	clientDbLocation := filepath.Join(dbLocation, clientName)
+	log.Debugln("DB Assets DBLocation: ", j.DBLocation)
+	clientDbLocation := filepath.Join(j.DBLocation, clientName)
 	if err := os.MkdirAll(clientDbLocation, dbFilesPermissions); err != nil {
 		return "", err
 	}
@@ -81,17 +79,20 @@ func (j Json) ReadBackupsMetadata() ([]BackupMetadata, error) {
 
 }
 func (j Json) ReadBackupsMetadataOfClient(clientName string) ([]BackupMetadata, error) {
-	files, err := ioutil.ReadDir(filepath.Join(j.DBLocation, clientName))
+	clientMetadataLocation := filepath.Join(j.DBLocation, clientName)
+	log.Debugln("DBLOCATION: ", j.DBLocation)
+	log.Debugln("Reading client metadata from location: ", clientMetadataLocation)
+	files, err := ioutil.ReadDir(clientMetadataLocation)
 	if err != nil {
 		return nil, clientMetadataNotFound
 	}
 
-	backupsMetadata := make([]BackupMetadata, len(files))
-
+	var backupsMetadata []BackupMetadata
 	for _, v := range files {
+		log.Debugln("Checking json files for metadata: ", v)
 		backupMetadata, err := j.readClientBackupMetadata(filepath.Join(j.DBLocation, clientName, v.Name()))
 		if err != nil {
-			log.Errorln(err)
+			log.Errorln("Cannot read client metadata file, err: ", err)
 		} else {
 			backupsMetadata = append(backupsMetadata, *backupMetadata)
 		}
@@ -143,7 +144,7 @@ func (j Json) ReadBackupMetadata(backupID int) (*BackupMetadata, error) {
 		}
 	}
 	if seekingBackupMetadata.BackupID == 0 {
-		return seekingBackupMetadata, errors.New("Backup metadata not found")
+		return seekingBackupMetadata, errors.New("backup metadata not found")
 	}
 	return seekingBackupMetadata, nil
 }

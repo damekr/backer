@@ -12,7 +12,6 @@ import (
 var (
 	log                    = logrus.WithFields(logrus.Fields{"prefix": "db"})
 	clientMetadataNotFound = errors.New("not found client metadata")
-	dbLocation             = filepath.Join(config.MainConfig.Storage.Location, ".meta/db")
 )
 
 type BackupsDB interface {
@@ -31,7 +30,8 @@ type BackupMetadata struct {
 	FilesMetadata []bftp.FileMetadata
 }
 
-func Get() BackupsDB {
+func DB() BackupsDB {
 	// IN case of use different DBs
+	dbLocation := filepath.Join(config.MainConfig.DBLocation, ".meta/db")
 	return GetJsonsBackupDB(dbLocation)
 }

@@ -35,35 +35,30 @@ func NewSession(id uint64, params *bftp.ConnParameters, conn net.Conn) *MainSess
 }
 
 func (s *MainSession) StartBackup(backupObjects fs.BackupObjects) error {
-	backupTransfer := bftp.Transfer{
+	backupTransfer := &bftp.Transfer{
 		TransferType:  bftp.TPUT,
 		ObjectsNumber: len(backupObjects.Files),
 	}
-	// Sending transfer type and number of objects
-	log.Debugln("Opening transfer with server, type: ", backupTransfer.TransferType)
-	log.Debugln("Number of objects to be transferred: ", backupTransfer.ObjectsNumber)
-	tr := gob.NewEncoder(s.Conn)
-	err := tr.Encode(&backupTransfer)
+	err := s.sendTransferType(backupTransfer)
 	if err != nil {
-		log.Println("Could not encode transfer struct, error: ", err)
-		return err
+		log.Errorln("Cannot send transfer type struct, err: ", err)
 	}
+
 	// Acknowledge message
-	log.Println("Waiting for response...")
-	tranType := new(bftp.Transfer)
-	trInc := gob.NewDecoder(s.Conn)
-	err = trInc.Decode(&tranType)
+	ack, err := s.receiveTransferTypeAck()
 	if err != nil {
-		log.Println("Could not decode response of transfer type")
+		log.Errorln("Cannot receive ack message about transfer type, err: ", err)
 		return err
 	}
+
 	// Server response an empty string when does not support requesting operation
-	if tranType.TransferType == "" {
+	if ack.TransferType == "" {
 		log.Println("Server does not support such operation")
 		return bftp.ServerDoesNotSupportSuchOperation
 	}
+
 	log.Println("Server accepts connection type")
-	s.Transfer = tranType
+	s.Transfer = ack
 
 	// Creating new filesystem object to handle backup session - TODO Consider put it in main session
 	fileSystem := fs.NewLocalFileSystem()
@@ -71,10 +66,17 @@ func (s *MainSession) StartBackup(backupObjects fs.BackupObjects) error {
 	backupSession := CreateBackupSession(s, fileSystem)
 
 	// Sending full dirs structure
-	err = backupSession.sendDirsStructure(backupObjects.Dirs)
+	err = backupSession.sendDirsMetadata(backupObjects.Dirs)
 	if err != nil {
 		return err
 	}
+
+	// Receiving acknowledge
+	err = backupSession.receiveEmptyAckMessage()
+	if err != nil {
+		return err
+	}
+
 	for fileNumber, path := range backupObjects.Files {
 		log.Debugf("Sending file %s, number %s", path, fileNumber)
 		backupSession.putFile(path, path)
@@ -83,32 +85,32 @@ func (s *MainSession) StartBackup(backupObjects fs.BackupObjects) error {
 }
 
 func (s *MainSession) StartRestore(restoreFileMetadata []RestoreFileMetadata) error {
-	restoreTransfer := bftp.Transfer{
+	restoreTransfer := &bftp.Transfer{
 		TransferType:  bftp.TGET,
 		ObjectsNumber: len(restoreFileMetadata),
 	}
+
 	log.Println("Opening transfer with server, type: ", restoreTransfer.TransferType)
-	tr := gob.NewEncoder(s.Conn)
-	err := tr.Encode(&restoreTransfer)
+	err := s.sendTransferType(restoreTransfer)
 	if err != nil {
-		log.Println("Could not encode transfer struct, error: ", err)
+		log.Errorln("Cannot send transfer type, err: ", err)
 		return err
 	}
+
 	log.Println("Waiting for response...")
-	tranType := new(bftp.Transfer)
-	trInc := gob.NewDecoder(s.Conn)
-	err = trInc.Decode(&tranType)
+	ack, err := s.receiveTransferTypeAck()
 	if err != nil {
-		log.Println("Could not decode response of transfer type")
+		log.Errorln("Cannot receive ack message about transfer type, err: ", err)
 		return err
 	}
+
 	// Server response an empty string when does not support requesting operation
-	if tranType.TransferType == "" {
+	if ack.TransferType == "" {
 		log.Println("Server does not support such operation")
 		return bftp.ServerDoesNotSupportSuchOperation
 	}
 	log.Println("Server accepts connection type")
-	s.Transfer = tranType
+	s.Transfer = ack
 	log.Debugln("Creating restore session")
 
 	// Creating new filesystem object to handle backup session - TODO consider place it in main session
@@ -125,6 +127,29 @@ func (s *MainSession) StartRestore(restoreFileMetadata []RestoreFileMetadata) er
 	}
 
 	return nil
+}
+
+func (s *MainSession) sendTransferType(transferType *bftp.Transfer) error {
+	// Sending transfer type and number of objects
+	log.Debugln("Opening transfer with server, type: ", transferType.TransferType)
+	log.Debugln("Number of objects to be transferred: ", transferType.ObjectsNumber)
+	tr := gob.NewEncoder(s.Conn)
+	err := tr.Encode(transferType)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *MainSession) receiveTransferTypeAck() (*bftp.Transfer, error) {
+	log.Println("Waiting for response...")
+	tranType := new(bftp.Transfer)
+	trInc := gob.NewDecoder(s.Conn)
+	err := trInc.Decode(&tranType)
+	if err != nil {
+		return nil, err
+	}
+	return tranType, nil
 }
 
 func (s *MainSession) CloseSession() error {
