@@ -54,16 +54,24 @@ type Authenticate struct {
 
 type Transfer struct {
 	TransferType  string
+	AssetID       int
 	ObjectsNumber int
 	Buffer        int
 }
 
-type BackupMetaData struct {
+type AssetMetadata struct {
 	ClientName    string `json:"clientName"`
-	BackupID      int    `json:"backupID"`
+	ID            int    `json:"ID"`
 	BucketPath    string `json:"bucketLocation"`
 	SavesetPath   string `json:"savesetLocation"`
 	FilesMetadata []FileMetadata
+	DirsMetadata  []DirMetadata
+}
+
+type RestoreOptions struct {
+	WholeBackup  bool     `json:"wholeBackup"`
+	ObjectsPaths []string `json:"restoreObjectsPaths"`
+	BasePath     string   `json:"basePath"`
 }
 
 type FileMetadata struct {

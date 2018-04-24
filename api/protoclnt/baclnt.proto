@@ -40,14 +40,12 @@ message BackupResponse {
 
 message RestoreRequest {
   string ip = 1;
-  repeated RestoreFileInfo restoreFileInfo = 2;
-
+  int32 backupID = 2;
+  bool wholeBackup = 3; // Whether we want to restore all files from backup with specific id
+  repeated string restoreObjects = 4; // Can be dir or path
+  string basePath = 5; // Where we want to place restore objects in different place
 }
 
-message RestoreFileInfo {
-  string locationOnServer = 1;
-  string originalLocation = 2;
-}
 
 
 message RestoreResponse {

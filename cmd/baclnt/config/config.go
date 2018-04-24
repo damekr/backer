@@ -12,7 +12,7 @@ var (
 
 // ClientConfig specify client main configuration
 type ClientConfig struct {
-	MgmtPort              string
+	ManagementPort        string
 	DataPort              string
 	LogOutput             string // STDOUT, FILE, SYSLOG
 	ExternalName          string
@@ -34,7 +34,7 @@ func ReadInConfig(path string) error {
 		return nil
 	}
 	MainConfig = ClientConfig{
-		MgmtPort:              viper.GetString("main.MgmtPort"),
+		ManagementPort:        viper.GetString("main.ManagementPort"),
 		DataPort:              viper.GetString("main.DataPort"),
 		LogOutput:             viper.GetString("main.LogOutput"),
 		Debug:                 viper.GetBool("main.Debug"),

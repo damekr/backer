@@ -9,7 +9,7 @@ import (
 	"github.com/damekr/backer/cmd/baclnt/config"
 	"github.com/damekr/backer/cmd/baclnt/fs"
 	"github.com/damekr/backer/cmd/baclnt/network"
-	"github.com/damekr/backer/cmd/baclnt/transfer"
+	"github.com/damekr/backer/pkg/bftp"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -22,9 +22,7 @@ var log = logrus.WithFields(logrus.Fields{"prefix": "api"})
 // Ping returns hostname of client
 func (s *server) Ping(ctx context.Context, in *protoclnt.PingRequest) (*protoclnt.PingResponse, error) {
 	log.Printf("Got request to ping client: %s", in.Ip)
-	md, ok := metadata.FromIncomingContext(ctx)
-	log.Print("OK: ", ok)
-	log.Print("METADATA: ", md)
+	s.metadataHandler(ctx)
 
 	return &protoclnt.PingResponse{Message: "FROM CLIENT"}, nil
 }
@@ -32,9 +30,7 @@ func (s *server) Ping(ctx context.Context, in *protoclnt.PingRequest) (*protocln
 func (s *server) Backup(ctx context.Context, backupRequest *protoclnt.BackupRequest) (*protoclnt.BackupResponse, error) {
 	log.Printf("Got request to backup client: %s", backupRequest.Ip)
 	log.Println("Paths to be validated: ", backupRequest.Paths)
-	md, ok := metadata.FromIncomingContext(ctx)
-	log.Print("OK: ", ok)
-	log.Print("METADATA: ", md)
+	s.metadataHandler(ctx)
 	fileSystem := fs.NewLocalFileSystem()
 	backupObjects, err := fileSystem.ReadBackupObjectsLocations(backupRequest.Paths)
 	if err != nil {
@@ -73,40 +69,36 @@ func runBackup(backupObjects fs.BackupObjects) error {
 
 func (s *server) Restore(ctx context.Context, restoreRequest *protoclnt.RestoreRequest) (*protoclnt.RestoreResponse, error) {
 	log.Printf("Got request to run restore of client: %s", restoreRequest.Ip)
-	log.Debugln("Need to restore files on server: ", restoreRequest.RestoreFileInfo)
-	md, ok := metadata.FromIncomingContext(ctx)
-	log.Print("OK: ", ok)
-	log.Print("METADATA: ", md)
-	var restoreFilesMetadata []transfer.RestoreFileMetadata
-	// TODO Fast fix to match paths - does not work! FIXME
+	log.Debugln("Need to restore from backupID: ", restoreRequest.BackupID)
+	s.metadataHandler(ctx)
 	startTime := time.Now()
 	log.Println("Start time: ", startTime)
-	for _, v := range restoreRequest.RestoreFileInfo {
-		fileMetadata := transfer.RestoreFileMetadata{
-			PathOnServer: v.LocationOnServer,
-			PathOnClient: v.OriginalLocation,
-		}
-		restoreFilesMetadata = append(restoreFilesMetadata, fileMetadata)
+	var restoreMetadata bftp.AssetMetadata
+	restoreMetadata.ID = int(restoreRequest.BackupID)
 
-	}
-	err := runRestore(restoreFilesMetadata)
+	var restoreOptions bftp.RestoreOptions
+	restoreOptions.BasePath = restoreRequest.BasePath
+	restoreOptions.WholeBackup = restoreRequest.WholeBackup
+	restoreOptions.ObjectsPaths = restoreRequest.RestoreObjects
+	err := runRestore(restoreMetadata, restoreOptions)
 	if err != nil {
 		log.Errorf("Restore Failed, err: ", err.Error())
 	}
 	return &protoclnt.RestoreResponse{Status: "OK"}, nil
 }
 
-func runRestore(restoreFilesMetadatas []transfer.RestoreFileMetadata) error {
+func runRestore(assetMetadata bftp.AssetMetadata, options bftp.RestoreOptions) error {
 	//TODO Consider extend gRPC API to send client and server IP or external NAME it allows trigger backup from many servers to one client
 	client := network.CreateTransferClient()
-	log.Debugln("Got restore files meta: ", restoreFilesMetadatas)
+	log.Debugln("Got restore files meta: ", assetMetadata)
+	log.Debugln("Got restore options: ", options)
 	session, err := client.Connect(config.MainConfig.ServerExternalName, config.MainConfig.ServerDataPort)
 	if err != nil {
 		log.Errorln("Could not connect to server for restore, err: ", err.Error())
 		return err
 	}
 	log.Println("Session ID: ", session.Id)
-	err = session.StartRestore(restoreFilesMetadatas)
+	err = session.StartRestore(assetMetadata.ID, options)
 	if err != nil {
 		log.Errorln("Restore failed, err: ", err.Error())
 	}
@@ -119,9 +111,16 @@ func runRestore(restoreFilesMetadatas []transfer.RestoreFileMetadata) error {
 	return nil
 }
 
+// TODO Just for now, for having it in one place
+func (s *server) metadataHandler(ctx context.Context) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	log.Print("OK: ", ok)
+	log.Print("METADATA: ", md)
+}
+
 // Start method starts a grpc server on specific port
 func Start() error {
-	lis, err := net.Listen("tcp", ":"+config.MainConfig.MgmtPort)
+	lis, err := net.Listen("tcp", ":"+config.MainConfig.ManagementPort)
 	if err != nil {
 		log.Errorf("Failed to listen: %v", err)
 		return err

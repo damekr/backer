@@ -18,8 +18,8 @@ var sessionID uint64
 
 // EstablishGRPCConnection initiate grpc connection
 func EstablishGRPCConnection(clientIP string) (*grpc.ClientConn, error) {
-	log.Debugf("Establishing grpc connection with: %s and port: %s ", clientIP, config.MainConfig.ClntMgmtPort)
-	conn, err := grpc.Dial(net.JoinHostPort(clientIP, config.MainConfig.ClntMgmtPort), grpc.WithInsecure())
+	log.Debugf("Establishing grpc connection with: %s and port: %s ", clientIP, config.MainConfig.ClientManagementPort)
+	conn, err := grpc.Dial(net.JoinHostPort(clientIP, config.MainConfig.ClientManagementPort), grpc.WithInsecure())
 	if err != nil {
 		log.Error("Cannot establish connection with client: ", clientIP)
 		return nil, err
@@ -27,8 +27,8 @@ func EstablishGRPCConnection(clientIP string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-func StartTCPMgmtServer() (net.Listener, error) {
-	lis, err := net.Listen("tcp", ":"+config.MainConfig.MgmtPort)
+func StartTCPManagementServer() (net.Listener, error) {
+	lis, err := net.Listen("tcp", ":"+config.MainConfig.ManagementPort)
 	log.Info("Starting bacsrv protoapi on addr: ", lis.Addr())
 	if err != nil {
 		return nil, err

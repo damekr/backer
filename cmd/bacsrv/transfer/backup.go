@@ -47,6 +47,9 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 		return err
 	}
 
+	// Saving dirs metadata
+	b.MainSession.Metadata.DirsMetadata = *dirsMetadata
+
 	for i := 0; i < objectsNumber; i++ {
 		logBackup.Debugln("Receiving object: ", i)
 		// Getting file metadata
@@ -56,7 +59,6 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 		}
 		log.Debugln("Received metadata: ", fileMetadata)
 		// Sending acknowledge
-		// TODO Make checks like: disk space
 		err = b.sendFileMetaDataAcknowledge(fileMetadata)
 		if err != nil {
 			logBackup.Errorln("Could not send file metadata as an acknowledge")
@@ -191,7 +193,7 @@ func (b *BackupSession) downloadFile(fileMetadata bftp.FileMetadata, savesetLoca
 }
 
 func (b *BackupSession) createMetadata() error {
-	if err := b.Database.CreateBackupMetadata(b.MainSession.Metadata); err != nil {
+	if err := b.Database.CreateAssetMetadata(b.MainSession.Metadata); err != nil {
 		return err
 	}
 	return nil

@@ -24,11 +24,6 @@ func NewLocalFileSystem() LocalFileSystem {
 
 func (l LocalFileSystem) CreateFile(metadata bftp.FileMetadata) error {
 	log.Debugln("Creating file: ", metadata)
-	err := l.createFileDir(metadata)
-	if err != nil {
-		log.Errorln("Cannot rebuild file dir, err: ", err)
-		return err
-	}
 	file, err := os.Create(path.Join(metadata.FullPath, metadata.Name))
 	defer file.Close()
 	if err != nil {
@@ -46,9 +41,18 @@ func (l LocalFileSystem) CreateFile(metadata bftp.FileMetadata) error {
 	return nil
 }
 
-func (l LocalFileSystem) createFileDir(metadata bftp.FileMetadata) error {
-	log.Debugln("Rebuilding needed directory for file full path: ", metadata.FullPath)
-	return os.MkdirAll(metadata.FullPath, metadata.DirMode)
+func (l LocalFileSystem) CreateDir(metadata bftp.DirMetadata) error {
+	err := l.createFileDir(metadata)
+	if err != nil {
+		log.Errorln("Cannot create directory, err: ", err)
+		return err
+	}
+	return nil
+}
+
+func (l LocalFileSystem) createFileDir(metadata bftp.DirMetadata) error {
+	log.Debugln("Creating directory path: ", metadata.Path)
+	return os.MkdirAll(metadata.Path, metadata.Mode)
 }
 
 func (l LocalFileSystem) ReadFile(filePath string) (io.ReadCloser, error) {

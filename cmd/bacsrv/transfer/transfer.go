@@ -19,7 +19,7 @@ type MainSession struct {
 	Id         uint64
 	Transfer   *bftp.Transfer
 	Storage    storage.Storage
-	Metadata   bftp.BackupMetaData
+	Metadata   bftp.AssetMetadata
 }
 
 func NewSession(id uint64, params *bftp.ConnParameters, conn net.Conn, storage storage.Storage) *MainSession {
@@ -107,7 +107,7 @@ func (s *MainSession) SessionDispatcher(createSessionMetadata bool) error {
 		}
 		restoreSession := CreateRestoreSession(s)
 		log.Debugln("Handling restore session")
-		return restoreSession.HandleRestoreSession(transfer.ObjectsNumber)
+		return restoreSession.HandleRestoreSession(transfer.AssetID)
 
 	case bftp.TPUT:
 		transfer.Buffer = bftp.BUFFERSIZE
@@ -124,12 +124,12 @@ func (s *MainSession) SessionDispatcher(createSessionMetadata bool) error {
 			return err
 		}
 		s.Metadata.BucketPath = bucket
-		saveset, err := s.Storage.CreateSaveset(bucket)
+		s.Metadata.ID = time.Now().Nanosecond()
+		saveset, err := s.Storage.CreateSaveset(bucket, s.Metadata.ID)
 		if err != nil {
 			log.Errorln("Could not create saveset, err: ", err.Error())
 		}
 		s.Metadata.SavesetPath = saveset
-		s.Metadata.BackupID = time.Now().Nanosecond()
 		return backupSession.HandleBackupSession(saveset, transfer.ObjectsNumber)
 
 	default:

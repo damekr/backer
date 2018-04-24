@@ -27,7 +27,7 @@ var DefaultStorage Storage
 
 type Storage interface {
 	CreateBucket(clientName string) (string, error)
-	CreateSaveset(bucketLocation string) (string, error)
+	CreateSaveset(bucketLocation string, assetID int) (string, error)
 	CreateFile(savesetLocation, fileOriginalPath string) (*os.File, error)
 	CreateDir(savesetLocation string, dirMetadata bftp.DirMetadata) error
 	ReadFile(fileLocation string) (*os.File, error)

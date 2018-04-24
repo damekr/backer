@@ -21,6 +21,76 @@ func CreateRestoreSession(mainSession *MainSession, fileSystem fs.FileSystem) *R
 	}
 }
 
+func (r *RestoreSession) receiveAssetMetadata(options bftp.RestoreOptions) (*bftp.AssetMetadata, error) {
+	log.Debugln("Receiving asset metadata")
+	assetMetadata := new(bftp.AssetMetadata)
+	connDecoder := gob.NewDecoder(r.MainSession.Conn)
+	err := connDecoder.Decode(&assetMetadata)
+	if err != nil {
+		log.Println("Could not decode FileMetadata struct from server, err: ", err)
+		return nil, err
+	}
+	modifiedAssets := r.modifyAssetMetadataWithRestoreOptions(assetMetadata, options)
+	err = r.sendBackModifiedAssetMetadata(modifiedAssets)
+	if err != nil {
+		log.Errorln("Could not send modified asset")
+	}
+	return assetMetadata, nil
+}
+
+func (r *RestoreSession) modifyAssetMetadataWithRestoreOptions(assetsMetadata *bftp.AssetMetadata, options bftp.RestoreOptions) *bftp.AssetMetadata {
+	if options.WholeBackup && options.BasePath == "" {
+		log.Debugln("Whole backup, the same path")
+		return assetsMetadata
+	}
+	if !options.WholeBackup && options.BasePath == "" {
+		log.Debugln("Single object, the same path")
+		var newFilesMetadataList []bftp.FileMetadata
+		var newDirMetadataList []bftp.DirMetadata
+		for _, o := range options.ObjectsPaths {
+			for _, f := range assetsMetadata.FilesMetadata {
+				if f.FullPath == o {
+					log.Debugln("Adding file: ", f)
+					newFilesMetadataList = append(newFilesMetadataList, f)
+				}
+			}
+			for _, k := range assetsMetadata.DirsMetadata {
+				if k.Path == o {
+					log.Debugln("Adding dir: ", k)
+					newDirMetadataList = append(newDirMetadataList, k)
+				}
+			}
+		}
+		assetsMetadata.DirsMetadata = newDirMetadataList
+		assetsMetadata.FilesMetadata = newFilesMetadataList
+		log.Debugln("Metadata: ", assetsMetadata)
+		return assetsMetadata
+	}
+	return nil
+}
+
+func (r *RestoreSession) sendBackModifiedAssetMetadata(metadata *bftp.AssetMetadata) error {
+	log.Debugln("Sending back modified asset message")
+	fileAEnc := gob.NewEncoder(r.MainSession.Conn)
+	if err := fileAEnc.Encode(&metadata); err != nil {
+		log.Errorln("Could not send acknowledge, err: ", err)
+		return err
+	}
+	return nil
+}
+
+func (r *RestoreSession) createDirs(dirsMetadata []bftp.DirMetadata) error {
+	log.Debugln("Creating directories")
+	var err error
+	for _, v := range dirsMetadata {
+		err = r.FileSystem.CreateDir(v)
+		if err != nil {
+			log.Errorln("Could not create directory, error: ", err)
+		}
+	}
+	return err
+}
+
 func (r *RestoreSession) GetFile(fileRemotePath, fileLocalPath string) error {
 	log.Printf("Downloading file: %r to: %r", fileRemotePath, fileLocalPath)
 

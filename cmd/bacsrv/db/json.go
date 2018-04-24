@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/damekr/backer/pkg/bftp"
 )
@@ -19,27 +20,28 @@ type Json struct {
 	DBLocation string
 }
 
-func GetJsonsBackupDB(dbLocation string) Json {
+func GetJsonBackupDB(dbLocation string) Json {
 	return Json{
 		// TODO It should be applied at the beginning of application start
 		DBLocation: dbLocation,
 	}
 }
 
-func (j Json) CreateBackupMetadata(backupMetadata bftp.BackupMetaData) error {
-	clientMetadataLocation, err := j.createClientMetaCatalogue(backupMetadata.ClientName)
+func (j Json) CreateAssetMetadata(assetMetadata bftp.AssetMetadata) error {
+	clientMetadataLocation, err := j.createClientMetaCatalogue(assetMetadata.ClientName)
 	if err != nil {
 		log.Errorln("Cannot create client metadata location, err: ", err.Error())
 		return err
 	}
 
 	log.Debugln("Creating backup metadata file")
-	file, err := os.Create(filepath.Join(clientMetadataLocation, filepath.Base(backupMetadata.SavesetPath)) + dbFilesSuffix)
+	s := strconv.Itoa(assetMetadata.ID)
+	file, err := os.Create(filepath.Join(clientMetadataLocation, s+dbFilesSuffix))
 	defer file.Close()
 	if err != nil {
 		return err
 	}
-	jsonData, err := json.Marshal(backupMetadata)
+	jsonData, err := json.Marshal(assetMetadata)
 	if err != nil {
 		return err
 	}
@@ -61,14 +63,14 @@ func (j Json) createClientMetaCatalogue(clientName string) (string, error) {
 
 }
 
-func (j Json) ReadBackupsMetadata() ([]BackupMetadata, error) {
-	var backupsMetadata []BackupMetadata
+func (j Json) ReadAssetsMetadata() ([]bftp.AssetMetadata, error) {
+	var backupsMetadata []bftp.AssetMetadata
 	clientsNames, err := j.ReadClientsNames()
 	if err != nil {
 		return backupsMetadata, err
 	}
 	for _, v := range clientsNames {
-		clientAsset, err := j.ReadBackupsMetadataOfClient(v)
+		clientAsset, err := j.ReadAssetsMetadataOfClient(v)
 		if err != nil {
 			log.Errorln("Could not read backup metadata of client: ", v)
 		} else {
@@ -78,7 +80,8 @@ func (j Json) ReadBackupsMetadata() ([]BackupMetadata, error) {
 	return backupsMetadata, nil
 
 }
-func (j Json) ReadBackupsMetadataOfClient(clientName string) ([]BackupMetadata, error) {
+func (j Json) ReadAssetsMetadataOfClient(clientName string) ([]bftp.AssetMetadata, error) {
+	var backupsMetadata []bftp.AssetMetadata
 	clientMetadataLocation := filepath.Join(j.DBLocation, clientName)
 	log.Debugln("DBLOCATION: ", j.DBLocation)
 	log.Debugln("Reading client metadata from location: ", clientMetadataLocation)
@@ -86,8 +89,6 @@ func (j Json) ReadBackupsMetadataOfClient(clientName string) ([]BackupMetadata, 
 	if err != nil {
 		return nil, clientMetadataNotFound
 	}
-
-	var backupsMetadata []BackupMetadata
 	for _, v := range files {
 		log.Debugln("Checking json files for metadata: ", v)
 		backupMetadata, err := j.readClientBackupMetadata(filepath.Join(j.DBLocation, clientName, v.Name()))
@@ -101,12 +102,12 @@ func (j Json) ReadBackupsMetadataOfClient(clientName string) ([]BackupMetadata, 
 
 }
 
-func (j Json) readClientBackupMetadata(clientAssetPath string) (*BackupMetadata, error) {
+func (j Json) readClientBackupMetadata(clientAssetPath string) (*bftp.AssetMetadata, error) {
 	rawData, err := ioutil.ReadFile(clientAssetPath)
 	if err != nil {
 		return nil, err
 	}
-	backupMetadata := new(BackupMetadata)
+	backupMetadata := new(bftp.AssetMetadata)
 	err = json.Unmarshal(rawData, backupMetadata)
 	if err != nil {
 		log.Error("Could not unmarshal json file, err: ", err.Error())
@@ -130,20 +131,19 @@ func (j Json) ReadClientsNames() ([]string, error) {
 
 }
 
-func (j Json) ReadBackupMetadata(backupID int) (*BackupMetadata, error) {
-
-	backupsMetadata, err := j.ReadBackupsMetadata()
+func (j Json) ReadAssetMetadata(backupID int) (*bftp.AssetMetadata, error) {
+	seekingBackupMetadata := new(bftp.AssetMetadata)
+	backupsMetadata, err := j.ReadAssetsMetadata()
 	if err != nil {
-		return nil, err
+		return seekingBackupMetadata, err
 	}
-	seekingBackupMetadata := new(BackupMetadata)
 	for _, v := range backupsMetadata {
-		log.Println("Backup id: ", v.BackupID)
-		if v.BackupID == backupID {
+		log.Println("Backup id: ", v.ID)
+		if v.ID == backupID {
 			seekingBackupMetadata = &v
 		}
 	}
-	if seekingBackupMetadata.BackupID == 0 {
+	if seekingBackupMetadata.ID == 0 {
 		return seekingBackupMetadata, errors.New("backup metadata not found")
 	}
 	return seekingBackupMetadata, nil

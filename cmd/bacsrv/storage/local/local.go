@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"time"
 
 	"github.com/damekr/backer/cmd/bacsrv/config"
 	"github.com/damekr/backer/pkg/bftp"
@@ -54,8 +53,8 @@ func Create(location string) (*Local, error) {
 	return local, nil
 }
 
-func (l Local) CreateSaveset(bucketLocation string) (string, error) {
-	savesetName := "fullbackup" + "_" + strconv.Itoa(time.Now().Nanosecond())
+func (l Local) CreateSaveset(bucketLocation string, assetID int) (string, error) {
+	savesetName := "fullbackup" + "_" + strconv.Itoa(assetID)
 	log.Debug("Creating saveset: ", savesetName)
 	savesetLocation := filepath.Join(bucketLocation, savesetName)
 	err := os.MkdirAll(savesetLocation, 0700)

@@ -21,11 +21,6 @@ type MainSession struct {
 	Storage    *fs.LocalFileSystem
 }
 
-type RestoreFileMetadata struct {
-	PathOnServer string
-	PathOnClient string
-}
-
 func NewSession(id uint64, params *bftp.ConnParameters, conn net.Conn) *MainSession {
 	return &MainSession{
 		Id:         id,
@@ -84,10 +79,10 @@ func (s *MainSession) StartBackup(backupObjects fs.BackupObjects) error {
 	return nil
 }
 
-func (s *MainSession) StartRestore(restoreFileMetadata []RestoreFileMetadata) error {
+func (s *MainSession) StartRestore(assetID int, options bftp.RestoreOptions) error {
 	restoreTransfer := &bftp.Transfer{
-		TransferType:  bftp.TGET,
-		ObjectsNumber: len(restoreFileMetadata),
+		TransferType: bftp.TGET,
+		AssetID:      assetID,
 	}
 
 	log.Println("Opening transfer with server, type: ", restoreTransfer.TransferType)
@@ -109,6 +104,7 @@ func (s *MainSession) StartRestore(restoreFileMetadata []RestoreFileMetadata) er
 		log.Println("Server does not support such operation")
 		return bftp.ServerDoesNotSupportSuchOperation
 	}
+
 	log.Println("Server accepts connection type")
 	s.Transfer = ack
 	log.Debugln("Creating restore session")
@@ -117,14 +113,28 @@ func (s *MainSession) StartRestore(restoreFileMetadata []RestoreFileMetadata) er
 	fileSystem := fs.NewLocalFileSystem()
 
 	restoreSession := CreateRestoreSession(s, fileSystem)
-	for _, v := range restoreFileMetadata {
-		log.Debugf("Downloading file from server path: %s, to local path: %s", v.PathOnServer, v.PathOnServer)
-		err = restoreSession.GetFile(v.PathOnServer, v.PathOnClient)
-		if err != nil {
-			log.Errorln("Cannot download file, err: ", err)
-		}
-		log.Debugf("File %s has been downloaded", v.PathOnClient)
+
+	// Getting assets metadata
+	assetsMetadata, err := restoreSession.receiveAssetMetadata(options)
+	if err != nil {
+		log.Errorln("Cannot receive asset metadata")
 	}
+	log.Println("ASSET METADATA: ", assetsMetadata)
+
+	//// Creating local dirs bases on metadata
+	//err = restoreSession.createDirs(restoreMetadata.DirsMetadata)
+	//if err != nil {
+	//	log.Errorln("At least one error occured during creating dirs, err: ", err)
+	//}
+	//
+	//for _, v := range restoreMetadata.FilesMetadata {
+	//	log.Debugf("Downloading file from server path: %s, to local path: %s", v.LocationOnServer, v.FullPath)
+	//	err = restoreSession.GetFile(v.LocationOnServer, v.FullPath)
+	//	if err != nil {
+	//		log.Errorln("Cannot download file, err: ", err)
+	//	}
+	//	log.Debugf("File %s has been downloaded", v.FullPath)
+	//}
 
 	return nil
 }
@@ -132,7 +142,6 @@ func (s *MainSession) StartRestore(restoreFileMetadata []RestoreFileMetadata) er
 func (s *MainSession) sendTransferType(transferType *bftp.Transfer) error {
 	// Sending transfer type and number of objects
 	log.Debugln("Opening transfer with server, type: ", transferType.TransferType)
-	log.Debugln("Number of objects to be transferred: ", transferType.ObjectsNumber)
 	tr := gob.NewEncoder(s.Conn)
 	err := tr.Encode(transferType)
 	if err != nil {

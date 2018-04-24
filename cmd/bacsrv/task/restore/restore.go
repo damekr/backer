@@ -15,16 +15,18 @@ var log = logrus.WithFields(logrus.Fields{"prefix": "task:restore"})
 type Restore struct {
 	ClientIP       string `json:"clientIP"`
 	BackupID       int    `json:"backupID"`
-	FilesMetadata  []bftp.FileMetadata
+	RestoreOptions bftp.RestoreOptions
+	AssetsMetadata bftp.AssetMetadata
 	Progress       int    `json:"-"`
 	Status         bool   `json:"status"`
 	BucketLocation string `json:"bucketLocation"`
 }
 
-func Create(clientIP string, backupID int) *Restore {
+func Create(clientIP string, backupID int, options bftp.RestoreOptions) *Restore {
 	return &Restore{
-		ClientIP: clientIP,
-		BackupID: backupID,
+		ClientIP:       clientIP,
+		BackupID:       backupID,
+		RestoreOptions: options,
 	}
 }
 
@@ -38,19 +40,14 @@ func (r *Restore) Run() {
 	// TODO Consider close grpc connection before restore gets done
 	defer conn.Close()
 	c := protoclnt.NewBaclntClient(conn)
-	var restoreFilesInfo []*protoclnt.RestoreFileInfo
-	log.Debugln("FIles metadata: ", r.FilesMetadata)
-	for _, v := range r.FilesMetadata {
-		fileMeta := protoclnt.RestoreFileInfo{
-			LocationOnServer: v.LocationOnServer,
-			OriginalLocation: v.FullPath,
-		}
-		restoreFilesInfo = append(restoreFilesInfo, &fileMeta)
-	}
-	log.Debugln("Restore Files info: ", restoreFilesInfo)
+	log.Debugln("Files metadata: ", r.AssetsMetadata)
+
+	// Sending to client restore request with options
 	response, err := c.Restore(context.Background(),
 		&protoclnt.RestoreRequest{Ip: r.ClientIP,
-			RestoreFileInfo: restoreFilesInfo})
+			WholeBackup:    r.RestoreOptions.WholeBackup,
+			RestoreObjects: r.RestoreOptions.ObjectsPaths,
+			BasePath:       r.RestoreOptions.BasePath})
 
 	if err != nil {
 		log.Warningf("Could not get response from restore request, err: ", err)
@@ -66,25 +63,13 @@ func (r *Restore) Stop() {
 }
 
 // Setup configures restore job, should be splited into different kind of setups(singleDir, wholeBackup etc.).
-func (r *Restore) Setup(remotePath string, singleDirPath string) error {
-	backupMetadata, err := db.DB().ReadBackupMetadata(r.BackupID)
+func (r *Restore) Setup() error {
+	backupMetadata, err := db.DB().ReadAssetMetadata(r.BackupID)
 	if err != nil {
 		return err
 	}
+	r.AssetsMetadata = *backupMetadata
 
-	if singleDirPath != "" {
-		for _, v := range backupMetadata.FilesMetadata {
-			if v.FullPath == singleDirPath {
-				log.Infoln("Adding to restore single dir: ", v.FullPath)
-				r.FilesMetadata = append(r.FilesMetadata, v)
-			}
-		}
-	} else {
-		for _, v := range backupMetadata.FilesMetadata {
-			r.FilesMetadata = append(r.FilesMetadata, v)
-		}
-	}
-
-	log.Debugln("Files to be restored metadata: ", r.FilesMetadata)
+	log.Debugln("Files to be restored metadata: ", r.AssetsMetadata)
 	return nil
 }

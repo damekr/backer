@@ -51,16 +51,16 @@ message RestoreWholeBackupDifferentPlaceRequest {
     string remotedir = 2;
 }
 
-// Restoring just file or directory to the same place
+// Restoring just file(s) or directory(s) to the same place
 message RestoreDirRequest {
     RestoreRequest restorerequest = 1;
-    string dir = 2;
+    repeated string objectPaths = 2;
 }
 
 // Restoring file or directory to different remote place
 message RestoreDirRemoteDifferentPlaceRequest {
     RestoreRequest restorerequest = 1;
-    string dir = 2;
+    repeated string objectsPaths = 2;
     string remotedir = 3;
 }
 

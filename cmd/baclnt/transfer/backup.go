@@ -9,6 +9,9 @@ import (
 	"github.com/damekr/backer/pkg/bftp"
 )
 
+// TODO Make the same flow like in restore,
+// Client prepares assetMetadata and send before files transfer
+
 type BackupSession struct {
 	MainSession *MainSession
 	FileSystem  fs.FileSystem

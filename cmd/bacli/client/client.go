@@ -172,8 +172,8 @@ func (c ClientGRPC) RunRestoreWholeBackupDifferentPlaceInSecure(clientIP, remote
 	return nil
 }
 
-func (c ClientGRPC) RunRestoreOfDirInSecure(clientIP, dir string, backupID int64) error {
-	log.Infof("Using GRPC protocol to run restore dir:", dir)
+func (c ClientGRPC) RunRestoreOfDirInSecure(clientIP string, objectsPaths []string, backupID int64) error {
+	log.Infof("Using GRPC protocol to run restore objectsPaths:", objectsPaths)
 	conn, err := c.ConnectInSecure(c.Server, c.Port)
 	if err != nil {
 		log.Warningf("Cannot connect to address %s", c.Server)
@@ -189,7 +189,7 @@ func (c ClientGRPC) RunRestoreOfDirInSecure(clientIP, dir string, backupID int64
 	}
 	r, err := cn.RestoreDir(c.prepareGRPCContext(), &protosrv.RestoreDirRequest{
 		Restorerequest: restoreRequest,
-		Dir:            dir,
+		ObjectPaths:    objectsPaths,
 	})
 	if err != nil {
 		log.Warningf("Could not send client name: %v", err)
@@ -199,8 +199,8 @@ func (c ClientGRPC) RunRestoreOfDirInSecure(clientIP, dir string, backupID int64
 	return nil
 }
 
-func (c ClientGRPC) RunRestoreOfDirDifferentPlaceInSecure(clientIP, dir, remoteDir string, backupID int64) error {
-	log.Infof("Using GRPC protocol to run restore dir: ", dir)
+func (c ClientGRPC) RunRestoreOfDirDifferentPlaceInSecure(clientIP, remoteDir string, objectsPaths []string, backupID int64) error {
+	log.Infof("Using GRPC protocol to run restore dir: ", objectsPaths)
 	conn, err := c.ConnectInSecure(c.Server, c.Port)
 	if err != nil {
 		log.Warningf("Cannot connect to address %s", c.Server)
@@ -216,7 +216,7 @@ func (c ClientGRPC) RunRestoreOfDirDifferentPlaceInSecure(clientIP, dir, remoteD
 	}
 	r, err := cn.RestoreDirRemoteDifferentPlace(c.prepareGRPCContext(), &protosrv.RestoreDirRemoteDifferentPlaceRequest{
 		Restorerequest: restoreRequest,
-		Dir:            dir,
+		ObjectsPaths:   objectsPaths,
 		Remotedir:      remoteDir,
 	})
 	if err != nil {
@@ -253,7 +253,7 @@ func (c ClientGRPC) ListBackupsInSecure(clientName string) error {
 	}
 	fmt.Println("Client Name: ", r.ClientName)
 	for _, v := range r.BackupID {
-		fmt.Println("   BackupID: ", v)
+		fmt.Println("   ID: ", v)
 	}
 
 	return nil

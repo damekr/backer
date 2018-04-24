@@ -12,14 +12,14 @@ CLI Options in restore
 
 ./bacli restore -c|--client <clientIP> -i|--backupid <backupID> -- Restore whole backup to given client into the same place
 ./bacli restore -c|--client <clientIP> -i|--backupid <backupID> -r|--remote <restore to remote path> -- Restore whole backup to given client into specified path
-./bacli restore -c|--client <clientIP> -i|--backupid <backupID> -d|--dir <path to be restored> -- Restore dir or whole path to the same location
-./bacli restore -c|--client <clientIP> -i|--backupid <backupID> -d|--dir <path to be restored> -r|--remote <restore to remote path> --
-Restore dir or whole path to given directory of the client
+./bacli restore -c|--client <clientIP> -i|--backupid <backupID> -d|--objects <path to be restored> -- Restore objects or whole path to the same location
+./bacli restore -c|--client <clientIP> -i|--backupid <backupID> -d|--objects <path to be restored> -r|--remote <restore to remote path> --
+Restore objects or whole path to given directory of the client
 
 */
 var (
 	backupID  int64
-	dir       string
+	objects   []string
 	remoteDir string
 )
 
@@ -32,12 +32,12 @@ var runRestore = &cobra.Command{
 			os.Exit(1)
 		}
 		switch {
-		case dir != "" && remoteDir != "":
-			log.Debugf("Running restore of one dir: %s to different place: %s\n", dir, remoteDir)
-			return restoreDirIntoDifferentPlace(clientIP, dir, remoteDir, backupID)
-		case dir != "" && remoteDir == "":
-			log.Debugf("Running restore of one dir: %s to the same place\n", dir)
-			return restoreDirIntoSamePlace(clientIP, dir, backupID)
+		case len(objects) > 0 && remoteDir != "":
+			log.Debugf("Running restore of one objects: %s to different place: %s\n", objects, remoteDir)
+			return restoreDirIntoDifferentPlace(clientIP, remoteDir, objects, backupID)
+		case len(objects) > 0 && remoteDir == "":
+			log.Debugf("Running restore of one objects: %s to the same place\n", objects)
+			return restoreDirIntoSamePlace(clientIP, objects, backupID)
 		case remoteDir != "":
 			log.Debugln("Running restore of whole backup to different place:", remoteDir)
 			return restoreWholeBackupIntoDifferentPlace(clientIP, remoteDir, backupID)
@@ -55,8 +55,8 @@ func init() {
 	runRestore.MarkFlagRequired("client")
 	runRestore.Flags().Int64VarP(&backupID, "backupid", "i", 0, "id of existing backup")
 	runRestore.MarkFlagRequired("backupid")
-	runRestore.Flags().StringVarP(&dir, "dir", "d", "", "filename or directory from created backup to be restored")
-	runRestore.Flags().StringVarP(&remoteDir, "remote", "r", "", "remote path to restore dir or directory")
+	runRestore.Flags().StringSliceVarP(&objects, "objects", "o", []string{}, "filename(s) or directory(s) from created backup to be restored")
+	runRestore.Flags().StringVarP(&remoteDir, "remote", "r", "", "remote path to restore objects or directory")
 }
 
 func restoreWholeBackupIntoSamePlace(clientIP string, backupID int64) error {
@@ -91,7 +91,7 @@ func restoreWholeBackupIntoDifferentPlace(clientIP, remoteDir string, backupID i
 	return nil
 }
 
-func restoreDirIntoSamePlace(clientIP, dir string, backupID int64) error {
+func restoreDirIntoSamePlace(clientIP string, dir []string, backupID int64) error {
 	log.Debugln("Running restore of client: ", clientIP)
 	log.Println("Running restore of backupID: ", backupID)
 	clnt := client.ClientGRPC{
@@ -106,14 +106,14 @@ func restoreDirIntoSamePlace(clientIP, dir string, backupID int64) error {
 	return nil
 }
 
-func restoreDirIntoDifferentPlace(clientIP, dir, remoteDir string, backupID int64) error {
+func restoreDirIntoDifferentPlace(clientIP, remoteDir string, objectsPaths []string, backupID int64) error {
 	log.Debugln("Running restore of client: ", clientIP)
 	log.Println("Running restore of backupID: ", backupID)
 	clnt := client.ClientGRPC{
 		Server: server,
 		Port:   port,
 	}
-	err := clnt.RunRestoreOfDirDifferentPlaceInSecure(clientIP, dir, remoteDir, backupID)
+	err := clnt.RunRestoreOfDirDifferentPlaceInSecure(clientIP, remoteDir, objectsPaths, backupID)
 	if err != nil {
 		log.Error("Could not run backup of client")
 		os.Exit(1)
