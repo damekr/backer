@@ -1,6 +1,7 @@
 package local
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -78,18 +79,17 @@ func (l Local) CreateBucket(clientName string) (string, error) {
 	return bucketLocation, nil
 }
 
-func (l Local) ReadFile(fileLocation string) (*os.File, error) {
-	log.Println("Opening file: ", fileLocation)
-	file, err := os.Open(fileLocation)
+func (l Local) ReadFile(filePath string) (io.ReadCloser, error) {
+	log.Debugln("Reading file: ", filePath)
+	file, err := os.Open(filePath)
 	if err != nil {
+		log.Errorln("Cannot open file for reading, err: ", err)
 		return nil, err
 	}
-
-	return file, nil
+	return io.ReadCloser(file), nil
 }
 
 func (l Local) CreateFile(savesetLocation, fileOriginalPath string) (*os.File, error) {
-	// filePath := filepath.Dir(fileOriginalPath)
 	fileName := filepath.Base(fileOriginalPath)
 	log.Infof("Creating file: %s, in saveset: %s", fileName, savesetLocation)
 

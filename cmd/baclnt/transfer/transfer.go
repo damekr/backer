@@ -67,14 +67,14 @@ func (s *MainSession) StartBackup(backupObjects fs.BackupObjects) error {
 	}
 
 	// Receiving acknowledge
-	err = backupSession.receiveEmptyAckMessage()
+	err = s.receiveEmptyAckMessage()
 	if err != nil {
 		return err
 	}
 
 	for fileNumber, path := range backupObjects.Files {
 		log.Debugf("Sending file %s, number %s", path, fileNumber)
-		backupSession.putFile(path, path)
+		backupSession.sendFile(path, path)
 	}
 	return nil
 }
@@ -115,26 +115,27 @@ func (s *MainSession) StartRestore(assetID int, options bftp.RestoreOptions) err
 	restoreSession := CreateRestoreSession(s, fileSystem)
 
 	// Getting assets metadata
-	assetsMetadata, err := restoreSession.receiveAssetMetadata(options)
+	modifiedAssetMetadata, err := restoreSession.receiveAssetMetadata(options)
 	if err != nil {
 		log.Errorln("Cannot receive asset metadata")
 	}
-	log.Println("ASSET METADATA: ", assetsMetadata)
+	log.Println("ASSET METADATA: ", modifiedAssetMetadata)
 
-	//// Creating local dirs bases on metadata
-	//err = restoreSession.createDirs(restoreMetadata.DirsMetadata)
-	//if err != nil {
-	//	log.Errorln("At least one error occured during creating dirs, err: ", err)
-	//}
-	//
-	//for _, v := range restoreMetadata.FilesMetadata {
-	//	log.Debugf("Downloading file from server path: %s, to local path: %s", v.LocationOnServer, v.FullPath)
-	//	err = restoreSession.GetFile(v.LocationOnServer, v.FullPath)
-	//	if err != nil {
-	//		log.Errorln("Cannot download file, err: ", err)
-	//	}
-	//	log.Debugf("File %s has been downloaded", v.FullPath)
-	//}
+	// Creating local dirs bases on metadata
+	err = restoreSession.createDirs(modifiedAssetMetadata.DirsMetadata)
+	if err != nil {
+		log.Errorln("At least one error occured during creating dirs, err: ", err)
+	}
+
+	log.Debugln("Starting downloading files")
+	for _, v := range modifiedAssetMetadata.FilesMetadata {
+		log.Debugf("Downloading file from server path: %s, to local path: %s", v.LocationOnServer, v.NameWithPath)
+		err = restoreSession.RestoreFile(v)
+		if err != nil {
+			log.Errorln("Cannot download file, err: ", err)
+		}
+		log.Debugf("File %s has been downloaded", v.NameWithPath)
+	}
 
 	return nil
 }
@@ -216,5 +217,28 @@ func (s *MainSession) Authenticate(password string) error {
 		return bftp.AuthenticationFailedError
 	}
 	log.Println("Authentication passed!")
+	return nil
+}
+
+func (s *MainSession) sendEmptyAckMessage() error {
+	log.Debugln("Sending empty ack message")
+	ackMessage := new(bftp.EmtpyAck)
+	fileAEnc := gob.NewEncoder(s.Conn)
+	if err := fileAEnc.Encode(&ackMessage); err != nil {
+		log.Errorln("Could not send acknowledge, err: ", err)
+		return err
+	}
+	return nil
+}
+
+func (s *MainSession) receiveEmptyAckMessage() error {
+	log.Debugln("Receiving empty Ack Message")
+	emptyAck := new(bftp.EmtpyAck)
+	dirsMetadataDecoder := gob.NewDecoder(s.Conn)
+	err := dirsMetadataDecoder.Decode(&emptyAck)
+	if err != nil {
+		log.Errorln("Cannot receive empty ack message, err: ", err)
+		return err
+	}
 	return nil
 }

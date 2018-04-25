@@ -81,7 +81,7 @@ func (c ClientREST) PingInSecure() (string, error) {
 //		hostname = "client"
 //	}
 //
-//	r, err := cn.ListClients(ctx, &proto.HelloRequest{Name: hostname})
+//	r, err := cn.ListClients(ctx, &proto.HelloRequest{NameWithPath: hostname})
 //	if err != nil {
 //		log.Warningf("Could not get client name: %v", err)
 //		return nil, err
@@ -251,7 +251,7 @@ func (c ClientGRPC) ListBackupsInSecure(clientName string) error {
 	if err != nil {
 		log.Warningf("Could not send client name: %v", err)
 	}
-	fmt.Println("Client Name: ", r.ClientName)
+	fmt.Println("Client NameWithPath: ", r.ClientName)
 	for _, v := range r.BackupID {
 		fmt.Println("   ID: ", v)
 	}

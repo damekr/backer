@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/d8x/bftp/storage"
 	"github.com/damekr/backer/cmd/bacsrv/db"
 	"github.com/damekr/backer/pkg/bftp"
 	"github.com/sirupsen/logrus"
@@ -42,7 +41,7 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 	}
 
 	// Sending acknowledge message
-	err = b.sendEmptyAckMessage()
+	err = b.MainSession.sendEmptyAckMessage()
 	if err != nil {
 		return err
 	}
@@ -52,6 +51,7 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 
 	for i := 0; i < objectsNumber; i++ {
 		logBackup.Debugln("Receiving object: ", i)
+
 		// Getting file metadata
 		fileMetadata, err := b.receiveFileMetadata()
 		if err != nil {
@@ -71,9 +71,9 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 		}
 		logBackup.Debugln("Received file, sending acknowledge")
 		// Sending file acknowledge
-		fileSize := storage.GetFileSize(fileMetadata.FullPath)
+
 		fileSizeAckn := new(bftp.FileAcknowledge)
-		fileSizeAckn.Size = fileSize
+		fileSizeAckn.Size = fileMetadata.FileSize
 		err = b.sendFileTransferAcknowledge(fileSizeAckn)
 		if err != nil {
 			logBackup.Error(err)
@@ -83,17 +83,6 @@ func (b *BackupSession) HandleBackupSession(savesetLocation string, objectsNumbe
 		logBackup.Errorln("Could not create session metadata, err: ", err)
 	}
 
-	return nil
-}
-
-func (b *BackupSession) sendEmptyAckMessage() error {
-	log.Debugln("Sending empty ack message")
-	ackMessage := new(bftp.EmtpyAck)
-	fileAEnc := gob.NewEncoder(b.MainSession.Conn)
-	if err := fileAEnc.Encode(&ackMessage); err != nil {
-		logBackup.Errorln("Could not send acknowledge, err: ", err)
-		return err
-	}
 	return nil
 }
 
@@ -145,8 +134,8 @@ func (b *BackupSession) sendFileTransferAcknowledge(acknowledge *bftp.FileAcknow
 }
 
 func (b *BackupSession) downloadFile(fileMetadata bftp.FileMetadata, savesetLocation string) error {
-	logBackup.Debugln("Starting downloading file:", fileMetadata.Name)
-	file, err := b.MainSession.Storage.CreateFile(savesetLocation, fileMetadata.FullPath)
+	logBackup.Debugln("Starting downloading file:", fileMetadata.NameWithPath)
+	file, err := b.MainSession.Storage.CreateFile(savesetLocation, fileMetadata.NameWithPath)
 	if err != nil {
 		logBackup.Errorln("Cannot create localfile to write, err: ", err)
 		return err
@@ -182,7 +171,7 @@ func (b *BackupSession) downloadFile(fileMetadata bftp.FileMetadata, savesetLoca
 		}
 	}
 	writer.Flush()
-	fileMetadata.LocationOnServer = filepath.Join(savesetLocation, fileMetadata.FullPath)
+	fileMetadata.LocationOnServer = filepath.Join(savesetLocation, fileMetadata.NameWithPath)
 	timeFinishBackup := time.Since(timeStartBackup)
 	fileMetadata.BackupTime = timeFinishBackup.String()
 	b.MainSession.Metadata.FilesMetadata = append(b.MainSession.Metadata.FilesMetadata, fileMetadata)

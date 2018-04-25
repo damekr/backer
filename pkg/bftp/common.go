@@ -75,8 +75,7 @@ type RestoreOptions struct {
 }
 
 type FileMetadata struct {
-	Name             string      `json:"fileName"`
-	FullPath         string      `json:"fullPathOfFile"`
+	NameWithPath     string      `json:"nameWithPath"` // Contains always fullPath
 	FileSize         int64       `json:"fileSize"`
 	ModTime          time.Time   `json:"modTime"`
 	UID              int         `json:"userID"`

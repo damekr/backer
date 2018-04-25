@@ -92,13 +92,13 @@ func testFileRead() {
 	// file, _ := os.Open("/tmp/file.txt")
 	// defer file.Close()
 	// metadata, err := localFS.ReadFileMetadata("/tmp/file.txt")
-	// metadata.FullPath = "/"
-	// metadata.Name = "myfile2.txt"
+	// metadata.OriginalFilePathWithName = "/"
+	// metadata.NameWithPath = "myfile2.txt"
 	// err = localFS.CreateFile(metadata)
 	// if err != nil {
 	// 	log.Errorln("Cannot create file, err: ", err)
 	// }
-	// writer, err := localFS.WriteFile(metadata)
+	// writer, err := localFS.WriteToFile(metadata)
 	// defer writer.Close()
 	// if err != nil {
 	// 	log.Errorln("Cannot create writer, err: ", err)

@@ -19,12 +19,12 @@ package storage
 //	allClients := config.GetAllClients()
 //	log.Debug("Number of integrated clients: ", len(allClients))
 //	for _, v := range allClients {
-//		log.Printf("clientDefinition info: %s", v.Name)
-//		if !checkIfClientBucketExists(v.Name) {
-//			log.Infof("clientDefinition %s bucket does not exist, creating...", v.Name)
-//			err := repo.CreateClientBucket(v.Name)
+//		log.Printf("clientDefinition info: %s", v.NameWithPath)
+//		if !checkIfClientBucketExists(v.NameWithPath) {
+//			log.Infof("clientDefinition %s bucket does not exist, creating...", v.NameWithPath)
+//			err := repo.CreateClientBucket(v.NameWithPath)
 //			if err != nil {
-//				log.Errorf("Could not create client %s bucket", v.Name)
+//				log.Errorf("Could not create client %s bucket", v.NameWithPath)
 //			}
 //		}
 //	}

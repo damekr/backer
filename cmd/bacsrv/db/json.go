@@ -54,7 +54,6 @@ func (j Json) CreateAssetMetadata(assetMetadata bftp.AssetMetadata) error {
 }
 
 func (j Json) createClientMetaCatalogue(clientName string) (string, error) {
-	log.Debugln("DB Assets DBLocation: ", j.DBLocation)
 	clientDbLocation := filepath.Join(j.DBLocation, clientName)
 	if err := os.MkdirAll(clientDbLocation, dbFilesPermissions); err != nil {
 		return "", err
@@ -83,14 +82,13 @@ func (j Json) ReadAssetsMetadata() ([]bftp.AssetMetadata, error) {
 func (j Json) ReadAssetsMetadataOfClient(clientName string) ([]bftp.AssetMetadata, error) {
 	var backupsMetadata []bftp.AssetMetadata
 	clientMetadataLocation := filepath.Join(j.DBLocation, clientName)
-	log.Debugln("DBLOCATION: ", j.DBLocation)
 	log.Debugln("Reading client metadata from location: ", clientMetadataLocation)
 	files, err := ioutil.ReadDir(clientMetadataLocation)
 	if err != nil {
 		return nil, clientMetadataNotFound
 	}
 	for _, v := range files {
-		log.Debugln("Checking json files for metadata: ", v)
+		log.Debugln("Checking json files for metadata: ", v.Name())
 		backupMetadata, err := j.readClientBackupMetadata(filepath.Join(j.DBLocation, clientName, v.Name()))
 		if err != nil {
 			log.Errorln("Cannot read client metadata file, err: ", err)
@@ -131,20 +129,22 @@ func (j Json) ReadClientsNames() ([]string, error) {
 
 }
 
-func (j Json) ReadAssetMetadata(backupID int) (*bftp.AssetMetadata, error) {
-	seekingBackupMetadata := new(bftp.AssetMetadata)
+func (j Json) ReadAssetMetadata(assetID int) (*bftp.AssetMetadata, error) {
+	log.Debugln("Looking metadata of asset ID: ", assetID)
+	seekingAssetMetadata := new(bftp.AssetMetadata)
 	backupsMetadata, err := j.ReadAssetsMetadata()
 	if err != nil {
-		return seekingBackupMetadata, err
+		return seekingAssetMetadata, err
 	}
 	for _, v := range backupsMetadata {
 		log.Println("Backup id: ", v.ID)
-		if v.ID == backupID {
-			seekingBackupMetadata = &v
+		if v.ID == assetID {
+			log.Debugln("Found matched asset id")
+			seekingAssetMetadata = &v
 		}
 	}
-	if seekingBackupMetadata.ID == 0 {
-		return seekingBackupMetadata, errors.New("backup metadata not found")
+	if seekingAssetMetadata.ID == 0 {
+		return seekingAssetMetadata, errors.New("backup metadata not found")
 	}
-	return seekingBackupMetadata, nil
+	return seekingAssetMetadata, nil
 }

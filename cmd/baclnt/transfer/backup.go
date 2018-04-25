@@ -26,9 +26,12 @@ func CreateBackupSession(mainSession *MainSession, fileSystem fs.FileSystem) *Ba
 
 func (b *BackupSession) sendDirsMetadata(dirPaths []string) error {
 	log.Debugln("Sending dirs metadata")
-	dirsMetadata := b.readDirsMetadata(dirPaths)
+	dirsMetadata, err := b.FileSystem.ReadDirsMetadata(dirPaths)
+	if err != nil {
+		log.Warningln("Not all dirs metadata has been read")
+	}
 	dirsMetadataEncoder := gob.NewEncoder(b.MainSession.Conn)
-	err := dirsMetadataEncoder.Encode(&dirsMetadata)
+	err = dirsMetadataEncoder.Encode(&dirsMetadata)
 	if err != nil {
 		log.Error("Could not encode DirMetadata struct, err: ", err)
 		return err
@@ -36,33 +39,7 @@ func (b *BackupSession) sendDirsMetadata(dirPaths []string) error {
 	return nil
 }
 
-func (b *BackupSession) readDirsMetadata(dirPaths []string) []*bftp.DirMetadata {
-	log.Debugln("Reading paths structure")
-	var dirsMetadata []*bftp.DirMetadata
-	for _, v := range dirPaths {
-		dirMetadata, err := b.FileSystem.ReadDirMetadata(v)
-		if err != nil {
-			log.Errorln("Cannot read dir metadata, err: ", err)
-		} else {
-			dirsMetadata = append(dirsMetadata, dirMetadata)
-		}
-	}
-	return dirsMetadata
-}
-
-func (b *BackupSession) receiveEmptyAckMessage() error {
-	log.Debugln("Receiving empty Ack Message")
-	emptyAck := new(bftp.EmtpyAck)
-	dirsMetadataDecoder := gob.NewDecoder(b.MainSession.Conn)
-	err := dirsMetadataDecoder.Decode(&emptyAck)
-	if err != nil {
-		log.Errorln("Cannot receive empty ack message, err: ", err)
-		return err
-	}
-	return nil
-}
-
-func (b *BackupSession) putFile(fileLocalPath, fileRemotePath string) error {
+func (b *BackupSession) sendFile(fileLocalPath, fileRemotePath string) error {
 
 	fileMetadata, err := b.FileSystem.ReadFileMetadata(fileRemotePath)
 

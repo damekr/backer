@@ -69,12 +69,12 @@ func runBackup(backupObjects fs.BackupObjects) error {
 
 func (s *server) Restore(ctx context.Context, restoreRequest *protoclnt.RestoreRequest) (*protoclnt.RestoreResponse, error) {
 	log.Printf("Got request to run restore of client: %s", restoreRequest.Ip)
-	log.Debugln("Need to restore from backupID: ", restoreRequest.BackupID)
+	log.Debugln("Need to restore from assetID: ", restoreRequest.AssetID)
 	s.metadataHandler(ctx)
 	startTime := time.Now()
 	log.Println("Start time: ", startTime)
 	var restoreMetadata bftp.AssetMetadata
-	restoreMetadata.ID = int(restoreRequest.BackupID)
+	restoreMetadata.ID = int(restoreRequest.AssetID)
 
 	var restoreOptions bftp.RestoreOptions
 	restoreOptions.BasePath = restoreRequest.BasePath

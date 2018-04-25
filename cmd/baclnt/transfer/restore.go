@@ -30,12 +30,14 @@ func (r *RestoreSession) receiveAssetMetadata(options bftp.RestoreOptions) (*bft
 		log.Println("Could not decode FileMetadata struct from server, err: ", err)
 		return nil, err
 	}
+	log.Debugln("Received asset metadata: ", assetMetadata)
+	// Here modifying assets according to restore options, not sure if it should be here
 	modifiedAssets := r.modifyAssetMetadataWithRestoreOptions(assetMetadata, options)
 	err = r.sendBackModifiedAssetMetadata(modifiedAssets)
 	if err != nil {
 		log.Errorln("Could not send modified asset")
 	}
-	return assetMetadata, nil
+	return modifiedAssets, nil
 }
 
 func (r *RestoreSession) modifyAssetMetadataWithRestoreOptions(assetsMetadata *bftp.AssetMetadata, options bftp.RestoreOptions) *bftp.AssetMetadata {
@@ -49,7 +51,7 @@ func (r *RestoreSession) modifyAssetMetadataWithRestoreOptions(assetsMetadata *b
 		var newDirMetadataList []bftp.DirMetadata
 		for _, o := range options.ObjectsPaths {
 			for _, f := range assetsMetadata.FilesMetadata {
-				if f.FullPath == o {
+				if f.NameWithPath == o {
 					log.Debugln("Adding file: ", f)
 					newFilesMetadataList = append(newFilesMetadataList, f)
 				}
@@ -91,50 +93,47 @@ func (r *RestoreSession) createDirs(dirsMetadata []bftp.DirMetadata) error {
 	return err
 }
 
-func (r *RestoreSession) GetFile(fileRemotePath, fileLocalPath string) error {
-	log.Printf("Downloading file: %r to: %r", fileRemotePath, fileLocalPath)
+func (r *RestoreSession) RestoreFile(metadata bftp.FileMetadata) error {
+	log.Printf("Downloading file: %r to: %r", metadata.LocationOnServer, metadata.NameWithPath)
 
 	// Sending remote file path using FileMetadata struct
-	fileMetadata := new(bftp.FileMetadata)
-	fileMetadata.FullPath = fileRemotePath
-	err := r.sendRequestForFile(fileMetadata)
+
+	err := r.sendRequestForFile(&metadata)
 	if err != nil {
 		log.Errorln("Could not send file metadata for restore, err: ", err.Error())
 	}
 
-	// Receiving file size with the same struct as above
-	receivedFileMetadata, err := r.receiveFileMetadata()
+	// Receiving empty as ack
+	err = r.MainSession.receiveEmptyAckMessage()
 	if err != nil {
-		log.Errorln("Could not receive file metadata, err: ", err.Error())
+		return err
 	}
 
-	if receivedFileMetadata.FullPath == "" {
+	if metadata.NameWithPath == "" {
 		//	FilePath is empty so does not exist or an error on server side
 		return bftp.FileDoesNotExist
 	}
-	log.Println("Creating local file: ", fileLocalPath)
-	err = r.FileSystem.CreateFile(*receivedFileMetadata)
+	err = r.FileSystem.CreateFile(metadata)
 	if err != nil {
-		log.Println("Cannot create localfile to write, err: ", err)
+		log.Println("Cannot create file to write, err: ", err)
 		return err
 	}
-	// TODO, This part might not work
-	fileWritter, err := r.FileSystem.WriteFile(*receivedFileMetadata)
+	fileWritter, err := r.FileSystem.WriteToFile(metadata)
 	if err != nil {
-		log.Errorln("Could not create file writter, err: ", err)
+		log.Errorln("Could not create file writer, err: ", err)
 	}
 	defer fileWritter.Close()
 
 	// Downloading file part
-	log.Println("Server has such file starting downloading file to local path: ", fileLocalPath)
-	err = r.downloadFile(fileWritter, receivedFileMetadata)
+	log.Println("Server has such file starting downloading file to local path: ", metadata.NameWithPath)
+	err = r.downloadFile(fileWritter, metadata)
 	if err != nil {
 		log.Println("Could not download file, error: ", err)
 		return err
 	}
 
 	//Sending file acknowledge
-	fileTransferAcknowledge, err := r.sendTransferAcknowledge(fileLocalPath)
+	fileTransferAcknowledge, err := r.sendTransferAcknowledge(metadata.NameWithPath)
 	if err != nil {
 		log.Errorln("Could not send transfer acknowledge, err: ", err)
 	}
@@ -144,8 +143,7 @@ func (r *RestoreSession) GetFile(fileRemotePath, fileLocalPath string) error {
 }
 
 func (r *RestoreSession) sendRequestForFile(metadata *bftp.FileMetadata) error {
-	//TODO When backup metadata will be created, then send here also backup id
-	log.Println("Sending request for file located in remote path: ", metadata.FullPath)
+	log.Println("Sending request for file located in remote path: ", metadata.NameWithPath)
 	ftran := gob.NewEncoder(r.MainSession.Conn)
 	err := ftran.Encode(&metadata)
 	if err != nil {
@@ -156,7 +154,7 @@ func (r *RestoreSession) sendRequestForFile(metadata *bftp.FileMetadata) error {
 }
 
 func (r *RestoreSession) receiveFileMetadata() (*bftp.FileMetadata, error) {
-	log.Println("Waiting for accepting transfering file")
+	log.Println("Waiting for accepting transferring file")
 	fileRecTransfer := new(bftp.FileMetadata)
 	frect := gob.NewDecoder(r.MainSession.Conn)
 	err := frect.Decode(&fileRecTransfer)
@@ -185,14 +183,14 @@ func (r *RestoreSession) sendTransferAcknowledge(filePath string) (*bftp.FileAck
 	return fileSizeAckn, nil
 }
 
-func (r *RestoreSession) downloadFile(fileWritter io.Writer, metadata *bftp.FileMetadata) error {
+func (r *RestoreSession) downloadFile(fileWritter io.Writer, metadata bftp.FileMetadata) error {
 	log.Println("Starting downloading file, size: ", metadata.FileSize)
 	reader := bufio.NewReader(r.MainSession.Conn)
 	var readFromConnection int64
 	var wroteToFile int64
 	buffer := make([]byte, r.MainSession.Transfer.Buffer)
 	if metadata.FileSize < int64(r.MainSession.Transfer.Buffer) {
-		log.Println("Shrinking buffer to filesize: ", metadata.FileSize)
+		log.Println("Shrinking buffer to file size: ", metadata.FileSize)
 		buffer = make([]byte, metadata.FileSize)
 	}
 	for {
@@ -214,6 +212,6 @@ func (r *RestoreSession) downloadFile(fileWritter io.Writer, metadata *bftp.File
 		}
 
 	}
-	// fileWritter.Flush()
+	//fileWritter.Flush()
 	return nil
 }

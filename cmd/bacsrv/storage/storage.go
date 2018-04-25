@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"io"
 	"os"
 
 	"github.com/damekr/backer/cmd/bacsrv/config"
@@ -30,7 +31,7 @@ type Storage interface {
 	CreateSaveset(bucketLocation string, assetID int) (string, error)
 	CreateFile(savesetLocation, fileOriginalPath string) (*os.File, error)
 	CreateDir(savesetLocation string, dirMetadata bftp.DirMetadata) error
-	ReadFile(fileLocation string) (*os.File, error)
+	ReadFile(path string) (io.ReadCloser, error)
 }
 
 func setDefaultStorage(storage Storage) {

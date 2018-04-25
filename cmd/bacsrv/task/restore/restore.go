@@ -14,7 +14,7 @@ var log = logrus.WithFields(logrus.Fields{"prefix": "task:restore"})
 
 type Restore struct {
 	ClientIP       string `json:"clientIP"`
-	BackupID       int    `json:"backupID"`
+	AssetID        int    `json:"assetID"`
 	RestoreOptions bftp.RestoreOptions
 	AssetsMetadata bftp.AssetMetadata
 	Progress       int    `json:"-"`
@@ -22,10 +22,10 @@ type Restore struct {
 	BucketLocation string `json:"bucketLocation"`
 }
 
-func Create(clientIP string, backupID int, options bftp.RestoreOptions) *Restore {
+func Create(clientIP string, assetID int, options bftp.RestoreOptions) *Restore {
 	return &Restore{
 		ClientIP:       clientIP,
-		BackupID:       backupID,
+		AssetID:        assetID,
 		RestoreOptions: options,
 	}
 }
@@ -40,14 +40,16 @@ func (r *Restore) Run() {
 	// TODO Consider close grpc connection before restore gets done
 	defer conn.Close()
 	c := protoclnt.NewBaclntClient(conn)
-	log.Debugln("Files metadata: ", r.AssetsMetadata)
 
 	// Sending to client restore request with options
 	response, err := c.Restore(context.Background(),
-		&protoclnt.RestoreRequest{Ip: r.ClientIP,
+		&protoclnt.RestoreRequest{
+			Ip:             r.ClientIP,
 			WholeBackup:    r.RestoreOptions.WholeBackup,
 			RestoreObjects: r.RestoreOptions.ObjectsPaths,
-			BasePath:       r.RestoreOptions.BasePath})
+			BasePath:       r.RestoreOptions.BasePath,
+			AssetID:        int32(r.AssetID),
+		})
 
 	if err != nil {
 		log.Warningf("Could not get response from restore request, err: ", err)
@@ -64,12 +66,14 @@ func (r *Restore) Stop() {
 
 // Setup configures restore job, should be splited into different kind of setups(singleDir, wholeBackup etc.).
 func (r *Restore) Setup() error {
-	backupMetadata, err := db.DB().ReadAssetMetadata(r.BackupID)
+	backupMetadata, err := db.DB().ReadAssetMetadata(r.AssetID)
 	if err != nil {
 		return err
 	}
 	r.AssetsMetadata = *backupMetadata
 
-	log.Debugln("Files to be restored metadata: ", r.AssetsMetadata)
+	log.Debugln("Files to be restored metadata: ", r.AssetsMetadata.FilesMetadata)
+	log.Debugln("Dirs to be restored metadata: ", r.AssetsMetadata.DirsMetadata)
+
 	return nil
 }

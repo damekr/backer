@@ -7,12 +7,10 @@ import (
 	"encoding/hex"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"time"
 
 	"github.com/damekr/backer/pkg/bftp"
-	log "github.com/sirupsen/logrus"
 )
 
 type LocalFileSystem struct {
@@ -23,8 +21,8 @@ func NewLocalFileSystem() LocalFileSystem {
 }
 
 func (l LocalFileSystem) CreateFile(metadata bftp.FileMetadata) error {
-	log.Debugln("Creating file: ", metadata)
-	file, err := os.Create(path.Join(metadata.FullPath, metadata.Name))
+	log.Debugln("Creating file: ", metadata.NameWithPath)
+	file, err := os.Create(metadata.NameWithPath)
 	defer file.Close()
 	if err != nil {
 		return err
@@ -38,6 +36,7 @@ func (l LocalFileSystem) CreateFile(metadata bftp.FileMetadata) error {
 	// if err != nil {
 	// 	return err
 	// }
+	log.Debugf("File %s has been created", metadata.NameWithPath)
 	return nil
 }
 
@@ -51,7 +50,7 @@ func (l LocalFileSystem) CreateDir(metadata bftp.DirMetadata) error {
 }
 
 func (l LocalFileSystem) createFileDir(metadata bftp.DirMetadata) error {
-	log.Debugln("Creating directory path: ", metadata.Path)
+	log.Debugln("Creating directory: ", metadata.Path)
 	return os.MkdirAll(metadata.Path, metadata.Mode)
 }
 
@@ -65,10 +64,11 @@ func (l LocalFileSystem) ReadFile(filePath string) (io.ReadCloser, error) {
 	return io.ReadCloser(file), nil
 }
 
-func (l LocalFileSystem) WriteFile(metadata bftp.FileMetadata) (io.WriteCloser, error) {
-	log.Debugln("Writing file: ", metadata)
-	file, err := os.OpenFile(path.Join(metadata.FullPath, metadata.Name), os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+func (l LocalFileSystem) WriteToFile(metadata bftp.FileMetadata) (io.WriteCloser, error) {
+	log.Debugln("Opening to write file: ", metadata.NameWithPath)
+	file, err := os.OpenFile(metadata.NameWithPath, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	if err != nil {
+		log.Errorln("Could not open file to create writer, err: ", err)
 		return nil, err
 	}
 	return io.WriteCloser(file), nil
@@ -85,11 +85,10 @@ func (l LocalFileSystem) ReadFileMetadata(filePath string) (*bftp.FileMetadata, 
 		return nil, err
 	}
 	fileMetadata := new(bftp.FileMetadata)
-	fileMetadata.Name = file.Name()
+	fileMetadata.NameWithPath = file.Name()
 	fileMetadata.FileSize = fileInfo.Size()
 	fileMetadata.ModTime = fileInfo.ModTime()
 	fileMetadata.Mode = fileInfo.Mode()
-	fileMetadata.FullPath = filePath
 	return fileMetadata, nil
 }
 
@@ -103,7 +102,21 @@ func (l LocalFileSystem) CheckIfFileExists(fullFilePath string) bool {
 	return true
 }
 
-func (l LocalFileSystem) ReadDirMetadata(path string) (*bftp.DirMetadata, error) {
+func (l LocalFileSystem) ReadDirsMetadata(dirPaths []string) ([]*bftp.DirMetadata, error) {
+	var dirsMetadata []*bftp.DirMetadata
+	var err error
+	for _, v := range dirPaths {
+		dirMetadata, err := l.readDirMetadata(v)
+		if err != nil {
+			log.Errorln("Cannot read dir metadata, err: ", err)
+		} else {
+			dirsMetadata = append(dirsMetadata, dirMetadata)
+		}
+	}
+	return dirsMetadata, err
+}
+
+func (l LocalFileSystem) readDirMetadata(path string) (*bftp.DirMetadata, error) {
 	dir, err := os.Open(path)
 	defer dir.Close()
 	if err != nil {

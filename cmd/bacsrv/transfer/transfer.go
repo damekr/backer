@@ -144,3 +144,26 @@ func (s *MainSession) SessionDispatcher(createSessionMetadata bool) error {
 
 	return nil
 }
+
+func (s *MainSession) sendEmptyAckMessage() error {
+	log.Debugln("Sending empty ack message")
+	ackMessage := new(bftp.EmtpyAck)
+	fileAEnc := gob.NewEncoder(s.Conn)
+	if err := fileAEnc.Encode(&ackMessage); err != nil {
+		log.Errorln("Could not send acknowledge, err: ", err)
+		return err
+	}
+	return nil
+}
+
+func (s *MainSession) receiveEmptyAckMessage() error {
+	log.Debugln("Receiving empty Ack Message")
+	emptyAck := new(bftp.EmtpyAck)
+	dirsMetadataDecoder := gob.NewDecoder(s.Conn)
+	err := dirsMetadataDecoder.Decode(&emptyAck)
+	if err != nil {
+		log.Errorln("Cannot receive empty ack message, err: ", err)
+		return err
+	}
+	return nil
+}
