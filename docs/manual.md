@@ -163,7 +163,7 @@ DataTransferInterface = "127.0.0.1" # IP addres on which data server will listen
 Localization = "/home/dixi/repository"
 
 [clients]
-ConfigFile = "/mnt/c/Users/Damian Rajca/dev/go/src/github.com/damekr/backer/config/clients"
+ConfigFile = "/mnt/c/Users/dixi/dev/go/src/github.com/damekr/backer/config/clients"
 
 ```
 
